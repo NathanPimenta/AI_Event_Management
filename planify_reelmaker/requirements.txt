@@ -1,5 +1,12 @@
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
-moviepy
+moviepy==1.0.3
 Pillow
+pillow-heif
+transformers
+torch
+torchvision
+opencv-python
+imagehash
+numpy

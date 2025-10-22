@@ -1,0 +1,88 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# VS Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# Output and generated files
+report_generator/output/
+event_management/output/
+planify_reelmaker/output/
+*.md
+*.png
+*.mp4
+
+# Credentials and models
+planify_reelmaker/credentials.json
+planify_reelmaker/nima_efficientnet-b0_ava_4060.pth
+planify_reelmaker/models/
+
+# Virtual environments
+planify_reelmaker/reel/
+
+# Ignore logs
+*.log
+
+# Ignore test artifacts
+*.tmp
+*.temp
+
+# Ignore CSV and JSON data (if sensitive)
+report_generator/data/*.csv
+report_generator/data/*.json

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createEvent, getEvents, getClubEvents, getUserEvents } from "@/lib/db"
+import { getEvents as dbGetEvents, getClubEvents as dbGetClubEvents, getUserEvents as dbGetUserEvents, createEvent as dbCreateEvent } from "@/lib/db"
 
 export async function GET(request: Request) {
   try {
@@ -8,13 +8,13 @@ export async function GET(request: Request) {
     const userId = searchParams.get("userId")
 
     if (clubId) {
-      const events = await getClubEvents(clubId)
+      const events = await dbGetClubEvents(clubId)
       return NextResponse.json(events)
     } else if (userId) {
-      const events = await getUserEvents(userId)
+      const events = await dbGetUserEvents(userId)
       return NextResponse.json(events)
     } else {
-      const events = await getEvents()
+      const events = await dbGetEvents()
       return NextResponse.json(events)
     }
   } catch (error) {
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   try {
     const data = await request.json()
 
-    const event = await createEvent({
+    const event = await dbCreateEvent({
       ...data,
       attendees: [],
       createdAt: new Date(),

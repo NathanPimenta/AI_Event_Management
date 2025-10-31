@@ -11,43 +11,68 @@ import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/hooks/use-auth"
 import { Users, Calendar, MessageSquare, Wand2 } from "lucide-react"
 
-// Mock event data
+// Fallback event shape for initial state
 const mockEvent = {
-  id: "event1",
-  title: "Web Development Workshop",
-  description: "Join us for an interactive workshop on modern web development techniques.",
-  date: "2023-11-15T14:00:00",
-  endDate: "2023-11-15T17:00:00",
-  location: "Online via Zoom",
-  club: "Web Development",
-  community: "Tech Enthusiasts",
-  attendees: 28,
-  maxAttendees: 50,
+  _id: "",
+  title: "",
+  description: "",
+  date: "",
+  endDate: "",
+  location: "",
+  club: "",
+  community: "",
+  attendees: 0,
+  maxAttendees: 0,
 }
 
 export default function ManageEventPage() {
   const { id } = useParams()
-  const [event, setEvent] = useState(mockEvent)
+  const [event, setEvent] = useState<any>(mockEvent)
   const [loading, setLoading] = useState(true)
+  const [runningTF, setRunningTF] = useState(false)
+  const [tfResults, setTfResults] = useState<any | null>(null)
+  const [tfLogs, setTfLogs] = useState<string>("")
   const { user } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    // Mock API call to fetch event details
     const fetchEvent = async () => {
       try {
-        // In a real app, you would fetch from your API
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        setEvent(mockEvent)
+        setLoading(true)
+        const res = await fetch(`/api/events/${id}`)
+        if (!res.ok) throw new Error("Failed to fetch event")
+        const data = await res.json()
+        setEvent(data)
       } catch (error) {
         console.error("Failed to fetch event:", error)
       } finally {
         setLoading(false)
       }
     }
-
-    fetchEvent()
+    if (id) fetchEvent()
   }, [id])
+
+  const runTeamFormation = async () => {
+    try {
+      setRunningTF(true)
+      setTfResults(null)
+      setTfLogs("")
+      const res = await fetch('/api/team-formation', {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setTfLogs((data && (data.output || data.logs)) || 'Process failed')
+        throw new Error(data?.error || 'Team formation failed')
+      }
+      setTfResults(data.results)
+      setTfLogs(data.logs || '')
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setRunningTF(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -232,10 +257,11 @@ export default function ManageEventPage() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="content" className="space-y-4">
-                <TabsList className="grid grid-cols-3 gap-2">
+                <TabsList className="grid grid-cols-4 gap-2">
                   <TabsTrigger value="content">Content Generator</TabsTrigger>
                   <TabsTrigger value="certificates">Certificate Generator</TabsTrigger>
                   <TabsTrigger value="feedback">Feedback Analysis</TabsTrigger>
+                  <TabsTrigger value="team-formation">Team Formation</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="content" className="space-y-4">
@@ -282,6 +308,32 @@ export default function ManageEventPage() {
                     <Wand2 className="h-4 w-4" />
                     Analyze Feedback (Available after event)
                   </Button>
+                </TabsContent>
+
+                <TabsContent value="team-formation" className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Run the AI team formation optimizer using current sample data.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button className="gap-2" onClick={runTeamFormation} disabled={runningTF}>
+                      <Wand2 className="h-4 w-4" />
+                      {runningTF ? 'Running…' : 'Run Team Formation'}
+                    </Button>
+                  </div>
+                  {tfResults && (
+                    <div className="mt-4 p-4 border rounded-md bg-muted/30">
+                      <p className="font-medium mb-2">Results</p>
+                      <pre className="text-xs overflow-auto max-h-80">{JSON.stringify(tfResults, null, 2)}</pre>
+                    </div>
+                  )}
+                  {tfLogs && (
+                    <div className="mt-4 p-4 border rounded-md bg-muted/30">
+                      <p className="font-medium mb-2">Logs</p>
+                      <pre className="text-xs overflow-auto max-h-80 whitespace-pre-wrap">{tfLogs}</pre>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>

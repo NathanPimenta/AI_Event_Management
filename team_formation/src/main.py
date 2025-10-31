@@ -164,8 +164,7 @@ def save_detailed_report(requirements: Dict[str, Any],
         print(f"⚠️  Warning: Could not save detailed report: {e}")
 
 
-def run_team_formation(custom_requirements_path: Optional[str] = None,
-                       custom_participants_path: Optional[str] = None) -> bool:
+def run_team_formation(event_id: str) -> bool:
     """
     Main function to load data and run the team formation optimizer.
     

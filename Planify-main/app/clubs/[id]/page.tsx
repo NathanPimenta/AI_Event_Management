@@ -17,10 +17,13 @@ export default function ClubPage() {
   const [club, setClub] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState<string | null>(null)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
+    // Wait for auth to load before checking user
+    if (authLoading) return
+
     if (!user) {
       router.push("/login")
       return
@@ -52,7 +55,7 @@ export default function ClubPage() {
     }
 
     fetchClub()
-  }, [id, user, router])
+  }, [id, user, authLoading, router])
 
   if (loading) {
     return (

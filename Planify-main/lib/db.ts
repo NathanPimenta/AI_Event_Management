@@ -709,6 +709,33 @@ export async function deleteCommunity(id: string) {
   await query('DELETE FROM communities WHERE id = $1', [id])
 }
 
+// Promote community member to admin
+export async function promoteCommunityMemberToAdmin(communityId: string, userId: string) {
+  const result = await query(
+    `UPDATE community_members
+     SET role = 'admin'
+     WHERE community_id = $1 AND user_id = $2
+     RETURNING *`,
+    [communityId, userId]
+  )
+  
+  if (result.rows.length === 0) return null
+  return toCamelCase(result.rows[0])
+}
+
+// Remove member from community
+export async function removeMemberFromCommunity(communityId: string, userId: string) {
+  const result = await query(
+    `DELETE FROM community_members
+     WHERE community_id = $1 AND user_id = $2
+     RETURNING *`,
+    [communityId, userId]
+  )
+  
+  if (result.rows.length === 0) return null
+  return toCamelCase(result.rows[0])
+}
+
 // Get all clubs
 export async function getClubs() {
   const result = await query(`
@@ -732,4 +759,31 @@ export async function getCommunityClubs(communityId: string) {
     ORDER BY c.created_at DESC
   `, [communityId])
   return result.rows.map(row => toCamelCase(row))
+}
+
+// Promote club member to lead
+export async function promoteClubMemberToLead(clubId: string, userId: string) {
+  const result = await query(
+    `UPDATE club_members
+     SET role = 'lead'
+     WHERE club_id = $1 AND user_id = $2
+     RETURNING *`,
+    [clubId, userId]
+  )
+  
+  if (result.rows.length === 0) return null
+  return toCamelCase(result.rows[0])
+}
+
+// Remove member from club
+export async function removeMemberFromClub(clubId: string, userId: string) {
+  const result = await query(
+    `DELETE FROM club_members
+     WHERE club_id = $1 AND user_id = $2
+     RETURNING *`,
+    [clubId, userId]
+  )
+  
+  if (result.rows.length === 0) return null
+  return toCamelCase(result.rows[0])
 }

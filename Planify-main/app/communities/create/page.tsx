@@ -16,11 +16,14 @@ export default function CreateCommunityPage() {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [loading, setLoading] = useState(false)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Wait for auth to load
+    if (authLoading) return
     
     if (!user) {
       toast({

@@ -18,42 +18,45 @@ export default function CommunityPage() {
   const [community, setCommunity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState<string | null>(null)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
+  const fetchCommunity = async () => {
+    try {
+      const response = await fetch(`/api/communities/${id}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch community")
+      }
+
+      const data = await response.json()
+      setCommunity(data)
+
+      // Determine user's role in this community
+      const member = data.members.find((m: any) => m.userId === user?.id)
+      setUserRole(member ? member.role : null)
+    } catch (error) {
+      console.error("Error fetching community:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load community details",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
+    // Wait for auth to load before checking user
+    if (authLoading) return
+
     if (!user) {
       router.push("/login")
       return
     }
 
-    const fetchCommunity = async () => {
-      try {
-        const response = await fetch(`/api/communities/${id}`)
-        if (!response.ok) {
-          throw new Error("Failed to fetch community")
-        }
-
-        const data = await response.json()
-        setCommunity(data)
-
-        // Determine user's role in this community
-        const member = data.members.find((m: any) => m.userId === user.id)
-        setUserRole(member ? member.role : null)
-      } catch (error) {
-        console.error("Error fetching community:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load community details",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchCommunity()
-  }, [id, user, router])
+  }, [id, user, authLoading, router])
 
   const copyInviteCode = () => {
     if (community?.inviteCode) {
@@ -174,7 +177,12 @@ export default function CommunityPage() {
               <CommunityClubs communityId={id as string} isAdmin={isAdmin} />
             </TabsContent>
             <TabsContent value="members">
-              <CommunityMembers communityId={id as string} isAdmin={isAdmin} members={community.members} />
+              <CommunityMembers 
+                communityId={id as string} 
+                isAdmin={isAdmin} 
+                members={community.members}
+                onMemberUpdated={fetchCommunity}
+              />
             </TabsContent>
             <TabsContent value="events">
               <CommunityEvents communityId={id as string} />

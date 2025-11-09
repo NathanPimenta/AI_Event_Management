@@ -21,11 +21,14 @@ export default function CreateClubPage() {
   const [communities, setCommunities] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [fetchingCommunities, setFetchingCommunities] = useState(true)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
   useEffect(() => {
+    // Wait for auth to load before checking user
+    if (authLoading) return
+
     // Check if user is logged in
     if (!user) {
       router.push("/login")
@@ -47,13 +50,27 @@ export default function CreateClubPage() {
         }
 
         const data = await response.json()
-        // Filter communities where user is an admin
-        const adminCommunities = data.filter((community: any) => {
-          const member = community.members.find((m: any) => m.userId === user.id)
-          return member && member.role === "admin"
-        })
+        
+        // If user has global community_admin role, show all communities
+        // Otherwise, filter communities where:
+        // 1. User is the community owner (adminId matches user.id)
+        // 2. OR user is a community admin (member role = admin)
+        let availableCommunities = data
+        
+        if (user.role !== 'community_admin') {
+          availableCommunities = data.filter((community: any) => {
+            // Check if user is the community owner
+            if (community.adminId === user.id) {
+              return true
+            }
+            
+            // Check if user is a community admin (member role)
+            const member = community.members?.find((m: any) => m.userId === user.id)
+            return member && member.role === "admin"
+          })
+        }
 
-        setCommunities(adminCommunities)
+        setCommunities(availableCommunities)
       } catch (error) {
         console.error("Error fetching communities:", error)
         toast({
@@ -67,7 +84,7 @@ export default function CreateClubPage() {
     }
 
     fetchCommunities()
-  }, [user, router, searchParams])
+  }, [user, authLoading, router, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -129,9 +146,11 @@ export default function CreateClubPage() {
           <h1 className="text-3xl font-bold mb-6">Create a Club</h1>
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-lg font-medium mb-2">You need to be a community admin to create a club</p>
+              <p className="text-lg font-medium mb-2">No communities available</p>
               <p className="text-muted-foreground text-center mb-6">
-                You must first create a community or be promoted to admin in an existing community.
+                {user?.role === 'community_admin' 
+                  ? "Create a community first to add clubs to it."
+                  : "You must first create a community or be promoted to admin in an existing community to create clubs."}
               </p>
               <Link href="/communities/create">
                 <Button>Create a Community</Button>

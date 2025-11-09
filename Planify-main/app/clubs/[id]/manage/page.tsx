@@ -18,53 +18,56 @@ export default function ManageClubPage() {
   const [club, setClub] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState<string | null>(null)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
+  const fetchClub = async () => {
+    try {
+      const response = await fetch(`/api/clubs/${id}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch club")
+      }
+
+      const data = await response.json()
+      setClub(data)
+
+      // Check if user is a lead of this club
+      const member = data.members?.find((m: any) => m.userId === user?.id)
+      setUserRole(member ? member.role : null)
+
+      // Only leads can manage the club
+      if (!member || member.role !== 'lead') {
+        toast({
+          title: "Access Denied",
+          description: "You must be a club lead to manage this club",
+          variant: "destructive",
+        })
+        router.push(`/clubs/${id}`)
+        return
+      }
+    } catch (error) {
+      console.error("Failed to fetch club:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load club details",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
+    // Wait for auth to load before checking user
+    if (authLoading) return
+
     if (!user) {
       router.push("/login")
       return
     }
 
-    const fetchClub = async () => {
-      try {
-        const response = await fetch(`/api/clubs/${id}`)
-        if (!response.ok) {
-          throw new Error("Failed to fetch club")
-        }
-
-        const data = await response.json()
-        setClub(data)
-
-        // Check if user is a lead of this club
-        const member = data.members?.find((m: any) => m.userId === user.id)
-        setUserRole(member ? member.role : null)
-
-        // Only leads can manage the club
-        if (!member || member.role !== 'lead') {
-          toast({
-            title: "Access Denied",
-            description: "You must be a club lead to manage this club",
-            variant: "destructive",
-          })
-          router.push(`/clubs/${id}`)
-          return
-        }
-      } catch (error) {
-        console.error("Failed to fetch club:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load club details",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchClub()
-  }, [id, user, router])
+  }, [id, user, authLoading, router])
 
   if (loading) {
     return (
@@ -130,7 +133,7 @@ export default function ManageClubPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="members">
-          <ClubMembers clubId={id as string} />
+          <ClubMembers clubId={id as string} isLead={userRole === 'lead'} onMemberUpdated={fetchClub} />
         </TabsContent>
         <TabsContent value="events">
           <ClubEvents clubId={id as string} />

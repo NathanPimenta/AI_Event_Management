@@ -20,7 +20,7 @@ export default function EventPage() {
   const [registering, setRegistering] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
   const [attendees, setAttendees] = useState<any[]>([])
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -75,6 +75,9 @@ export default function EventPage() {
   }, [id, user, event])
 
   const handleRegister = async () => {
+    // Wait for auth to load
+    if (authLoading) return
+    
     if (!user) {
       router.push("/login")
       return

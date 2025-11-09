@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server"
-import { getEvents as dbGetEvents, getClubEvents as dbGetClubEvents, getUserEvents as dbGetUserEvents, createEvent as dbCreateEvent } from "@/lib/db"
+import { getEvents as dbGetEvents, getEventsByClub as dbGetClubEvents, getEventsByCommunity as dbGetEventsByCommunity, createEvent as dbCreateEvent } from "@/lib/db"
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const clubId = searchParams.get("clubId")
     const userId = searchParams.get("userId")
+    const communityId = searchParams.get("communityId")
 
     if (clubId) {
       const events = await dbGetClubEvents(clubId)
       return NextResponse.json(events)
+    } else if (communityId) {
+      const events = await dbGetEventsByCommunity(communityId)
+      return NextResponse.json(events)
     } else if (userId) {
-      const events = await dbGetUserEvents(userId)
+      const events = await dbGetEvents(userId)
       return NextResponse.json(events)
     } else {
       const events = await dbGetEvents()

@@ -19,10 +19,13 @@ export default function CommunityEvents({ communityId }: CommunityEventsProps) {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        // In a real implementation, we would fetch events for this community
-        // For now, we'll use a timeout to simulate loading
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        setEvents([])
+        const response = await fetch(`/api/events?communityId=${communityId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setEvents(data)
+        } else {
+          throw new Error('Failed to fetch events')
+        }
       } catch (error) {
         console.error("Error fetching events:", error)
         toast({
@@ -63,7 +66,7 @@ export default function CommunityEvents({ communityId }: CommunityEventsProps) {
         ) : (
           <div className="space-y-4">
             {events.map((event) => (
-              <Card key={event._id}>
+              <Card key={event.id}>
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{event.title}</CardTitle>
@@ -97,7 +100,7 @@ export default function CommunityEvents({ communityId }: CommunityEventsProps) {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Link href={`/events/${event._id}`} className="w-full">
+                  <Link href={`/events/${event.id}`} className="w-full">
                     <Button variant="outline" className="w-full">
                       View Event
                     </Button>

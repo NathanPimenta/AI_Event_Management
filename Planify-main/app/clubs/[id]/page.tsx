@@ -116,13 +116,13 @@ export default function ClubPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="members">
-          <ClubMembers clubId={id as string} isLead={isLead} />
+          <ClubMembers clubId={id as string} />
         </TabsContent>
         <TabsContent value="events">
-          <ClubEvents clubId={id as string} isLead={isLead} />
+          <ClubEvents clubId={id as string} />
         </TabsContent>
         <TabsContent value="tasks">
-          <ClubTasks clubId={id as string} isLead={isLead} />
+          <ClubTasks clubId={id as string} />
         </TabsContent>
       </Tabs>
     </div>

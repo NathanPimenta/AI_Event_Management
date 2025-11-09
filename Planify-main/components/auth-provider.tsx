@@ -45,9 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const userData = await response.json()
 
-      // Transform MongoDB _id to id for consistency
+      // PostgreSQL returns id directly
       const user: User = {
-        id: userData._id.toString(),
+        id: userData.id || userData.id?.toString(), // Support both PostgreSQL and MongoDB
         name: userData.name,
         email: userData.email,
         image: userData.image,
@@ -84,9 +84,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const userData = await response.json()
 
-      // Transform MongoDB _id to id for consistency
+      // PostgreSQL returns id directly
       const user: User = {
-        id: userData._id.toString(),
+        id: userData.id || userData.id?.toString(), // Support both PostgreSQL and MongoDB
         name: userData.name,
         email: userData.email,
         image: userData.image,

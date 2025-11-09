@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -21,61 +21,15 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-// Mock data for tasks
-const mockTasks = [
-  {
-    id: "task1",
-    title: "Prepare presentation slides",
-    description: "Create slides for the upcoming workshop",
-    dueDate: "2023-11-10",
-    event: "Web Development Workshop",
-    assignee: "Alice Smith",
-    status: "pending",
-    priority: "high",
-  },
-  {
-    id: "task2",
-    title: "Design event poster",
-    description: "Create a promotional poster for social media",
-    dueDate: "2023-11-05",
-    event: "React Deep Dive",
-    assignee: "Bob Johnson",
-    status: "completed",
-    priority: "medium",
-  },
-  {
-    id: "task3",
-    title: "Coordinate with speakers",
-    description: "Confirm availability and requirements with guest speakers",
-    dueDate: "2023-11-08",
-    event: "Web Development Workshop",
-    assignee: "John Doe",
-    status: "pending",
-    priority: "high",
-  },
-]
-
-// Mock data for members
-const mockMembers = [
-  { id: "user1", name: "John Doe" },
-  { id: "user2", name: "Alice Smith" },
-  { id: "user3", name: "Bob Johnson" },
-  { id: "user4", name: "Emma Wilson" },
-]
-
-// Mock data for events
-const mockEvents = [
-  { id: "event1", name: "Web Development Workshop" },
-  { id: "event2", name: "JavaScript Fundamentals" },
-  { id: "event3", name: "React Deep Dive" },
-]
-
 interface ClubTasksProps {
   clubId: string
 }
 
 export default function ClubTasks({ clubId }: ClubTasksProps) {
-  const [tasks, setTasks] = useState(mockTasks)
+  const [tasks, setTasks] = useState<any[]>([])
+  const [members, setMembers] = useState<any[]>([])
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState("all")
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -88,6 +42,37 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
   const [newTaskAssignee, setNewTaskAssignee] = useState("")
   const [newTaskPriority, setNewTaskPriority] = useState("medium")
   const [creating, setCreating] = useState(false)
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [tasksRes, membersRes, eventsRes] = await Promise.all([
+          fetch(`/api/tasks?clubId=${clubId}`),
+          fetch(`/api/clubs/${clubId}/members`),
+          fetch(`/api/events?clubId=${clubId}`)
+        ])
+
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json()
+          setTasks(tasksData)
+        }
+        if (membersRes.ok) {
+          const membersData = await membersRes.json()
+          setMembers(membersData)
+        }
+        if (eventsRes.ok) {
+          const eventsData = await eventsRes.json()
+          setEvents(eventsData)
+        }
+      } catch (error) {
+        console.error("Failed to fetch data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [clubId])
 
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch =
@@ -124,20 +109,24 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
     setCreating(true)
 
     try {
-      // Mock API call to create task
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clubId,
+          eventId: newTaskEvent,
+          title: newTaskTitle,
+          description: newTaskDescription,
+          dueDate: newTaskDueDate,
+          assigneeId: newTaskAssignee,
+          priority: newTaskPriority,
+          status: 'pending'
+        })
+      })
 
-      const newTask = {
-        id: `task${Date.now()}`,
-        title: newTaskTitle,
-        description: newTaskDescription,
-        dueDate: newTaskDueDate,
-        event: mockEvents.find((e) => e.id === newTaskEvent)?.name || "",
-        assignee: mockMembers.find((m) => m.id === newTaskAssignee)?.name || "",
-        status: "pending",
-        priority: newTaskPriority,
-      }
+      if (!response.ok) throw new Error('Failed to create task')
 
+      const newTask = await response.json()
       setTasks([...tasks, newTask])
 
       // Reset form
@@ -241,9 +230,9 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
                       <SelectValue placeholder="Select event" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockEvents.map((event) => (
+                      {events.map((event: any) => (
                         <SelectItem key={event.id} value={event.id}>
-                          {event.name}
+                          {event.title || event.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -257,9 +246,9 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
                       <SelectValue placeholder="Select member" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name}
+                      {members.map((member: any) => (
+                        <SelectItem key={member.userId || member.id} value={member.userId || member.id}>
+                          {member.name || member.email}
                         </SelectItem>
                       ))}
                     </SelectContent>

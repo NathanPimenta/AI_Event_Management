@@ -6,33 +6,32 @@ import { Badge } from "@/components/ui/badge"
 import { PlusCircle, Users, Settings, Calendar } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
-import { useState } from "react"
-
-// Mock data for clubs
-const mockClubs = [
-  {
-    id: "club1",
-    name: "Web Development",
-    community: "Tech Enthusiasts",
-    description: "Learn and collaborate on web development projects",
-    memberCount: 45,
-    eventCount: 12,
-    role: "lead",
-  },
-  {
-    id: "club2",
-    name: "UI/UX Design",
-    community: "Creative Minds",
-    description: "Explore user interface and experience design",
-    memberCount: 32,
-    eventCount: 8,
-    role: "member",
-  },
-]
+import { useState, useEffect } from "react"
 
 export default function DashboardClubs() {
   const { user } = useAuth()
-  const [clubs] = useState(mockClubs)
+  const [clubs, setClubs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchClubs() {
+      if (!user?.id) return
+      
+      try {
+        const response = await fetch(`/api/clubs?userId=${user.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setClubs(data)
+        }
+      } catch (error) {
+        console.error("Failed to fetch clubs:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchClubs()
+  }, [user?.id])
 
   return (
     <div className="space-y-4">
@@ -46,7 +45,13 @@ export default function DashboardClubs() {
         </Link>
       </div>
 
-      {clubs.length === 0 ? (
+      {loading ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground">Loading clubs...</p>
+          </CardContent>
+        </Card>
+      ) : clubs.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mb-4" />

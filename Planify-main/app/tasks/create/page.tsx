@@ -162,7 +162,7 @@ export default function CreateTaskPage() {
         description: `${title} has been created successfully.`,
       })
 
-      router.push(`/tasks/${task._id}`)
+      router.push(`/tasks/${task.id}`)
     } catch (error) {
       console.error("Error creating task:", error)
       toast({
@@ -227,7 +227,7 @@ export default function CreateTaskPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {clubs.map((club) => (
-                      <SelectItem key={club._id} value={club._id}>
+                      <SelectItem key={club.id} value={club.id}>
                         {club.name}
                       </SelectItem>
                     ))}
@@ -244,7 +244,7 @@ export default function CreateTaskPage() {
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {events.map((event) => (
-                      <SelectItem key={event._id} value={event._id}>
+                      <SelectItem key={event.id} value={event.id}>
                         {event.title}
                       </SelectItem>
                     ))}

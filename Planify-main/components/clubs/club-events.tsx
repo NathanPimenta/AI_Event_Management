@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,48 +8,38 @@ import { PlusCircle, Calendar, MapPin, Users, Clock, Search } from "lucide-react
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 
-// Mock data for events
-const mockEvents = [
-  {
-    id: "event1",
-    title: "Web Development Workshop",
-    date: "2023-11-15T14:00:00",
-    endDate: "2023-11-15T17:00:00",
-    location: "Online",
-    attendees: 28,
-    maxAttendees: 50,
-    status: "upcoming",
-  },
-  {
-    id: "event2",
-    title: "JavaScript Fundamentals",
-    date: "2023-10-25T15:00:00",
-    endDate: "2023-10-25T17:00:00",
-    location: "Online",
-    attendees: 32,
-    maxAttendees: 40,
-    status: "past",
-  },
-  {
-    id: "event3",
-    title: "React Deep Dive",
-    date: "2023-12-05T10:00:00",
-    endDate: "2023-12-05T13:00:00",
-    location: "Community Center",
-    attendees: 15,
-    maxAttendees: 30,
-    status: "upcoming",
-  },
-]
-
 interface ClubEventsProps {
   clubId: string
 }
 
 export default function ClubEvents({ clubId }: ClubEventsProps) {
-  const [events, setEvents] = useState(mockEvents)
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState("all")
+
+  useEffect(() => {
+    async function fetchEvents() {
+      try {
+        const response = await fetch(`/api/events?clubId=${clubId}`)
+        if (response.ok) {
+          const data = await response.json()
+          // Add status based on date
+          const eventsWithStatus = data.map((event: any) => ({
+            ...event,
+            status: new Date(event.date || event.startDate) > new Date() ? 'upcoming' : 'past'
+          }))
+          setEvents(eventsWithStatus)
+        }
+      } catch (error) {
+        console.error("Failed to fetch events:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEvents()
+  }, [clubId])
 
   const filteredEvents = events.filter((event) => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -100,7 +90,12 @@ export default function ClubEvents({ clubId }: ClubEventsProps) {
             </div>
           </div>
 
-          {filteredEvents.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Loading events...</p>
+            </div>
+          ) : filteredEvents.length === 0 ? (
             <div className="text-center py-8">
               <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-lg font-medium mb-2">No events found</p>
@@ -130,23 +125,23 @@ export default function ClubEvents({ clubId }: ClubEventsProps) {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{new Date(event.date).toLocaleDateString()}</span>
+                        <span>{new Date(event.date || event.startDate).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span>
-                          {new Date(event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -
-                          {new Date(event.endDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(event.date || event.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {event.endDate && ` - ${new Date(event.endDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{event.location}</span>
+                        <span>{event.location || 'TBA'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>
-                          {event.attendees} / {event.maxAttendees} registered
+                          {event.attendeeCount || event.attendees || 0} / {event.maxAttendees || 'Unlimited'} registered
                         </span>
                       </div>
                     </div>

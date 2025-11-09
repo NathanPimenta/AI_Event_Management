@@ -10,9 +10,12 @@ import DashboardCommunities from "@/components/dashboard/communities"
 import DashboardClubs from "@/components/dashboard/clubs"
 import DashboardEvents from "@/components/dashboard/events"
 import DashboardTasks from "@/components/dashboard/tasks"
+import { Protected } from "@/components/protected"
+import { usePermissions } from "@/hooks/use-permissions"
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
+  const { can } = usePermissions()
 
   // If not logged in, redirect to login page
   if (!loading && !user) {
@@ -36,26 +39,29 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back, {user?.name}! Manage your communities, clubs, and events.
+            Welcome back, {user?.name}! 
+            {user?.role === 'community_admin' && ' Manage your communities, clubs, and events.'}
+            {user?.role === 'community_member' && ' Participate in clubs and events.'}
+            {user?.role === 'audience' && ' Explore communities and join events.'}
           </p>
         </div>
         <div className="flex gap-2">
-          {user?.role === "audience" && (
+          <Protected resource="communities" action="create">
             <Link href="/communities/create">
               <Button className="gap-2">
                 <PlusCircle className="h-4 w-4" />
                 Create Community
               </Button>
             </Link>
-          )}
-          {user?.role === "community_admin" && (
+          </Protected>
+          <Protected resource="clubs" action="create">
             <Link href="/clubs/create">
-              <Button className="gap-2">
+              <Button className="gap-2" variant="outline">
                 <PlusCircle className="h-4 w-4" />
                 Create Club
               </Button>
             </Link>
-          )}
+          </Protected>
         </div>
       </div>
 
@@ -73,10 +79,12 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4" />
             Events
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="gap-2">
-            <ClipboardList className="h-4 w-4" />
-            Tasks
-          </TabsTrigger>
+          {can('tasks', 'read') && (
+            <TabsTrigger value="tasks" className="gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Tasks
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="communities" className="space-y-4">
           <DashboardCommunities />
@@ -87,9 +95,11 @@ export default function DashboardPage() {
         <TabsContent value="events" className="space-y-4">
           <DashboardEvents />
         </TabsContent>
-        <TabsContent value="tasks" className="space-y-4">
-          <DashboardTasks />
-        </TabsContent>
+        {can('tasks', 'read') && (
+          <TabsContent value="tasks" className="space-y-4">
+            <DashboardTasks />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )

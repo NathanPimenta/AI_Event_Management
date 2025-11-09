@@ -7,47 +7,34 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar, ClipboardList, PlusCircle } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
-import { useState } from "react"
-
-// Mock data for tasks
-const mockTasks = [
-  {
-    id: "task1",
-    title: "Prepare presentation slides",
-    description: "Create slides for the upcoming workshop",
-    dueDate: "2023-11-10",
-    event: "Web Development Workshop",
-    club: "Web Development",
-    status: "pending",
-    priority: "high",
-  },
-  {
-    id: "task2",
-    title: "Design event poster",
-    description: "Create a promotional poster for social media",
-    dueDate: "2023-11-05",
-    event: "UI/UX Design Principles",
-    club: "UI/UX Design",
-    status: "completed",
-    priority: "medium",
-  },
-  {
-    id: "task3",
-    title: "Coordinate with speakers",
-    description: "Confirm availability and requirements with guest speakers",
-    dueDate: "2023-11-08",
-    event: "Web Development Workshop",
-    club: "Web Development",
-    status: "pending",
-    priority: "high",
-  },
-]
+import { useState, useEffect } from "react"
 
 export default function DashboardTasks() {
   const { user } = useAuth()
-  const [tasks, setTasks] = useState(mockTasks)
+  const [tasks, setTasks] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState("all")
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+
+  useEffect(() => {
+    async function fetchTasks() {
+      if (!user?.id) return
+      
+      try {
+        const response = await fetch(`/api/tasks?userId=${user.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setTasks(data)
+        }
+      } catch (error) {
+        console.error("Failed to fetch tasks:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTasks()
+  }, [user?.id])
 
   const filteredTasks = tasks.filter((task) => {
     if (filter === "all") return true
@@ -57,18 +44,32 @@ export default function DashboardTasks() {
     return true
   })
 
-  const toggleTaskStatus = (taskId: string) => {
-    setTasks(
-      tasks.map((task) => {
-        if (task.id === taskId) {
-          return {
-            ...task,
-            status: task.status === "pending" ? "completed" : "pending",
-          }
-        }
-        return task
-      }),
-    )
+  const toggleTaskStatus = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+
+    const newStatus = task.status === "pending" ? "completed" : "pending"
+    
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (response.ok) {
+        setTasks(
+          tasks.map((t) => {
+            if (t.id === taskId) {
+              return { ...t, status: newStatus }
+            }
+            return t
+          }),
+        )
+      }
+    } catch (error) {
+      console.error("Failed to update task status:", error)
+    }
   }
 
   return (

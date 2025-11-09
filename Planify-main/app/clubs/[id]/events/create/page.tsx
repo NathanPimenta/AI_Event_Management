@@ -29,9 +29,24 @@ export default function CreateEventPage() {
     setLoading(true)
 
     try {
-      // Mock API call to create event
-      // In a real app, you would call your API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clubId,
+          title,
+          description,
+          date,
+          endDate,
+          location,
+          maxAttendees: parseInt(maxAttendees),
+          organizerId: user?.id,
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create event')
+      }
 
       toast({
         title: "Event created",

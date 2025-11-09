@@ -98,7 +98,7 @@ export default function CreateClubPage() {
         description: `${name} has been created successfully.`,
       })
 
-      router.push(`/clubs/${club._id}`)
+      router.push(`/clubs/${club.id}`)
     } catch (error) {
       console.error("Error creating club:", error)
       toast({
@@ -163,7 +163,7 @@ export default function CreateClubPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {communities.map((community) => (
-                      <SelectItem key={community._id} value={community._id}>
+                      <SelectItem key={community.id} value={community.id}>
                         {community.name}
                       </SelectItem>
                     ))}

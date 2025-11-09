@@ -21,23 +21,47 @@ export default function CreateCommunityPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a community",
+        variant: "destructive",
+      })
+      router.push("/login")
+      return
+    }
+
     setLoading(true)
 
     try {
-      // Mock API call to create community
-      // In a real app, you would call your API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch('/api/communities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description,
+          adminId: user.id
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create community')
+      }
+
+      const data = await response.json()
 
       toast({
         title: "Community created",
         description: `${name} has been created successfully.`,
       })
 
-      router.push("/dashboard")
-    } catch (err) {
+      router.push(`/communities/${data.id}`)
+    } catch (err: any) {
       toast({
         title: "Error",
-        description: "Failed to create community. Please try again.",
+        description: err.message || "Failed to create community. Please try again.",
         variant: "destructive",
       })
     } finally {

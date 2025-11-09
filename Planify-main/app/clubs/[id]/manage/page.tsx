@@ -7,45 +7,64 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/hooks/use-auth"
 import { PlusCircle, Users, Calendar, ClipboardList, Wand2 } from "lucide-react"
 import Link from "next/link"
+import { toast } from "@/hooks/use-toast"
 import ClubMembers from "@/components/clubs/club-members"
 import ClubEvents from "@/components/clubs/club-events"
 import ClubTasks from "@/components/clubs/club-tasks"
 import AITools from "@/components/clubs/ai-tools"
 
-// Mock club data
-const mockClub = {
-  id: "club1",
-  name: "Web Development",
-  community: "Tech Enthusiasts",
-  description: "Learn and collaborate on web development projects",
-  memberCount: 45,
-  eventCount: 12,
-  role: "lead",
-}
-
 export default function ManageClubPage() {
   const { id } = useParams()
-  const [club, setClub] = useState(mockClub)
+  const [club, setClub] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const { user } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    // Mock API call to fetch club details
+    if (!user) {
+      router.push("/login")
+      return
+    }
+
     const fetchClub = async () => {
       try {
-        // In a real app, you would fetch from your API
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        setClub(mockClub)
+        const response = await fetch(`/api/clubs/${id}`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch club")
+        }
+
+        const data = await response.json()
+        setClub(data)
+
+        // Check if user is a lead of this club
+        const member = data.members?.find((m: any) => m.userId === user.id)
+        setUserRole(member ? member.role : null)
+
+        // Only leads can manage the club
+        if (!member || member.role !== 'lead') {
+          toast({
+            title: "Access Denied",
+            description: "You must be a club lead to manage this club",
+            variant: "destructive",
+          })
+          router.push(`/clubs/${id}`)
+          return
+        }
       } catch (error) {
         console.error("Failed to fetch club:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load club details",
+          variant: "destructive",
+        })
       } finally {
         setLoading(false)
       }
     }
 
     fetchClub()
-  }, [id])
+  }, [id, user, router])
 
   if (loading) {
     return (
@@ -58,13 +77,27 @@ export default function ManageClubPage() {
     )
   }
 
+  if (!club) {
+    return (
+      <div className="container py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Club Not Found</h1>
+          <p className="mb-6">The club you're trying to manage doesn't exist or you don't have access.</p>
+          <Link href="/dashboard">
+            <Button>Go to Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Manage Club: {club.name}</h1>
           <p className="text-muted-foreground">
-            Part of {club.community} • {club.memberCount} members
+            {club.communityName && `Part of ${club.communityName} • `}{club.memberCount || 0} members
           </p>
         </div>
         <div className="flex gap-2">

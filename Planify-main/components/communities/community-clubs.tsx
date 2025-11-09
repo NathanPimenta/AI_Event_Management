@@ -85,7 +85,7 @@ export default function CommunityClubs({ communityId, isAdmin }: CommunityClubsP
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {clubs.map((club) => (
-            <Card key={club._id}>
+            <Card key={club.id}>
               <CardHeader>
                 <CardTitle>{club.name}</CardTitle>
                 <CardDescription>{club.description}</CardDescription>
@@ -94,7 +94,7 @@ export default function CommunityClubs({ communityId, isAdmin }: CommunityClubsP
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{club.members?.length || 0} members</span>
+                    <span>{club.memberCount || 0} members</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -103,7 +103,7 @@ export default function CommunityClubs({ communityId, isAdmin }: CommunityClubsP
                 </div>
               </CardContent>
               <CardFooter>
-                <Link href={`/clubs/${club._id}`} className="w-full">
+                <Link href={`/clubs/${club.id}`} className="w-full">
                   <Button variant="outline" className="w-full">
                     View Club
                   </Button>

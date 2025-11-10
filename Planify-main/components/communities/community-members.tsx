@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Search, Mail } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { useAuth } from "@/hooks/use-auth"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,15 +17,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface CommunityMembersProps {
   communityId: string
   isAdmin: boolean
   members: any[]
+  onMemberUpdated?: () => void
 }
 
-export default function CommunityMembers({ communityId, isAdmin, members = [] }: CommunityMembersProps) {
+export default function CommunityMembers({ communityId, isAdmin, members = [], onMemberUpdated }: CommunityMembersProps) {
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
+  const [memberToRemove, setMemberToRemove] = useState<string | null>(null)
+  const [isPromoting, setIsPromoting] = useState(false)
+  const [isRemoving, setIsRemoving] = useState(false)
 
   const filteredMembers = members.filter(
     (member) =>
@@ -33,36 +49,93 @@ export default function CommunityMembers({ communityId, isAdmin, members = [] }:
   )
 
   const handlePromoteToAdmin = async (memberId: string) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to perform this action",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsPromoting(true)
     try {
-      // API call to promote member
+      const response = await fetch(`/api/communities/${communityId}/members/${memberId}/promote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ requestingUserId: user.id }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to promote member')
+      }
+
       toast({
         title: "Member promoted",
         description: "Member has been promoted to admin",
       })
-    } catch (error) {
+
+      // Refresh the members list
+      if (onMemberUpdated) {
+        onMemberUpdated()
+      }
+    } catch (error: any) {
       console.error("Error promoting member:", error)
       toast({
         title: "Error",
-        description: "Failed to promote member",
+        description: error.message || "Failed to promote member",
         variant: "destructive",
       })
+    } finally {
+      setIsPromoting(false)
     }
   }
 
   const handleRemoveMember = async (memberId: string) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to perform this action",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsRemoving(true)
     try {
-      // API call to remove member
+      const response = await fetch(`/api/communities/${communityId}/members/${memberId}?requestingUserId=${user.id}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to remove member')
+      }
+
       toast({
         title: "Member removed",
         description: "Member has been removed from the community",
       })
-    } catch (error) {
+
+      // Refresh the members list
+      if (onMemberUpdated) {
+        onMemberUpdated()
+      }
+    } catch (error: any) {
       console.error("Error removing member:", error)
       toast({
         title: "Error",
-        description: "Failed to remove member",
+        description: error.message || "Failed to remove member",
         variant: "destructive",
       })
+    } finally {
+      setIsRemoving(false)
+      setMemberToRemove(null)
     }
   }
 
@@ -114,17 +187,24 @@ export default function CommunityMembers({ communityId, isAdmin, members = [] }:
                   {isAdmin && member.role !== "admin" && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" disabled={isPromoting || isRemoving}>
                           Actions
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Member Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handlePromoteToAdmin(member.userId)}>
-                          Promote to Admin
+                        <DropdownMenuItem 
+                          onClick={() => handlePromoteToAdmin(member.userId)}
+                          disabled={isPromoting}
+                        >
+                          {isPromoting ? 'Promoting...' : 'Promote to Admin'}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleRemoveMember(member.userId)}>
+                        <DropdownMenuItem 
+                          onClick={() => setMemberToRemove(member.userId)}
+                          disabled={isRemoving}
+                          className="text-destructive"
+                        >
                           Remove from Community
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -135,6 +215,27 @@ export default function CommunityMembers({ communityId, isAdmin, members = [] }:
             ))
           )}
         </div>
+
+        <AlertDialog open={!!memberToRemove} onOpenChange={(open) => !open && setMemberToRemove(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove the member from the community. They will lose access to all clubs and events in this community.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isRemoving}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => memberToRemove && handleRemoveMember(memberToRemove)}
+                disabled={isRemoving}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isRemoving ? 'Removing...' : 'Remove Member'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   )

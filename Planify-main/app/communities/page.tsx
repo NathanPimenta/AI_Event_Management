@@ -104,7 +104,7 @@ export default function CommunitiesPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredCommunities.map((community) => (
-            <Card key={community._id}>
+            <Card key={community.id}>
               <CardHeader>
                 <CardTitle>{community.name}</CardTitle>
                 <CardDescription>{community.description}</CardDescription>
@@ -116,7 +116,7 @@ export default function CommunitiesPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Link href={`/communities/${community._id}`} className="w-full">
+                <Link href={`/communities/${community.id}`} className="w-full">
                   <Button variant="outline" className="w-full">
                     View Community
                   </Button>

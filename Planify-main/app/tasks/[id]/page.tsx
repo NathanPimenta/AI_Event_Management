@@ -121,7 +121,7 @@ export default function TaskDetailPage() {
           <CardHeader>
             <div className="flex items-start gap-2">
               <Checkbox
-                id={`task-${task._id}`}
+                id={`task-${task.id}`}
                 checked={task.status === "completed"}
                 onCheckedChange={toggleTaskStatus}
                 className="mt-1"

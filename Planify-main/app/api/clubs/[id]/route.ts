@@ -3,7 +3,8 @@ import { getClubById, updateClub } from "@/lib/db"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const club = await getClubById(params.id)
+    const { id } = await params
+    const club = await getClubById(id)
 
     if (!club) {
       return NextResponse.json({ error: "Club not found" }, { status: 404 })
@@ -18,8 +19,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
+    const { id } = await params
     const data = await request.json()
-    const club = await updateClub(params.id, data)
+    const club = await updateClub(id, data)
 
     return NextResponse.json(club)
   } catch (error) {

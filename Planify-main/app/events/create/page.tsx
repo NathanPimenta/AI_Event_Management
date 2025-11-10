@@ -105,7 +105,7 @@ export default function CreateEventPage() {
         description: `${title} has been created successfully.`,
       })
 
-      router.push(`/events/${event._id}`)
+      router.push(`/events/${event.id}`)
     } catch (error) {
       console.error("Error creating event:", error)
       toast({
@@ -170,7 +170,7 @@ export default function CreateEventPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {clubs.map((club) => (
-                      <SelectItem key={club._id} value={club._id}>
+                      <SelectItem key={club.id} value={club.id}>
                         {club.name}
                       </SelectItem>
                     ))}

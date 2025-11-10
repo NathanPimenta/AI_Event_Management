@@ -12,19 +12,23 @@ export async function POST(request: Request) {
     }
 
     // Check if user is already a member
-    const isMember = community.members.some((member: any) => member.userId === userId)
+    const isMember = community.members && community.members.some((member: any) => member.userId === userId)
     if (isMember) {
       return NextResponse.json({ error: "You are already a member of this community" }, { status: 400 })
     }
 
     // Add user to community
-    await addMemberToCommunity(community._id.toString(), {
+    await addMemberToCommunity(community.id.toString(), {
       userId,
       role: "member",
       joinedAt: new Date(),
     })
 
-    return NextResponse.json({ success: true, communityId: community._id })
+    return NextResponse.json({ 
+      success: true, 
+      communityId: community.id,
+      communityName: community.name 
+    })
   } catch (error) {
     console.error("Error joining community:", error)
     return NextResponse.json({ error: "An error occurred while joining the community" }, { status: 500 })

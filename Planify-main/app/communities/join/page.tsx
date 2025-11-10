@@ -14,28 +14,56 @@ import { toast } from "@/hooks/use-toast"
 export default function JoinCommunityPage() {
   const [inviteCode, setInviteCode] = useState("")
   const [loading, setLoading] = useState(false)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Wait for auth to load
+    if (authLoading) return
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to join a community",
+        variant: "destructive",
+      })
+      router.push("/login")
+      return
+    }
+
     setLoading(true)
 
     try {
-      // Mock API call to join community
-      // In a real app, you would call your API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch('/api/communities/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inviteCode: inviteCode.trim(),
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to join community')
+      }
+
+      const data = await response.json()
 
       toast({
         title: "Community joined",
-        description: "You have successfully joined the community.",
+        description: `You have successfully joined ${data.communityName || 'the community'}.`,
       })
 
-      router.push("/dashboard")
-    } catch (err) {
+      router.push(`/communities/${data.communityId}`)
+    } catch (err: any) {
       toast({
         title: "Error",
-        description: "Failed to join community. Please check your invite code and try again.",
+        description: err.message || "Failed to join community. Please check your invite code and try again.",
         variant: "destructive",
       })
     } finally {

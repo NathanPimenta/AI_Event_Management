@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -12,26 +12,41 @@ import { MessageSquare } from "lucide-react"
 
 type Query = {
   id: string
-  user: {
-    id: string
-    name: string
-    image?: string
-  }
+  userId: string
+  userName: string
   question: string
   answer?: string
-  timestamp: string
+  createdAt: string
 }
 
 interface EventQueriesProps {
-  queries: Query[]
   eventId: string
 }
 
-export default function EventQueries({ queries: initialQueries, eventId }: EventQueriesProps) {
-  const [queries, setQueries] = useState<Query[]>(initialQueries)
+export default function EventQueries({ eventId }: EventQueriesProps) {
+  const [queries, setQueries] = useState<Query[]>([])
+  const [loading, setLoading] = useState(true)
   const [newQuery, setNewQuery] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const { user } = useAuth()
+
+  useEffect(() => {
+    async function fetchQueries() {
+      try {
+        const response = await fetch(`/api/queries?eventId=${eventId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setQueries(data)
+        }
+      } catch (error) {
+        console.error("Failed to fetch queries:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchQueries()
+  }, [eventId])
 
   const handleSubmitQuery = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,7 +75,6 @@ export default function EventQueries({ queries: initialQueries, eventId }: Event
           eventId,
           userId: user.id,
           userName: user.name,
-          userImage: user.image,
           question: newQuery,
         }),
       })
@@ -72,14 +86,11 @@ export default function EventQueries({ queries: initialQueries, eventId }: Event
       const data = await response.json()
 
       const query: Query = {
-        id: data._id,
-        user: {
-          id: user.id,
-          name: user.name,
-          image: user.image,
-        },
+        id: data.id,
+        userId: user.id,
+        userName: user.name,
         question: newQuery,
-        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       }
 
       setQueries([...queries, query])
@@ -116,7 +127,12 @@ export default function EventQueries({ queries: initialQueries, eventId }: Event
       </form>
 
       <div className="space-y-6">
-        {queries.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading questions...</p>
+          </div>
+        ) : queries.length === 0 ? (
           <div className="text-center py-8">
             <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-lg font-medium">No questions yet</p>
@@ -127,13 +143,12 @@ export default function EventQueries({ queries: initialQueries, eventId }: Event
             <div key={query.id} className="border rounded-lg p-4 space-y-4">
               <div className="flex items-start gap-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={query.user.image} alt={query.user.name} />
-                  <AvatarFallback>{query.user.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{query.userName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex justify-between items-center">
-                    <p className="font-medium">{query.user.name}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(query.timestamp).toLocaleDateString()}</p>
+                    <p className="font-medium">{query.userName}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(query.createdAt).toLocaleDateString()}</p>
                   </div>
                   <p className="mt-1">{query.question}</p>
                 </div>

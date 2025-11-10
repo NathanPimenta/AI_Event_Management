@@ -17,10 +17,13 @@ export default function ClubPage() {
   const [club, setClub] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState<string | null>(null)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
+    // Wait for auth to load before checking user
+    if (authLoading) return
+
     if (!user) {
       router.push("/login")
       return
@@ -52,7 +55,7 @@ export default function ClubPage() {
     }
 
     fetchClub()
-  }, [id, user, router])
+  }, [id, user, authLoading, router])
 
   if (loading) {
     return (
@@ -116,13 +119,13 @@ export default function ClubPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="members">
-          <ClubMembers clubId={id as string} isLead={isLead} />
+          <ClubMembers clubId={id as string} />
         </TabsContent>
         <TabsContent value="events">
-          <ClubEvents clubId={id as string} isLead={isLead} />
+          <ClubEvents clubId={id as string} />
         </TabsContent>
         <TabsContent value="tasks">
-          <ClubTasks clubId={id as string} isLead={isLead} />
+          <ClubTasks clubId={id as string} />
         </TabsContent>
       </Tabs>
     </div>

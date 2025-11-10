@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:migrate": "node lib/migrations/run.js",
+    "db:seed": "node lib/migrations/seed.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -43,6 +45,7 @@
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
+    "dotenv": "^17.2.3",
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
@@ -50,6 +53,7 @@
     "next": "15.2.4",
     "next-auth": "latest",
     "next-themes": "latest",
+    "pg": "^8.11.3",
     "react": "^19",
     "react-day-picker": "8.10.1",
     "react-dom": "^19",
@@ -64,6 +68,7 @@
   },
   "devDependencies": {
     "@types/node": "^22",
+    "@types/pg": "^8.10.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8",

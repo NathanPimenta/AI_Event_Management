@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { PlusCircle, Calendar, ClipboardList, Search, User } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { useAuth } from "@/hooks/use-auth"
 import {
   Dialog,
   DialogContent,
@@ -21,61 +22,16 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-// Mock data for tasks
-const mockTasks = [
-  {
-    id: "task1",
-    title: "Prepare presentation slides",
-    description: "Create slides for the upcoming workshop",
-    dueDate: "2023-11-10",
-    event: "Web Development Workshop",
-    assignee: "Alice Smith",
-    status: "pending",
-    priority: "high",
-  },
-  {
-    id: "task2",
-    title: "Design event poster",
-    description: "Create a promotional poster for social media",
-    dueDate: "2023-11-05",
-    event: "React Deep Dive",
-    assignee: "Bob Johnson",
-    status: "completed",
-    priority: "medium",
-  },
-  {
-    id: "task3",
-    title: "Coordinate with speakers",
-    description: "Confirm availability and requirements with guest speakers",
-    dueDate: "2023-11-08",
-    event: "Web Development Workshop",
-    assignee: "John Doe",
-    status: "pending",
-    priority: "high",
-  },
-]
-
-// Mock data for members
-const mockMembers = [
-  { id: "user1", name: "John Doe" },
-  { id: "user2", name: "Alice Smith" },
-  { id: "user3", name: "Bob Johnson" },
-  { id: "user4", name: "Emma Wilson" },
-]
-
-// Mock data for events
-const mockEvents = [
-  { id: "event1", name: "Web Development Workshop" },
-  { id: "event2", name: "JavaScript Fundamentals" },
-  { id: "event3", name: "React Deep Dive" },
-]
-
 interface ClubTasksProps {
   clubId: string
 }
 
 export default function ClubTasks({ clubId }: ClubTasksProps) {
-  const [tasks, setTasks] = useState(mockTasks)
+  const { user } = useAuth()
+  const [tasks, setTasks] = useState<any[]>([])
+  const [members, setMembers] = useState<any[]>([])
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState("all")
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -89,11 +45,47 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
   const [newTaskPriority, setNewTaskPriority] = useState("medium")
   const [creating, setCreating] = useState(false)
 
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [tasksRes, clubRes, eventsRes] = await Promise.all([
+          fetch(`/api/tasks?clubId=${clubId}`),
+          fetch(`/api/clubs/${clubId}`),
+          fetch(`/api/events?clubId=${clubId}`)
+        ])
+
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json()
+          setTasks(tasksData)
+        }
+        if (clubRes.ok) {
+          const clubData = await clubRes.json()
+          setMembers(clubData.members || [])
+        }
+        if (eventsRes.ok) {
+          const eventsData = await eventsRes.json()
+          setEvents(eventsData)
+        }
+      } catch (error) {
+        console.error("Failed to fetch data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load tasks data",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [clubId])
+
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch =
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.assignee.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.event.toLowerCase().includes(searchQuery.toLowerCase())
+      task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.assignedToName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description?.toLowerCase().includes(searchQuery.toLowerCase())
 
     const matchesFilter =
       filter === "all" ||
@@ -104,41 +96,86 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
     return matchesSearch && matchesFilter
   })
 
-  const toggleTaskStatus = (taskId: string) => {
-    setTasks(
-      tasks.map((task) => {
-        if (task.id === taskId) {
-          return {
-            ...task,
-            status: task.status === "pending" ? "completed" : "pending",
+  const toggleTaskStatus = async (taskId: string) => {
+    try {
+      const task = tasks.find(t => t.id === taskId)
+      if (!task) return
+
+      const newStatus = task.status === "pending" ? "completed" : "pending"
+
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (!response.ok) throw new Error('Failed to update task')
+
+      setTasks(
+        tasks.map((t) => {
+          if (t.id === taskId) {
+            return { ...t, status: newStatus }
           }
-        }
-        return task
-      }),
-    )
+          return t
+        }),
+      )
+
+      toast({
+        title: "Task updated",
+        description: `Task marked as ${newStatus}`,
+      })
+    } catch (error) {
+      console.error("Failed to update task:", error)
+      toast({
+        title: "Update failed",
+        description: "Failed to update task status",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleCreateTask = async () => {
-    if (!newTaskTitle.trim() || !newTaskDueDate || !newTaskAssignee || !newTaskEvent) return
+    if (!newTaskTitle.trim() || !newTaskDueDate || !newTaskAssignee) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields (Title, Due Date, and Assignee)",
+        variant: "destructive",
+      })
+      return
+    }
 
     setCreating(true)
 
     try {
-      // Mock API call to create task
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clubId,
+          eventId: newTaskEvent && newTaskEvent !== 'none' ? newTaskEvent : null,
+          title: newTaskTitle,
+          description: newTaskDescription,
+          dueDate: newTaskDueDate,
+          assignedTo: newTaskAssignee,
+          priority: newTaskPriority,
+          status: 'pending',
+          createdBy: user?.id || null
+        })
+      })
 
-      const newTask = {
-        id: `task${Date.now()}`,
-        title: newTaskTitle,
-        description: newTaskDescription,
-        dueDate: newTaskDueDate,
-        event: mockEvents.find((e) => e.id === newTaskEvent)?.name || "",
-        assignee: mockMembers.find((m) => m.id === newTaskAssignee)?.name || "",
-        status: "pending",
-        priority: newTaskPriority,
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create task')
       }
 
-      setTasks([...tasks, newTask])
+      const newTask = await response.json()
+      
+      // Refresh tasks list
+      const tasksRes = await fetch(`/api/tasks?clubId=${clubId}`)
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json()
+        setTasks(tasksData)
+      }
 
       // Reset form
       setNewTaskTitle("")
@@ -235,15 +272,16 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="event">Related Event</Label>
+                  <Label htmlFor="event">Related Event (Optional)</Label>
                   <Select value={newTaskEvent} onValueChange={setNewTaskEvent}>
                     <SelectTrigger id="event">
-                      <SelectValue placeholder="Select event" />
+                      <SelectValue placeholder="Select event (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockEvents.map((event) => (
+                      <SelectItem value="none">None</SelectItem>
+                      {events.map((event: any) => (
                         <SelectItem key={event.id} value={event.id}>
-                          {event.name}
+                          {event.title || event.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -257,11 +295,15 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
                       <SelectValue placeholder="Select member" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name}
-                        </SelectItem>
-                      ))}
+                      {members.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground">No members found</div>
+                      ) : (
+                        members.map((member: any) => (
+                          <SelectItem key={member.userId || member.id} value={member.userId || member.id}>
+                            {member.name || member.email}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -272,7 +314,7 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
                 </Button>
                 <Button
                   onClick={handleCreateTask}
-                  disabled={creating || !newTaskTitle.trim() || !newTaskDueDate || !newTaskAssignee || !newTaskEvent}
+                  disabled={creating || !newTaskTitle.trim() || !newTaskDueDate || !newTaskAssignee}
                 >
                   {creating ? "Creating..." : "Create Task"}
                 </Button>
@@ -361,20 +403,22 @@ export default function ClubTasks({ clubId }: ClubTasksProps) {
                             <Badge variant={task.status === "completed" ? "outline" : "secondary"}>{task.status}</Badge>
                           </div>
                         </div>
-                        <CardDescription>{task.event}</CardDescription>
+                        <CardDescription>
+                          {task.eventId ? `Event ID: ${task.eventId}` : 'General club task'}
+                        </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm mb-2">{task.description}</p>
+                    <p className="text-sm mb-2">{task.description || 'No description'}</p>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                        <span>Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span>Assigned to: {task.assignee}</span>
+                        <span>Assigned to: {task.assignedToName || 'Unassigned'}</span>
                       </div>
                     </div>
                   </CardContent>

@@ -32,8 +32,8 @@ export default function RegisterPage() {
     try {
       await signUp(name, email, password)
       router.push("/dashboard")
-    } catch (err) {
-      setError("Failed to create account")
+    } catch (err: any) {
+      setError(err.message || "Failed to create account")
     }
   }
 

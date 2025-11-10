@@ -124,7 +124,7 @@ export default function EventsPage() {
             const isPast = eventDate < new Date()
 
             return (
-              <Card key={event._id} className={isPast ? "opacity-70" : ""}>
+              <Card key={event.id} className={isPast ? "opacity-70" : ""}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{event.title}</CardTitle>
@@ -156,7 +156,7 @@ export default function EventsPage() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Link href={`/events/${event._id}`} className="w-full">
+                  <Link href={`/events/${event.id}`} className="w-full">
                     <Button variant="outline" className="w-full">
                       View Details
                     </Button>

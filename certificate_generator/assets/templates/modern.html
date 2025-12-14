@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Certificate of Achievement</title>
+    <style>
+        /* Import a nice font */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+        /* The AI will provide values for these CSS variables */
+        :root {
+            --bg-color: {{ colors.background | default('#f5f7fa') }};
+            --text-color: {{ colors.text | default('#333333') }};
+            --accent-color: {{ colors.accent | default('#4A90E2') }};
+            --header-color: {{ colors.header | default('#2c3e50') }};
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            width: 297mm; /* A4 landscape width */
+            height: 210mm; /* A4 landscape height */
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .certificate-container {
+            width: 95%;
+            height: 95%;
+            border: 2px solid var(--accent-color);
+            background: white;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo {
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            max-width: 100px;
+            max-height: 50px;
+        }
+
+        .qr-code {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            width: 80px;
+            height: 80px;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: var(--header-color);
+            margin-top: 80px;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+
+        .presented-to {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .participant-name {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--header-color);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+
+        .achievement-text {
+            font-size: 16px;
+            margin: 0 auto 50px auto;
+            max-width: 80%;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            left: 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+        }
+
+        .signature-block {
+            width: 250px;
+        }
+
+        .signature-image {
+            max-height: 60px;
+            margin-bottom: 5px;
+        }
+
+        .signature-line {
+            border-top: 1px solid var(--text-color);
+            padding-top: 5px;
+            font-weight: bold;
+        }
+
+        .date-block .signature-line {
+             font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+
+        <!-- LOGO AND QR CODE -->
+        <img src="file://{{ logo_path }}" alt="Event Logo" class="logo">
+        <img src="file://{{ qr_code_path }}" alt="Verification QR Code" class="qr-code">
+
+        <h1>Certificate of {{ achievement_type }}</h1>
+        <p class="subtitle">Awarded by {{ institution_name }}</p>
+
+        <p class="presented-to">Presented to</p>
+        <h2 class="participant-name">{{ name }}</h2>
+
+        <p class="achievement-text">
+            For their successful participation and outstanding contribution to the
+            <strong>{{ event_name }}</strong>, held on {{ event_date }}.
+        </p>
+
+        <div class="footer">
+            <div class="date-block signature-block">
+                <p class="signature-line">{{ event_date }}</p>
+            </div>
+            <div class="signature-block">
+                <img src="file://{{ signature_path }}" alt="Signature" class="signature-image">
+                <p class="signature-line">{{ signature_name }}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

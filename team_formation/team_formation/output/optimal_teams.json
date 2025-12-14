@@ -1,0 +1,242 @@
+{
+  "event_name": "InnovateTech AI Conference 2025",
+  "fitness_score": 2863.26,
+  "total_participants_assigned": 16,
+  "roles": {
+    "REG_DESK": {
+      "role_name": "Registration Desk",
+      "quantity_needed": 4,
+      "quantity_assigned": 4,
+      "status": "\u2713 Met",
+      "required_skills": [
+        "Communication",
+        "Organization"
+      ],
+      "assigned_participants": [
+        {
+          "id": "P06",
+          "name": "Fiona Clark",
+          "year": 2,
+          "past_events": 1,
+          "skill_levels": {
+            "Communication": 3,
+            "Organization": 3
+          }
+        },
+        {
+          "id": "P18",
+          "name": "Ruby Carter",
+          "year": 2,
+          "past_events": 1,
+          "skill_levels": {
+            "Communication": 2,
+            "Organization": 2
+          }
+        },
+        {
+          "id": "P11",
+          "name": "Kevin White",
+          "year": 1,
+          "past_events": 0,
+          "skill_levels": {
+            "Communication": 2,
+            "Organization": 2
+          }
+        },
+        {
+          "id": "P14",
+          "name": "Nora King",
+          "year": 3,
+          "past_events": 2,
+          "skill_levels": {
+            "Communication": 3,
+            "Organization": 2
+          }
+        }
+      ]
+    },
+    "AV_TECH": {
+      "role_name": "AV Tech Support",
+      "quantity_needed": 3,
+      "quantity_assigned": 3,
+      "status": "\u2713 Met",
+      "required_skills": [
+        "AV Setup",
+        "Troubleshooting"
+      ],
+      "assigned_participants": [
+        {
+          "id": "P07",
+          "name": "George Hall",
+          "year": 4,
+          "past_events": 6,
+          "skill_levels": {
+            "AV Setup": 3,
+            "Troubleshooting": 3
+          }
+        },
+        {
+          "id": "P05",
+          "name": "Ethan Garcia",
+          "year": 3,
+          "past_events": 3,
+          "skill_levels": {
+            "AV Setup": 3,
+            "Troubleshooting": 3
+          }
+        },
+        {
+          "id": "P09",
+          "name": "Ian Martinez",
+          "year": 2,
+          "past_events": 2,
+          "skill_levels": {
+            "AV Setup": 2,
+            "Troubleshooting": 2
+          }
+        }
+      ]
+    },
+    "SOC_MEDIA": {
+      "role_name": "Social Media Crew",
+      "quantity_needed": 2,
+      "quantity_assigned": 2,
+      "status": "\u2713 Met",
+      "required_skills": [
+        "Content Creation",
+        "Social Media"
+      ],
+      "assigned_participants": [
+        {
+          "id": "P16",
+          "name": "Penny Adams",
+          "year": 1,
+          "past_events": 1,
+          "skill_levels": {
+            "Content Creation": 3,
+            "Social Media": 3
+          }
+        },
+        {
+          "id": "P12",
+          "name": "Laura Green",
+          "year": 2,
+          "past_events": 1,
+          "skill_levels": {
+            "Content Creation": 3,
+            "Social Media": 3
+          }
+        }
+      ]
+    },
+    "STAGE_HAND": {
+      "role_name": "Stage Management",
+      "quantity_needed": 3,
+      "quantity_assigned": 3,
+      "status": "\u2713 Met",
+      "required_skills": [
+        "Organization",
+        "Coordination"
+      ],
+      "assigned_participants": [
+        {
+          "id": "P02",
+          "name": "Bob Williams",
+          "year": 2,
+          "past_events": 1,
+          "skill_levels": {
+            "Organization": 3,
+            "Coordination": 3
+          }
+        },
+        {
+          "id": "P10",
+          "name": "Jane Rodriguez",
+          "year": 3,
+          "past_events": 4,
+          "skill_levels": {
+            "Organization": 3,
+            "Coordination": 3
+          }
+        },
+        {
+          "id": "P19",
+          "name": "Sam Evans",
+          "year": 3,
+          "past_events": 3,
+          "skill_levels": {
+            "Organization": 3,
+            "Coordination": 3
+          }
+        }
+      ]
+    },
+    "INFO_BOOTH": {
+      "role_name": "Information Booth",
+      "quantity_needed": 2,
+      "quantity_assigned": 2,
+      "status": "\u2713 Met",
+      "required_skills": [
+        "Communication",
+        "Problem Solving"
+      ],
+      "assigned_participants": [
+        {
+          "id": "P08",
+          "name": "Hannah Lee",
+          "year": 1,
+          "past_events": 0,
+          "skill_levels": {
+            "Communication": 3,
+            "Problem Solving": 2
+          }
+        },
+        {
+          "id": "P03",
+          "name": "Charlie Brown",
+          "year": 4,
+          "past_events": 5,
+          "skill_levels": {
+            "Communication": 3,
+            "Problem Solving": 3
+          }
+        }
+      ]
+    },
+    "HACK_JUDGE": {
+      "role_name": "Hackathon Judge Helper",
+      "quantity_needed": 2,
+      "quantity_assigned": 2,
+      "status": "\u2713 Met",
+      "required_skills": [
+        "Python",
+        "Problem Solving",
+        "Organization"
+      ],
+      "assigned_participants": [
+        {
+          "id": "P17",
+          "name": "Quinn Baker",
+          "year": 4,
+          "past_events": 5,
+          "skill_levels": {
+            "Python": 3,
+            "Problem Solving": 3,
+            "Organization": 3
+          }
+        },
+        {
+          "id": "P13",
+          "name": "Mason Harris",
+          "year": 4,
+          "past_events": 7,
+          "skill_levels": {
+            "Python": 3,
+            "Problem Solving": 2,
+            "Organization": 3
+          }
+        }
+      ]
+    }
+  }
+}

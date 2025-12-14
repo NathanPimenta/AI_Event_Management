@@ -1,0 +1,53 @@
+{
+  "event_name": "InnovateTech AI Conference 2025",
+  "roles": [
+    {
+      "role_id": "REG_DESK",
+      "role_name": "Registration Desk",
+      "required_skills": ["Communication", "Organization"],
+      "quantity_needed": 4,
+      "priority": "High",
+      "shift_time": "Morning"
+    },
+    {
+      "role_id": "AV_TECH",
+      "role_name": "AV Tech Support",
+      "required_skills": ["AV Setup", "Troubleshooting"],
+      "quantity_needed": 3,
+      "priority": "High",
+      "shift_time": "All Day"
+    },
+    {
+      "role_id": "SOC_MEDIA",
+      "role_name": "Social Media Crew",
+      "required_skills": ["Content Creation", "Social Media"],
+      "quantity_needed": 2,
+      "priority": "Medium",
+      "shift_time": "All Day"
+    },
+    {
+      "role_id": "STAGE_HAND",
+      "role_name": "Stage Management",
+      "required_skills": ["Organization", "Coordination"],
+      "quantity_needed": 3,
+      "priority": "High",
+      "shift_time": "Afternoon"
+    },
+    {
+      "role_id": "INFO_BOOTH",
+      "role_name": "Information Booth",
+      "required_skills": ["Communication", "Problem Solving"],
+      "quantity_needed": 2,
+      "priority": "Medium",
+      "shift_time": "All Day"
+    },
+    {
+      "role_id": "HACK_JUDGE",
+      "role_name": "Hackathon Judge Helper",
+      "required_skills": ["Python", "Problem Solving", "Organization"],
+      "quantity_needed": 2,
+      "priority": "Low",
+      "shift_time": "Afternoon"
+    }
+  ]
+}

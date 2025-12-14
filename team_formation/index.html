@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Formation Optimizer - CommunityHub</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Custom styles to match your theme */
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+        }
+        .btn-primary {
+            background-color: #238636;
+            color: white;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #2ea043;
+        }
+        .btn-primary:disabled {
+            background-color: #23863655;
+            cursor: not-allowed;
+        }
+        .upload-card.success { border-color: #238636; }
+        .upload-card.error { border-color: #da3633; }
+    </style>
+</head>
+<body>
+    <!-- Header Navigation -->
+    <header class="bg-[#161b22] border-b border-[#30363d]">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold">CommunityHub</div>
+            <div>
+                <a href="#" class="px-4 hover:text-white">Events</a>
+                <a href="#" class="px-4 hover:text-white">AI Tools</a>
+            </div>
+            <div>
+                <a href="#" class="px-3 py-2 border border-[#30363d] rounded-md hover:bg-[#21262d]">Log In</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto p-6 md:p-12">
+        <div class="max-w-5xl mx-auto">
+
+            <!-- Page Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-white">🎯 Team Formation Optimizer</h1>
+                <p class="mt-4 text-lg text-[#8b949e]">Upload your data to automatically form the best possible teams using a Genetic Algorithm.</p>
+            </div>
+
+            <!-- Uploader Form -->
+            <div id="uploader-form">
+                <div class="card p-8">
+                    <h2 class="text-2xl font-semibold mb-6 text-white"><i class="fa-solid fa-file-arrow-up mr-3"></i>Upload Your Data Files</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Requirements File Upload -->
+                        <div id="upload-requirements" class="upload-card p-4 border-2 border-dashed border-[#30363d] rounded-lg text-center">
+                            <h3 class="font-semibold text-white">1. Event Requirements</h3>
+                            <p class="text-sm text-[#8b949e] mb-2">event_requirements.json <span class="font-bold text-red-400">(Required)</span></p>
+                            <input type="file" id="requirements_file" class="hidden" accept=".json">
+                            <button onclick="document.getElementById('requirements_file').click()" class="w-full p-4 rounded-md bg-[#21262d] hover:bg-[#30363d]">
+                                <i class="fa-solid fa-upload mr-2"></i>
+                                <span id="requirements-status">Click to upload</span>
+                            </button>
+                             <a id="download-json-template" href="#" class="text-sm mt-2 inline-block text-[#4A90E2] hover:underline">Download template</a>
+                        </div>
+                        
+                        <!-- Participants File Upload -->
+                         <div id="upload-participants" class="upload-card p-4 border-2 border-dashed border-[#30363d] rounded-lg text-center">
+                            <h3 class="font-semibold text-white">2. Participant Data</h3>
+                            <p class="text-sm text-[#8b949e] mb-2">participants.csv <span class="font-bold text-red-400">(Required)</span></p>
+                            <input type="file" id="participants_file" class="hidden" accept=".csv">
+                            <button onclick="document.getElementById('participants_file').click()" class="w-full p-4 rounded-md bg-[#21262d] hover:bg-[#30363d]">
+                                <i class="fa-solid fa-upload mr-2"></i>
+                                <span id="participants-status">Click to upload</span>
+                            </button>
+                            <a id="download-csv-template" href="#" class="text-sm mt-2 inline-block text-[#4A90E2] hover:underline">Download template</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="text-center mt-8">
+                    <button id="optimize-btn" class="btn-primary px-12 py-4 text-lg" disabled>
+                        <i class="fa-solid fa-gears mr-2"></i>Optimize Teams
+                    </button>
+                    <p id="error-message" class="text-red-400 mt-4 h-4"></p>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="hidden text-center card p-8">
+                 <i class="fa-solid fa-spinner fa-spin text-4xl mb-4"></i>
+                 <h2 class="text-2xl font-semibold text-white">Optimizing Teams...</h2>
+                 <p class="text-[#8b949e]">The Genetic Algorithm is evaluating thousands of combinations. This may take a moment.</p>
+            </div>
+
+             <!-- Results Section -->
+            <div id="results-section" class="hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-white" id="results-event-name"></h2>
+                    <p id="results-summary" class="text-[#8b949e]"></p>
+                </div>
+                <div class="card p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold">Optimal Team Assignments</h3>
+                        <a id="download-results-btn" href="#" class="btn-primary px-4 py-2">
+                            <i class="fa-solid fa-file-arrow-down mr-2"></i>Download Full Report (JSON)
+                        </a>
+                    </div>
+                    <div id="teams-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Dynamically generated team cards will be inserted here -->
+                    </div>
+                </div>
+                <div class="text-center mt-8">
+                    <button id="new-optimization-btn" class="px-8 py-3 border border-[#303d] rounded-md hover:bg-[#21262d]">
+                        <i class="fa-solid fa-plus mr-2"></i>Start New Optimization
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+<script>
+    const files = {
+        requirements: null,
+        participants: null
+    };
+
+    const optimizeBtn = document.getElementById('optimize-btn');
+    const errorMessage = document.getElementById('error-message');
+
+    function validateForm() {
+        const allFilesUploaded = Object.values(files).every(file => file !== null);
+        optimizeBtn.disabled = !allFilesUploaded;
+    }
+
+    // --- File Input Handling ---
+    function handleFileInput(id, key, statusId, cardId) {
+        const input = document.getElementById(id);
+        const statusLabel = document.getElementById(statusId);
+        const card = document.getElementById(cardId);
+
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                files[key] = file;
+                statusLabel.innerHTML = `<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>${file.name}`;
+                card.classList.add('success');
+            } else {
+                files[key] = null;
+                statusLabel.innerText = 'Click to upload';
+                card.classList.remove('success');
+            }
+            validateForm();
+        });
+    }
+    handleFileInput('requirements_file', 'requirements', 'requirements-status', 'upload-requirements');
+    handleFileInput('participants_file', 'participants', 'participants-status', 'upload-participants');
+
+    // --- Template Downloads ---
+    document.getElementById('download-json-template').addEventListener('click', e => {
+        e.preventDefault();
+        const jsonContent = {
+          "event_name": "Tech Conference 2025",
+          "roles": [
+            { "role_id": "REG", "role_name": "Registration Desk", "required_skills": ["Communication", "Organization"], "quantity_needed": 4, "priority": "High", "shift_time": "Morning" },
+            { "role_id": "TECH", "role_name": "AV Tech Support", "required_skills": ["AV Setup", "Troubleshooting"], "quantity_needed": 2, "priority": "High", "shift_time": "All Day" }
+          ]
+        };
+        const blob = new Blob([JSON.stringify(jsonContent, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'event_requirements_template.json';
+        link.click();
+        URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('download-csv-template').addEventListener('click', e => {
+        e.preventDefault();
+        const csvContent = "data:text/csv;charset=utf-8,participant_id,name,year,past_events,availability,Communication,Organization,AV Setup,Troubleshooting\nP1,Alice Johnson,3,2,Morning,3,2,1,0\nP2,Bob Williams,2,1,All Day,2,3,0,2\nP3,Charlie Brown,4,5,All Day,3,3,2,3";
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "participants_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // --- Form Submission ---
+    optimizeBtn.addEventListener('click', async () => {
+        errorMessage.innerText = '';
+
+        document.getElementById('uploader-form').classList.add('hidden');
+        document.getElementById('loading-state').classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('requirements_file', files.requirements);
+        formData.append('participants_file', files.participants);
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/form-teams/', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                displayResults(result.data);
+            } else {
+                throw new Error(result.detail || 'Optimization failed.');
+            }
+        } catch (error) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('uploader-form').classList.remove('hidden');
+            errorMessage.innerText = `Error: ${error.message}`;
+        }
+    });
+
+    // --- Results Display ---
+    function displayResults(data) {
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('results-section').classList.remove('hidden');
+
+        // --- Populate Header ---
+        document.getElementById('results-event-name').innerText = data.event_name;
+        document.getElementById('results-summary').innerText = 
+            `Successfully formed ${Object.keys(data.roles).length} teams with ${data.total_participants_assigned} members. Final Fitness Score: ${data.fitness_score}`;
+
+        // --- Setup Download Button ---
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const downloadBtn = document.getElementById('download-results-btn');
+        downloadBtn.href = url;
+        downloadBtn.download = 'optimal_teams.json';
+
+        // --- Render Team Cards ---
+        const teamsContainer = document.getElementById('teams-container');
+        teamsContainer.innerHTML = ''; // Clear previous results
+
+        // Helper function to generate skill stars
+        const generateStars = (level) => {
+            let stars = '';
+            const maxStars = 3; // Max skill level is 3
+            for (let i = 1; i <= maxStars; i++) {
+                if (i <= level) {
+                    stars += `<i class="fa-solid fa-star text-blue-400"></i>`;
+                } else {
+                    stars += `<i class="fa-regular fa-star text-gray-600"></i>`;
+                }
+            }
+            return stars;
+        };
+        
+        // Loop through each role to create a card
+        for (const roleId in data.roles) {
+            const role = data.roles[roleId];
+            
+            // Determine status color
+            let statusColor = 'text-green-400'; // Default for "Met"
+            if (role.status.includes('short')) statusColor = 'text-yellow-400';
+            if (role.status.includes('over')) statusColor = 'text-orange-400';
+
+            // Generate HTML for each member
+            let membersHtml = '<p class="text-sm text-center text-[#8b949e]">No members assigned to this role.</p>';
+            if(role.assigned_participants.length > 0) {
+                membersHtml = role.assigned_participants.map(p => {
+                    // Generate HTML for each of the member's relevant skills
+                    let skillsHtml = Object.entries(p.skill_levels).map(([skill, level]) => `
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-[#8b949e]">${skill}</span>
+                            <span class="flex space-x-1">${generateStars(level)}</span>
+                        </div>
+                    `).join('');
+
+                    return `
+                    <div class="p-3 bg-[#0d1117] rounded-lg border border-[#30363d]">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-white"><i class="fa-solid fa-user-shield mr-2"></i>${p.name}</span>
+                            <span class="text-xs bg-[#30363d] px-2 py-1 rounded-full">Events: ${p.past_events}</span>
+                        </div>
+                        <div class="space-y-1">
+                            ${skillsHtml}
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            }
+            
+            // Assemble the final card for the role
+            const teamCard = `
+                <div class="card p-4 flex flex-col">
+                    <div class="flex justify-between items-center mb-3 pb-3 border-b border-[#30363d]">
+                        <h4 class="text-lg font-semibold text-white">${role.role_name}</h4>
+                        <span class="font-bold ${statusColor}">${role.quantity_assigned}/${role.quantity_needed}</span>
+                    </div>
+                    <div class="space-y-3 overflow-y-auto pr-2 flex-grow" style="max-height: 250px;">
+                        ${membersHtml}
+                    </div>
+                </div>
+            `;
+            teamsContainer.innerHTML += teamCard;
+        }
+    }
+
+    // --- New Optimization Button ---
+    document.getElementById('new-optimization-btn').addEventListener('click', () => {
+        // Only reload the page when the user clicks this button
+        window.location.reload();
+    });
+</script>
+
+</body>
+</html>

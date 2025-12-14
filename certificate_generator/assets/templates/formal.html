@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Certificate of Achievement</title>
+    <style>
+        /* Define a custom font for WeasyPrint */
+        @font-face {
+            font-family: 'Merriweather';
+            src: url('file:///{{ font_path }}'); /* Absolute path to the font file */
+        }
+        
+        :root {
+        --bg-color: {{ colors.background | default('#fdfdf6') }};
+        --text-color: {{ colors.text | default('#4a4a4a') }};
+        --accent-color: {{ colors.accent | default('#a28a5a') }};
+        --header-color: {{ colors.header | default('#363636') }};
+    }
+
+        body {
+            font-family: 'Merriweather', serif;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            width: 297mm;
+            height: 210mm;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .certificate-container {
+            width: 277mm;
+            height: 190mm;
+            border: 1px solid #c0c0c0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 40px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+            background: white;
+            border-left: 10px solid var(--accent-color);
+            border-right: 10px solid var(--accent-color);
+        }
+
+        .logo {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 120px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--header-color);
+            margin-top: 120px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            margin-bottom: 50px;
+        }
+
+        .presented-to {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .participant-name {
+            font-size: 40px;
+            color: var(--accent-color);
+            margin-bottom: 40px;
+        }
+
+        .achievement-text {
+            font-size: 18px;
+            line-height: 1.6;
+            margin: 0 auto 60px auto;
+            max-width: 75%;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 50px;
+            width: 100%;
+            left: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .signature-block {
+            width: 300px;
+        }
+
+        .signature-image {
+            max-height: 50px;
+            margin-bottom: 10px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #999;
+            padding-top: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <img src="file://{{ logo_path }}" alt="Event Logo" class="logo">
+        <h1>CERTIFICATE</h1>
+        <p class="subtitle">OF {{ achievement_type | upper }}</p>
+        <p class="presented-to">This certificate is proudly presented to</p>
+        <h2 class="participant-name">{{ name }}</h2>
+        <p class="achievement-text">
+            in recognition of their valuable contribution to the <strong>{{ event_name }}</strong>, hosted by {{ institution_name }} on {{ event_date }}.
+        </p>
+        <div class="footer">
+            <div class="signature-block">
+                <img src="file://{{ signature_path }}" alt="Signature" class="signature-image">
+                <p class="signature-line">{{ signature_name }}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

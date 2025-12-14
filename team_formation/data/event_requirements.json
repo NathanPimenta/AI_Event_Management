@@ -1,0 +1,128 @@
+{
+  "event_name": "Tech Conference 2025",
+  "event_date": "2025-03-15",
+  "event_location": "Grand Convention Center",
+  "description": "Annual tech conference with 500+ attendees featuring keynotes, workshops, and networking sessions",
+  "total_duration_hours": 10,
+  "roles": [
+    {
+      "role_id": "REG_STAFF",
+      "role_name": "Registration Staff",
+      "description": "Manage attendee check-in, badge distribution, and welcome desk",
+      "required_skills": ["Communication", "Organization", "Customer Service"],
+      "quantity_needed": 4,
+      "shift_time": "08:00-12:00",
+      "priority": "high",
+      "responsibilities": [
+        "Check-in attendees",
+        "Distribute badges and materials",
+        "Answer basic questions"
+      ]
+    },
+    {
+      "role_id": "TECH_SUPPORT",
+      "role_name": "AV & Tech Support",
+      "description": "Setup and maintain audio-visual equipment, troubleshoot technical issues",
+      "required_skills": ["AV Setup", "Troubleshooting", "Networking Basics"],
+      "quantity_needed": 2,
+      "shift_time": "08:00-18:00",
+      "priority": "critical",
+      "responsibilities": [
+        "Setup microphones and projectors",
+        "Monitor audio/video quality",
+        "Troubleshoot technical problems"
+      ]
+    },
+    {
+      "role_id": "SOCIAL_MEDIA",
+      "role_name": "Social Media Coordinator",
+      "description": "Live coverage of event on social media platforms",
+      "required_skills": ["Social Media Marketing", "Content Creation", "Communication"],
+      "quantity_needed": 1,
+      "shift_time": "09:00-17:00",
+      "priority": "medium",
+      "responsibilities": [
+        "Post live updates",
+        "Create engaging content",
+        "Respond to online engagement"
+      ]
+    },
+    {
+      "role_id": "STAGE_MANAGER",
+      "role_name": "Stage Manager",
+      "description": "Coordinate speaker schedules and stage activities",
+      "required_skills": ["Organization", "Time Management", "Communication", "Problem Solving"],
+      "quantity_needed": 2,
+      "shift_time": "08:00-18:00",
+      "priority": "high",
+      "responsibilities": [
+        "Manage speaker transitions",
+        "Keep event on schedule",
+        "Coordinate with AV team"
+      ]
+    },
+    {
+      "role_id": "CATERING_COORD",
+      "role_name": "Catering Coordinator",
+      "description": "Oversee food service, dietary accommodations, and refreshment stations",
+      "required_skills": ["Organization", "Communication", "Problem Solving"],
+      "quantity_needed": 2,
+      "shift_time": "10:00-15:00",
+      "priority": "medium",
+      "responsibilities": [
+        "Coordinate meal service",
+        "Handle dietary restrictions",
+        "Maintain refreshment stations"
+      ]
+    },
+    {
+      "role_id": "WORKSHOP_FACILITATOR",
+      "role_name": "Workshop Facilitator",
+      "description": "Lead breakout sessions and facilitate group discussions",
+      "required_skills": ["Communication", "Time Management", "Problem Solving"],
+      "quantity_needed": 3,
+      "shift_time": "13:00-17:00",
+      "priority": "medium",
+      "responsibilities": [
+        "Lead workshop sessions",
+        "Facilitate discussions",
+        "Manage participant engagement"
+      ]
+    },
+    {
+      "role_id": "LOGISTICS_COORD",
+      "role_name": "Logistics Coordinator",
+      "description": "Handle venue logistics, supplies, and emergency protocols",
+      "required_skills": ["Organization", "Problem Solving", "Time Management"],
+      "quantity_needed": 2,
+      "shift_time": "08:00-18:00",
+      "priority": "high",
+      "responsibilities": [
+        "Manage venue setup",
+        "Track supplies",
+        "Handle emergencies"
+      ]
+    },
+    {
+      "role_id": "PHOTOGRAPHER",
+      "role_name": "Event Photographer",
+      "description": "Capture key moments and create visual documentation",
+      "required_skills": ["Content Creation", "Communication"],
+      "quantity_needed": 1,
+      "shift_time": "09:00-17:00",
+      "priority": "low",
+      "responsibilities": [
+        "Photograph key moments",
+        "Capture attendee interactions",
+        "Coordinate with speakers for photos"
+      ]
+    }
+  ],
+  "metadata": {
+    "created_date": "2025-01-15",
+    "last_modified": "2025-01-20",
+    "created_by": "Event Planning Team",
+    "total_roles": 8,
+    "total_positions": 17
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "event_name": "Aurora 2025 - Annual Cultural Fest",
+  "event_date": "2025-02-10",
+  "event_location": "Starlight College Campus Grounds",
+  "description": "Three-day annual college cultural festival featuring performances, competitions, food stalls, and guest appearances.",
+  "total_duration_hours": 30,
+  "roles": [
+    {
+      "role_id": "STAGE_CREW",
+      "role_name": "Stage Crew",
+      "description": "Assist with stage setup, manage backstage operations, and coordinate performer entries.",
+      "required_skills": ["Teamwork", "Coordination", "Time Management"],
+      "quantity_needed": 6,
+      "shift_time": "09:00-18:00",
+      "priority": "high",
+      "responsibilities": [
+        "Setup and dismantle stage equipment",
+        "Manage performer line-ups",
+        "Coordinate with lighting and sound teams"
+      ]
+    },
+    {
+      "role_id": "LIGHT_SOUND",
+      "role_name": "Lighting & Sound Team",
+      "description": "Operate lighting rigs, sound systems, and ensure smooth technical flow during performances.",
+      "required_skills": ["AV Operation", "Troubleshooting", "Team Coordination"],
+      "quantity_needed": 3,
+      "shift_time": "08:00-20:00",
+      "priority": "critical",
+      "responsibilities": [
+        "Setup microphones and speakers",
+        "Manage stage lighting effects",
+        "Troubleshoot technical issues during shows"
+      ]
+    },
+    {
+      "role_id": "MEDIA_TEAM",
+      "role_name": "Media & PR Team",
+      "description": "Handle event promotions, live updates, and campus media coverage.",
+      "required_skills": ["Social Media Marketing", "Photography", "Content Writing"],
+      "quantity_needed": 4,
+      "shift_time": "10:00-18:00",
+      "priority": "medium",
+      "responsibilities": [
+        "Capture event highlights",
+        "Post updates on social media",
+        "Coordinate with college media partners"
+      ]
+    },
+    {
+      "role_id": "HOSPITALITY",
+      "role_name": "Hospitality & Guest Management",
+      "description": "Manage accommodation, travel, and assistance for guests, judges, and performers.",
+      "required_skills": ["Communication", "Organization", "Politeness"],
+      "quantity_needed": 3,
+      "shift_time": "08:00-17:00",
+      "priority": "high",
+      "responsibilities": [
+        "Welcome and guide guests",
+        "Arrange accommodations and meals",
+        "Ensure smooth guest experience"
+      ]
+    },
+    {
+      "role_id": "SECURITY_VOL",
+      "role_name": "Security Volunteers",
+      "description": "Maintain crowd control and ensure safety protocols throughout the venue.",
+      "required_skills": ["Alertness", "Discipline", "Crisis Management"],
+      "quantity_needed": 8,
+      "shift_time": "09:00-21:00",
+      "priority": "critical",
+      "responsibilities": [
+        "Check entry passes",
+        "Patrol event zones",
+        "Assist in emergency response"
+      ]
+    },
+    {
+      "role_id": "FOOD_COORD",
+      "role_name": "Food Stall Coordinator",
+      "description": "Supervise food stalls, ensure hygiene standards, and manage vendor logistics.",
+      "required_skills": ["Organization", "Communication", "Problem Solving"],
+      "quantity_needed": 2,
+      "shift_time": "10:00-19:00",
+      "priority": "medium",
+      "responsibilities": [
+        "Coordinate with food vendors",
+        "Ensure cleanliness at stalls",
+        "Monitor crowd and queue management"
+      ]
+    },
+    {
+      "role_id": "COMP_COORD",
+      "role_name": "Competition Coordinator",
+      "description": "Oversee various inter-college competitions and manage participant flow.",
+      "required_skills": ["Leadership", "Organization", "Multitasking"],
+      "quantity_needed": 5,
+      "shift_time": "09:00-18:00",
+      "priority": "high",
+      "responsibilities": [
+        "Schedule competition rounds",
+        "Coordinate with judges",
+        "Manage participant registrations"
+      ]
+    },
+    {
+      "role_id": "CLEANUP_TEAM",
+      "role_name": "Cleanup & Maintenance Team",
+      "description": "Ensure venue cleanliness before, during, and after events.",
+      "required_skills": ["Responsibility", "Teamwork"],
+      "quantity_needed": 4,
+      "shift_time": "07:00-20:00",
+      "priority": "low",
+      "responsibilities": [
+        "Maintain hygiene around stages and stalls",
+        "Assist in waste segregation",
+        "Ensure post-event cleanup"
+      ]
+    }
+  ],
+  "metadata": {
+    "created_date": "2025-01-10",
+    "last_modified": "2025-01-25",
+    "created_by": "Aurora 2025 Organizing Committee",
+    "total_roles": 8,
+    "total_positions": 35
+  }
+}

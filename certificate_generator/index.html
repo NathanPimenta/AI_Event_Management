@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Certificate Generator - CommunityHub</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Custom styles to match your theme */
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+        }
+        .input-field {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+        }
+        .btn-primary {
+            background-color: #238636;
+            color: white;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #2ea043;
+        }
+        .btn-primary:disabled {
+            background-color: #23863655;
+            cursor: not-allowed;
+        }
+        .upload-card.success { border-color: #238636; }
+        .upload-card.error { border-color: #da3633; }
+    </style>
+</head>
+<body>
+    <!-- Header Navigation (Mirrors your existing UI) -->
+    <header class="bg-[#161b22] border-b border-[#30363d]">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold">CommunityHub</div>
+            <div>
+                <a href="#" class="px-4 hover:text-white">Communities</a>
+                <a href="#" class="px-4 hover:text-white">Events</a>
+            </div>
+            <div>
+                <a href="#" class="px-3 py-2 border border-[#30363d] rounded-md hover:bg-[#21262d]">Log In</a>
+                <a href="#" class="ml-2 px-3 py-2 bg-white text-black rounded-md font-semibold">Sign Up</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto p-6 md:p-12">
+        <div class="max-w-4xl mx-auto">
+
+            <!-- Page Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-white">AI Certificate Generator</h1>
+                <p class="mt-4 text-lg text-[#8b949e]">Create and deliver unique, professional certificates for your event participants.</p>
+            </div>
+
+            <!-- Generator Form -->
+            <div id="generator-form">
+                <!-- Step 1: Event Details -->
+                <div class="card p-8 mb-8">
+                    <h2 class="text-2xl font-semibold mb-6 text-white"><i class="fa-solid fa-calendar-alt mr-3"></i>Step 1: Event Details</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="event_name" class="block mb-2 font-medium">Event Name</label>
+                            <input type="text" id="event_name" class="input-field w-full p-2.5" placeholder="e.g., AI & Code Summit" required>
+                        </div>
+                        <div>
+                            <label for="event_date" class="block mb-2 font-medium">Event Date</label>
+                            <input type="text" id="event_date" class="input-field w-full p-2.5" placeholder="e.g., December 4, 2025" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <label for="institution_name" class="block mb-2 font-medium">Institution / Host</label>
+                            <input type="text" id="institution_name" class="input-field w-full p-2.5" placeholder="e.g., CommunityHub University" required>
+                        </div>
+                        <div>
+                            <label for="signature_name" class="block mb-2 font-medium">Signature Name & Title</label>
+                            <input type="text" id="signature_name" class="input-field w-full p-2.5" placeholder="e.g., Dr. Alex Ray, Event Chair" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Design and Branding -->
+                <div class="card p-8 mb-8">
+                    <h2 class="text-2xl font-semibold mb-6 text-white"><i class="fa-solid fa-palette mr-3"></i>Step 2: Design & Branding</h2>
+                    
+                    <!-- Design Style Selection -->
+                    <div class="mb-6">
+                        <label class="block mb-2 font-medium">Certificate Style</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="card p-4 text-center rounded-lg border-2 cursor-pointer has-[:checked]:border-green-500 has-[:checked]:bg-green-900/20">
+                                <input type="radio" name="style" id="style_modern" value="modern" class="hidden" checked>
+                                <i class="fa-solid fa-star text-2xl mb-2"></i>
+                                <span class="font-semibold">Modern</span>
+                            </label>
+                            <label class="card p-4 text-center rounded-lg border-2 cursor-pointer has-[:checked]:border-green-500 has-[:checked]:bg-green-900/20">
+                                <input type="radio" name="style" id="style_formal" value="formal" class="hidden">
+                                <i class="fa-solid fa-award text-2xl mb-2"></i>
+                                <span class="font-semibold">Formal</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Theme Prompt -->
+                    <div class="mb-6">
+                        <label for="ai_theme_prompt" class="block mb-2 font-medium">
+                            <i class="fa-solid fa-wand-magic-sparkles text-yellow-400"></i> AI-Powered Theme (Optional)
+                        </label>
+                        <input type="text" id="ai_theme_prompt" class="input-field w-full p-2.5" placeholder="e.g., Winter hackathon with icy blues and silver">
+                        <p class="text-sm text-[#8b949e] mt-1">Describe the theme, and the AI will generate a unique color palette.</p>
+                    </div>
+
+                    <!-- File Uploads for Logo and Signature -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="upload-card p-4 border-2 border-dashed border-[#30363d] rounded-lg">
+                            <h3 class="font-semibold text-white mb-2">Event Logo <span class="text-red-400">*</span></h3>
+                            <input type="file" id="logo_file" class="hidden" accept="image/png, image/jpeg">
+                            <button onclick="document.getElementById('logo_file').click()" class="w-full text-left p-2 rounded-md bg-[#21262d] hover:bg-[#30363d]">
+                                <i class="fa-solid fa-upload mr-2"></i>
+                                <span id="logo-status">Click to upload logo</span>
+                            </button>
+                        </div>
+                        <div class="upload-card p-4 border-2 border-dashed border-[#30363d] rounded-lg">
+                             <h3 class="font-semibold text-white mb-2">Signature Image <span class="text-red-400">*</span></h3>
+                            <input type="file" id="signature_file" class="hidden" accept="image/png">
+                            <button onclick="document.getElementById('signature_file').click()" class="w-full text-left p-2 rounded-md bg-[#21262d] hover:bg-[#30363d]">
+                                <i class="fa-solid fa-upload mr-2"></i>
+                                <span id="signature-status">Click to upload signature</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Participant Data -->
+                <div class="card p-8 mb-8">
+                    <h2 class="text-2xl font-semibold mb-6 text-white"><i class="fa-solid fa-users mr-3"></i>Step 3: Upload Participant Data</h2>
+                    <div class="upload-card p-4 border-2 border-dashed border-[#30363d] rounded-lg">
+                        <h3 class="font-semibold text-white mb-2">Participants File <span class="text-red-400">*</span></h3>
+                        <input type="file" id="participants_csv" class="hidden" accept=".csv">
+                        <button onclick="document.getElementById('participants_csv').click()" class="w-full text-left p-2 rounded-md bg-[#21262d] hover:bg-[#30363d]">
+                            <i class="fa-solid fa-file-csv mr-2"></i>
+                            <span id="csv-status">Click to upload participants.csv</span>
+                        </button>
+                    </div>
+                    <p class="text-sm text-[#8b949e] mt-2">
+                        Requires a CSV with columns: `name`, `email`, `achievement_type`. 
+                        <a id="download-template" href="#" class="text-[#4A90E2] hover:underline">Download template</a>.
+                    </p>
+                </div>
+                
+                <!-- Action Button -->
+                <div class="text-center">
+                    <button id="generate-btn" class="btn-primary px-12 py-4 text-lg" disabled>
+                        <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Generate Certificates
+                    </button>
+                    <p id="error-message" class="text-red-400 mt-4 h-4"></p>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="hidden text-center card p-8">
+                 <i class="fa-solid fa-spinner fa-spin text-4xl mb-4"></i>
+                 <h2 class="text-2xl font-semibold text-white">Generating Certificates...</h2>
+                 <p class="text-[#8b949e]">This may take a moment, especially for a large number of participants.</p>
+            </div>
+
+             <!-- Results Section -->
+            <div id="results-section" class="hidden">
+                 <div class="text-center mb-8">
+                     <h2 class="text-3xl font-bold text-white">Generation Complete!</h2>
+                 </div>
+                 <div class="card p-8">
+                     <h3 class="text-xl font-semibold mb-4">Generated Files:</h3>
+                     <ul id="file-list" class="list-disc list-inside bg-[#0d1117] p-4 rounded-md max-h-60 overflow-y-auto">
+                         <!-- Generated file names will be listed here -->
+                     </ul>
+                     <p class="text-sm text-[#8b949e] mt-2">Files are saved in your project's `certificate_generator/output/certificates` directory.</p>
+                 </div>
+                 <div class="text-center mt-8">
+                     <button onclick="window.location.reload()" class="px-8 py-3 border border-[#30363d] rounded-md hover:bg-[#21262d]">
+                         <i class="fa-solid fa-plus mr-2"></i>Generate Another Batch
+                     </button>
+                 </div>
+            </div>
+
+        </div>
+    </main>
+
+<script>
+    const formState = {
+        eventName: false, eventDate: false, institutionName: false, signatureName: false,
+        logoFile: false, signatureFile: false, csvFile: false
+    };
+
+    const generateBtn = document.getElementById('generate-btn');
+    const errorMessage = document.getElementById('error-message');
+
+    function validateForm() {
+        const allRequiredFilled = Object.values(formState).every(Boolean);
+        generateBtn.disabled = !allRequiredFilled;
+    }
+
+    // --- Event Listeners for Text Inputs ---
+    document.getElementById('event_name').addEventListener('input', (e) => {
+        formState.eventName = e.target.value.trim() !== '';
+        validateForm();
+    });
+    document.getElementById('event_date').addEventListener('input', (e) => {
+        formState.eventDate = e.target.value.trim() !== '';
+        validateForm();
+    });
+    document.getElementById('institution_name').addEventListener('input', (e) => {
+        formState.institutionName = e.target.value.trim() !== '';
+        validateForm();
+    });
+    document.getElementById('signature_name').addEventListener('input', (e) => {
+        formState.signatureName = e.target.value.trim() !== '';
+        validateForm();
+    });
+    
+    // --- Event Listeners for File Inputs ---
+    function handleFileInput(id, stateKey, statusId) {
+        const input = document.getElementById(id);
+        const statusLabel = document.getElementById(statusId);
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                statusLabel.innerHTML = `<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>${file.name}`;
+                formState[stateKey] = true;
+            } else {
+                statusLabel.innerText = `Click to upload`;
+                formState[stateKey] = false;
+            }
+            validateForm();
+        });
+    }
+    handleFileInput('logo_file', 'logoFile', 'logo-status');
+    handleFileInput('signature_file', 'signatureFile', 'signature-status');
+    handleFileInput('participants_csv', 'csvFile', 'csv-status');
+
+    // --- Download CSV Template ---
+    document.getElementById('download-template').addEventListener('click', (e) => {
+        e.preventDefault();
+        const csvContent = "data:text/csv;charset=utf-8,name,email,achievement_type\nJohn Doe,john@example.com,Participation\nJane Smith,jane@example.com,First Place Winner";
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "participants_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // --- Handle Form Submission (Updated) ---
+    generateBtn.addEventListener('click', async () => {
+        errorMessage.innerText = '';
+        
+        // 1. Show loading state
+        document.getElementById('generator-form').classList.add('hidden');
+        document.getElementById('loading-state').classList.remove('hidden');
+
+        // 2. Aggregate form data, including new fields
+        const config = {
+            event_name: document.getElementById('event_name').value,
+            event_date: document.getElementById('event_date').value,
+            institution_name: document.getElementById('institution_name').value,
+            signature_name: document.getElementById('signature_name').value,
+            style: document.querySelector('input[name="style"]:checked').value,
+            ai_theme_prompt: document.getElementById('ai_theme_prompt').value
+        };
+
+        const formData = new FormData();
+        formData.append('config_json', JSON.stringify(config));
+        formData.append('participants_csv', document.getElementById('participants_csv').files[0]);
+        formData.append('logo', document.getElementById('logo_file').files[0]);
+        formData.append('signature', document.getElementById('signature_file').files[0]);
+
+        // 3. API Call
+        try {
+            const response = await fetch('http://127.0.0.1:8001/certificates/generate', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Display results
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('results-section').classList.remove('hidden');
+                
+                const fileList = document.getElementById('file-list');
+                fileList.innerHTML = ''; // Clear previous results
+                result.generated_files.forEach(fileName => {
+                    const li = document.createElement('li');
+                    li.textContent = fileName;
+                    fileList.appendChild(li);
+                });
+
+            } else {
+                throw new Error(result.detail || 'An unknown error occurred.');
+            }
+        } catch (error) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('generator-form').classList.remove('hidden');
+            errorMessage.innerText = `Error: ${error.message}`;
+        }
+    });
+
+</script>
+
+</body>
+</html>

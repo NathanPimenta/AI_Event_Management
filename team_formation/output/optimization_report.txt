@@ -1,0 +1,130 @@
+======================================================================
+TEAM FORMATION OPTIMIZATION REPORT
+======================================================================
+
+Event: Tech Conference 2025
+Generated: 2025-10-28 15:39:17
+Execution Time: 4.08 seconds
+Final Fitness Score: 4052.39
+
+----------------------------------------------------------------------
+OVERALL STATISTICS
+----------------------------------------------------------------------
+Total Roles: 8
+Total Positions Needed: 17
+Total Participants Assigned: 17
+Assignment Coverage: 100.0%
+
+----------------------------------------------------------------------
+ROLE ASSIGNMENTS
+----------------------------------------------------------------------
+
+Role: Registration Staff (REG_STAFF)
+  Status: 4/4 assigned ✓ PERFECT
+  Required Skills: Communication, Organization, Customer Service
+  Assigned Participants:
+    - Heidi Taylor (ID: P108)
+      Year: 2, Past Events: 1
+      Skills: Communication=2, Organization=1, Customer Service=2
+    - Kevin White (ID: P111)
+      Year: 2, Past Events: 1
+      Skills: Communication=2, Organization=3, Customer Service=2
+    - Judy Thomas (ID: P110)
+      Year: 4, Past Events: 4
+      Skills: Communication=3, Organization=2, Customer Service=3
+    - Wendy Baker (ID: P123)
+      Year: 2, Past Events: 1
+      Skills: Communication=3, Organization=2, Customer Service=3
+
+Role: AV & Tech Support (TECH_SUPPORT)
+  Status: 2/2 assigned ✓ PERFECT
+  Required Skills: AV Setup, Troubleshooting, Networking Basics
+  Assigned Participants:
+    - Frank Brown (ID: P106)
+      Year: 2, Past Events: 0
+      Skills: AV Setup=3, Troubleshooting=2, Networking Basics=3
+    - Eve Martinez (ID: P105)
+      Year: 3, Past Events: 1
+      Skills: AV Setup=3, Troubleshooting=3, Networking Basics=2
+
+Role: Social Media Coordinator (SOCIAL_MEDIA)
+  Status: 1/1 assigned ✓ PERFECT
+  Required Skills: Social Media Marketing, Content Creation, Communication
+  Assigned Participants:
+    - Quinn Hall (ID: P117)
+      Year: 4, Past Events: 4
+      Skills: Social Media Marketing=3, Content Creation=3, Communication=3
+
+Role: Stage Manager (STAGE_MANAGER)
+  Status: 2/2 assigned ✓ PERFECT
+  Required Skills: Organization, Time Management, Communication, Problem Solving
+  Assigned Participants:
+    - Xavier Adams (ID: P124)
+      Year: 4, Past Events: 4
+      Skills: Organization=3, Time Management=3, Communication=3, Problem Solving=3
+    - Mike Robinson (ID: P113)
+      Year: 4, Past Events: 6
+      Skills: Organization=3, Time Management=3, Communication=3, Problem Solving=3
+
+Role: Catering Coordinator (CATERING_COORD)
+  Status: 2/2 assigned ✓ PERFECT
+  Required Skills: Organization, Communication, Problem Solving
+  Assigned Participants:
+    - Charlie Davis (ID: P103)
+      Year: 4, Past Events: 5
+      Skills: Organization=3, Communication=3, Problem Solving=3
+    - Tina King (ID: P120)
+      Year: 4, Past Events: 5
+      Skills: Organization=3, Communication=3, Problem Solving=3
+
+Role: Workshop Facilitator (WORKSHOP_FACILITATOR)
+  Status: 3/3 assigned ✓ PERFECT
+  Required Skills: Communication, Time Management, Problem Solving
+  Assigned Participants:
+    - Yolanda Nelson (ID: P125)
+      Year: 3, Past Events: 2
+      Skills: Communication=2, Time Management=2, Problem Solving=3
+    - Ivan Anderson (ID: P109)
+      Year: 3, Past Events: 2
+      Skills: Communication=2, Time Management=2, Problem Solving=3
+    - Laura Garcia (ID: P112)
+      Year: 3, Past Events: 3
+      Skills: Communication=3, Time Management=2, Problem Solving=3
+
+Role: Logistics Coordinator (LOGISTICS_COORD)
+  Status: 2/2 assigned ✓ PERFECT
+  Required Skills: Organization, Problem Solving, Time Management
+  Assigned Participants:
+    - Bob Smith (ID: P102)
+      Year: 2, Past Events: 1
+      Skills: Organization=3, Problem Solving=2, Time Management=3
+    - Victor Green (ID: P122)
+      Year: 3, Past Events: 3
+      Skills: Organization=3, Problem Solving=2, Time Management=3
+
+Role: Event Photographer (PHOTOGRAPHER)
+  Status: 1/1 assigned ✓ PERFECT
+  Required Skills: Content Creation, Communication
+  Assigned Participants:
+    - Rachel Allen (ID: P118)
+      Year: 3, Past Events: 2
+      Skills: Content Creation=3, Communication=2
+
+----------------------------------------------------------------------
+SKILL UTILIZATION ANALYSIS
+----------------------------------------------------------------------
+
+  Communication: Avg Level = 2.41 (17 participants)
+  Organization: Avg Level = 2.41 (17 participants)
+  Customer Service: Avg Level = 2.18 (17 participants)
+  AV Setup: Avg Level = 1.88 (17 participants)
+  Troubleshooting: Avg Level = 2.12 (17 participants)
+  Networking Basics: Avg Level = 1.71 (17 participants)
+  Social Media Marketing: Avg Level = 2.00 (17 participants)
+  Content Creation: Avg Level = 2.00 (17 participants)
+  Time Management: Avg Level = 2.47 (17 participants)
+  Problem Solving: Avg Level = 2.35 (17 participants)
+
+======================================================================
+END OF REPORT
+======================================================================

@@ -1,0 +1,26 @@
+participant_id,name,year,past_events,email,phone,availability,Communication,Organization,Customer Service,AV Setup,Troubleshooting,Networking Basics,Social Media Marketing,Content Creation,Time Management,Problem Solving
+C201,Ananya Sharma,2,1,ananya.sharma@aurora.edu,555-2001,all,3,3,2,1,1,1,3,3,2,3
+C202,Rohan Patel,3,2,rohan.patel@aurora.edu,555-2002,morning,2,3,2,2,1,1,2,2,3,2
+C203,Meera Nair,4,4,meera.nair@aurora.edu,555-2003,all,3,3,3,1,1,1,3,3,3,3
+C204,Aditya Verma,1,0,aditya.verma@aurora.edu,555-2004,afternoon,1,2,1,2,1,1,1,1,2,1
+C205,Sneha Iyer,3,1,sneha.iyer@aurora.edu,555-2005,all,2,2,3,1,2,1,3,2,2,2
+C206,Karan Mehta,2,0,karan.mehta@aurora.edu,555-2006,morning,2,3,2,3,2,2,1,1,3,2
+C207,Divya Rao,4,3,divya.rao@aurora.edu,555-2007,all,3,2,3,1,1,1,3,3,3,2
+C208,Ritvik Jain,1,0,ritvik.jain@aurora.edu,555-2008,afternoon,1,1,1,2,2,2,1,1,2,1
+C209,Alisha Fernandes,3,2,alisha.fernandes@aurora.edu,555-2009,all,3,3,2,1,1,1,3,3,3,3
+C210,Neel Deshmukh,2,1,neel.deshmukh@aurora.edu,555-2010,morning,2,2,2,2,2,3,2,2,2,2
+C211,Krisha Bansal,3,2,krisha.bansal@aurora.edu,555-2011,all,3,2,2,1,1,1,3,3,2,3
+C212,Arjun Reddy,4,5,arjun.reddy@aurora.edu,555-2012,all,3,3,3,2,3,2,2,2,3,3
+C213,Simran Kaur,2,0,simran.kaur@aurora.edu,555-2013,afternoon,2,2,2,1,1,1,3,2,2,2
+C214,Vedant Joshi,3,1,vedant.joshi@aurora.edu,555-2014,morning,3,3,2,2,2,2,1,1,3,3
+C215,Nisha Das,4,3,nisha.das@aurora.edu,555-2015,all,3,3,2,1,1,1,2,3,3,3
+C216,Ishan Kapoor,2,0,ishan.kapoor@aurora.edu,555-2016,afternoon,2,2,2,3,2,3,1,1,2,2
+C217,Priya Menon,3,2,priya.menon@aurora.edu,555-2017,all,3,2,3,1,1,1,3,3,3,3
+C218,Raj Shah,1,0,raj.shah@aurora.edu,555-2018,morning,2,1,2,2,2,1,2,1,2,2
+C219,Tanvi Kulkarni,4,4,tanvi.kulkarni@aurora.edu,555-2019,all,3,3,3,1,1,1,3,3,3,3
+C220,Harshita Pandey,3,1,harshita.pandey@aurora.edu,555-2020,all,2,3,2,2,2,2,3,2,2,2
+C221,Ritisha Sen,2,1,ritisha.sen@aurora.edu,555-2021,morning,3,2,3,1,1,1,2,3,2,2
+C222,Vikram Chauhan,3,2,vikram.chauhan@aurora.edu,555-2022,all,2,3,2,3,2,3,1,1,3,2
+C223,Shruti Gupta,4,5,shruti.gupta@aurora.edu,555-2023,all,3,3,3,1,1,1,3,3,3,3
+C224,Rohan Nair,2,0,rohan.nair@aurora.edu,555-2024,afternoon,2,2,1,3,3,2,1,1,2,2
+C225,Diya Malhotra,3,3,diya.malhotra@aurora.edu,555-2025,all,3,3,3,1,1,1,3,2,3,3

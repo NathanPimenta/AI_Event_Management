@@ -1,0 +1,21 @@
+participant_id,name,year,past_events,availability,Communication,Organization,AV Setup,Troubleshooting,Content Creation,Social Media,Coordination,Problem Solving,Python
+P01,Alice Johnson,3,2,All Day,3,2,1,0,2,1,2,1,0
+P02,Bob Williams,2,1,All Day,2,3,0,2,1,1,3,2,1
+P03,Charlie Brown,4,5,Morning,3,3,2,3,3,3,3,3,3
+P04,Diana Miller,1,0,Afternoon,2,1,0,0,3,2,1,1,0
+P05,Ethan Garcia,3,3,All Day,1,2,3,3,0,1,1,2,2
+P06,Fiona Clark,2,1,Morning,3,3,1,1,2,2,3,2,1
+P07,George Hall,4,6,All Day,2,2,3,3,1,0,2,3,3
+P08,Hannah Lee,1,0,All Day,3,1,0,1,2,3,1,2,0
+P09,Ian Martinez,2,2,Afternoon,2,2,2,2,1,1,2,2,2
+P10,Jane Rodriguez,3,4,All Day,3,3,1,2,3,2,3,3,1
+P11,Kevin White,1,0,Morning,2,2,0,0,1,1,2,1,0
+P12,Laura Green,2,1,All Day,3,1,0,1,3,3,1,2,0
+P13,Mason Harris,4,7,Afternoon,2,3,3,2,1,1,3,2,3
+P14,Nora King,3,2,All Day,3,2,1,1,2,2,2,2,1
+P15,Oscar Wright,2,0,Morning,1,1,2,2,0,0,1,1,2
+P16,Penny Adams,1,1,All Day,3,2,0,0,3,3,2,2,0
+P17,Quinn Baker,4,5,Afternoon,3,3,3,3,2,1,3,3,3
+P18,Ruby Carter,2,1,All Day,2,2,1,2,1,2,2,2,1
+P19,Sam Evans,3,3,Morning,3,3,2,1,2,1,3,2,2
+P20,Tina Flores,1,0,Afternoon,2,1,1,0,2,2,1,1,0

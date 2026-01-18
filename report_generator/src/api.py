@@ -12,8 +12,19 @@ import uuid
 import io
 
 from pydantic import BaseModel
-import markdown2
-from weasyprint import HTML, CSS
+try:
+    import markdown2
+except ImportError as e:
+    raise ImportError(
+        "Missing dependency 'markdown2'. Install project requirements: `pip install -r report_generator/requirements.txt`"
+    ) from e
+
+try:
+    from weasyprint import HTML, CSS
+except ImportError as e:
+    raise ImportError(
+        "Missing dependency 'weasyprint'. It has system dependencies (cairo/pango). Install via `pip install -r report_generator/requirements.txt` and refer to WeasyPrint docs if installation fails."
+    ) from e
 
 # Add the src directory to Python path
 sys.path.append(str(Path(__file__).parent))

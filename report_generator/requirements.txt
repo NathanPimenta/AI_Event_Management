@@ -3,4 +3,5 @@ matplotlib
 ollama
 seaborn
 markdown2
-weasyprint
+python-docx
+jinja2

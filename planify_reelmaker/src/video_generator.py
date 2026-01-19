@@ -4,6 +4,9 @@ import numpy as np
 from PIL import Image
 import pillow_heif
 import shutil
+import base64
+import json
+import random
 
 # Register HEIF opener for HEIC/HEIF support
 pillow_heif.register_heif_opener()
@@ -23,6 +26,40 @@ def convert_heic_to_jpg_array(heic_path):
         print(f"   - Warning: Could not convert {os.path.basename(heic_path)}: {e}")
         return None
 
+def generate_video_with_comfyui(client, image_paths, music_path=None, output_path="output/reel.mp4"):
+    """
+    Generates a high-end video reel using ComfyUI (Image-to-Video).
+    Assumes a workflow enabling batch processing or sequential I2V generation.
+    For this implementation, we will generate short video clips from images and then concat them.
+    """
+    print(f"🎬 Starting ComfyUI High-End Video Generation with {len(image_paths)} images...")
+    
+    generated_clips = []
+    
+    # Ensure output dir exists
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    # 1. Generate video clips for each image
+    # Note: Requires a specific SVD (Stable Video Diffusion) workflow in ComfyUI
+    # This is a simplified example assuming a workflow that takes an image path or base64
+    
+    # Ideally, you'd load a workflow JSON template here
+    # For now, we will fallback to standard generation if client is not actually connected/ready
+    # or loop through image paths, upload them (or reference them), and get video back.
+    
+    print("   - Info: ComfyUI integration is complex. For this MVP, we will simulate the pipeline")
+    print("   - or rely on the standard generator if ComfyUI workflow isn't strictly defined.")
+    
+    # Real implementation would involve:
+    # for img in image_paths:
+    #    response = client.queue_prompt(load_workflow(img))
+    #    video_data = client.wait_for_completion(response)
+    #    save_video(video_data)
+    #    generated_clips.append(saved_video_path)
+    
+    # Fallback to standard for now until workflow JSON is provided
+    print("   - Falling back to standard MoivePy generation for stability in this iteration.")
+    create_reel_from_images(image_paths, music_path, output_path)
 
 def create_reel_from_images(image_paths, music_path=None, output_path="output/reel.mp4",
                             fps=24, clip_duration=2):
@@ -36,7 +73,7 @@ def create_reel_from_images(image_paths, music_path=None, output_path="output/re
         fps (int): Frames per second.
         clip_duration (int): Duration (seconds) per image.
     """
-    print("🎬 Starting video generation...")
+    print("🎬 Starting standard video generation...")
     clips = []
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -55,9 +92,20 @@ def create_reel_from_images(image_paths, music_path=None, output_path="output/re
                 clip = ImageClip(img_path, duration=clip_duration)
 
             # Resize + crop for 9:16 aspect ratio (Reel format)
-            clip = clip.resize(height=1920).crop(
-                x_center=clip.w / 2, y_center=clip.h / 2, width=1080, height=1920
-            )
+            # Target 1080x1920
+            w, h = clip.size
+            
+            # Smart aspect ratio handling
+            if w/h > 1080/1920: # Wider than target
+                clip = clip.resize(height=1920)
+                clip = clip.crop(x_center=clip.w/2, y_center=clip.h/2, width=1080, height=1920)
+            else: # Taller than target
+                clip = clip.resize(width=1080)
+                clip = clip.crop(x_center=clip.w/2, y_center=clip.h/2, width=1080, height=1920)
+
+            # Add a crossfade transition for smoothness
+            clip = clip.crossfadein(0.5)
+            
             clips.append(clip)
         except Exception as e:
             print(f"   - Skipping {os.path.basename(img_path)} due to error: {e}")
@@ -66,7 +114,7 @@ def create_reel_from_images(image_paths, music_path=None, output_path="output/re
         print("❌ No valid images found. Exiting.")
         return
 
-    final_clip = concatenate_videoclips(clips, method="compose")
+    final_clip = concatenate_videoclips(clips, method="compose", padding=-0.5) # Negative padding for crossfade overlap
 
     # Optional background music
     if music_path and os.path.exists(music_path):
@@ -75,7 +123,8 @@ def create_reel_from_images(image_paths, music_path=None, output_path="output/re
             if audioclip.duration < final_clip.duration:
                 audioclip = audioclip.loop(duration=final_clip.duration)
             else:
-                audioclip = audioclip.set_duration(final_clip.duration)
+                # Fade out audio at the end
+                audioclip = audioclip.set_duration(final_clip.duration).audio_fadeout(2)
 
             final_clip = final_clip.set_audio(audioclip)
             print("🎵 Background music added successfully.")
@@ -93,6 +142,8 @@ def create_reel_from_images(image_paths, music_path=None, output_path="output/re
             audio_codec="aac",
             temp_audiofile="temp-audio.m4a",
             remove_temp=True,
+            threads=4,
+            preset='medium' 
         )
         print(f"✅ Reel created successfully: {output_path}")
     except Exception as e:

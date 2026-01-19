@@ -19,12 +19,16 @@ except ImportError as e:
         "Missing dependency 'markdown2'. Install project requirements: `pip install -r report_generator/requirements.txt`"
     ) from e
 
+# WeasyPrint Handling: It relies on system libraries (Pango/Cairo) which might be missing.
+# We catch both ImportError (missing package) and OSError (missing system libs).
 try:
     from weasyprint import HTML, CSS
-except ImportError as e:
-    raise ImportError(
-        "Missing dependency 'weasyprint'. It has system dependencies (cairo/pango). Install via `pip install -r report_generator/requirements.txt` and refer to WeasyPrint docs if installation fails."
-    ) from e
+    WEASYPRINT_AVAILABLE = True
+except (ImportError, OSError) as e:
+    print(f"⚠️ PDF generation unavailable: {e}")
+    WEASYPRINT_AVAILABLE = False
+    HTML = None
+    CSS = None
 
 # Add the src directory to Python path
 sys.path.append(str(Path(__file__).parent))
@@ -98,7 +102,8 @@ REQUIRED_FILES = {
     'attendees.csv': {'type': 'csv', 'required': True},
     'feedback.csv': {'type': 'csv', 'required': True},
     'crowd_analytics.json': {'type': 'json', 'required': False},
-    'social_mentions.json': {'type': 'json', 'required': False}
+    'social_mentions.json': {'type': 'json', 'required': False},
+    'custom_template.txt': {'type': 'txt', 'required': False}
 }
 
 @app.post("/upload/{file_type}")
@@ -160,7 +165,8 @@ async def generate_event_report(request: ReportRequest):
             institution_name=request.institution_name,
             ollama_model=request.ollama_model,
             generate_ai_recommendations=request.generate_ai_recommendations,
-            report_filename=report_filename
+            report_filename=report_filename,
+            custom_template_path=DATA_DIR / "custom_template.txt" if (DATA_DIR / "custom_template.txt").exists() else None
         )
         
         generator = EventReportGenerator(config)
@@ -190,10 +196,12 @@ async def generate_event_report(request: ReportRequest):
             detail=f"Failed to generate report: {str(e)}"
         )
 
-@app.get("/download-report/pdf")
-async def download_pdf_report(filename: str):
+from src.doc_generator import ReportToDocxConverter
+
+@app.get("/download-report/docx")
+async def download_docx_report(filename: str):
     """
-    Converts a specified markdown report to a PDF and serves it for download.
+    Converts a specified markdown report to DOCX and serves it for download.
     """
     if not filename.endswith(".md"):
         raise HTTPException(status_code=400, detail="Invalid filename format.")
@@ -202,35 +210,25 @@ async def download_pdf_report(filename: str):
     if not report_path.exists():
         raise HTTPException(status_code=404, detail="Report file not found.")
 
-    with open(report_path, 'r', encoding='utf-8') as f:
-        md_content = f.read()
+    try:
+        converter = ReportToDocxConverter(report_path, ROOT_DIR / "output")
+        docx_path = converter.convert()
+        
+        return FileResponse(
+            docx_path,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            filename=docx_path.name
+        )
+    except Exception as e:
+        print(f"Error generating DOCX: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate DOCX: {str(e)}")
 
-    # Convert Markdown to HTML
-    html_content = markdown2.markdown(md_content, extras=["fenced-code-blocks", "tables"])
-    
-    # Simple CSS for styling the PDF
-    pdf_css = """
-    @page { size: A4; margin: 2cm; }
-    body { font-family: 'Helvetica', sans-serif; line-height: 1.6; color: #333; }
-    h1, h2, h3 { color: #0d1117; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-    h1 { font-size: 24pt; }
-    h2 { font-size: 18pt; }
-    img { max-width: 100%; height: auto; border-radius: 5px; margin: 1em 0; }
-    ul { padding-left: 20px; }
-    """
-    
-    # Convert HTML to PDF in memory
-    pdf_file = HTML(string=html_content, base_url=str(ROOT_DIR / "output")).write_pdf(stylesheets=[CSS(string=pdf_css)])
-    
-    pdf_stream = io.BytesIO(pdf_file)
-    
-    pdf_filename = filename.replace('.md', '.pdf')
-    
-    return StreamingResponse(
-        pdf_stream,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={pdf_filename}"}
-    )
+# Legacy PDF endpoint (disabled)
+@app.get("/download-report/pdf")
+async def download_pdf_report(filename: str):
+    raise HTTPException(status_code=501, detail="PDF generation is deprecated. Please use DOCX download.")
 
 @app.get("/files-status")
 async def get_files_status():

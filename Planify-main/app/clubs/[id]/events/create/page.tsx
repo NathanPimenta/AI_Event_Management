@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,8 +21,28 @@ export default function CreateEventPage() {
   const [location, setLocation] = useState("")
   const [maxAttendees, setMaxAttendees] = useState("50")
   const [loading, setLoading] = useState(false)
+  const [communityId, setCommunityId] = useState<string | null>(null)
   const { user } = useAuth()
   const router = useRouter()
+
+  useEffect(() => {
+    // Fetch club details to get communityId
+    const fetchClubDetails = async () => {
+      try {
+        const response = await fetch(`/api/clubs/${clubId}`)
+        if (response.ok) {
+          const club = await response.json()
+          setCommunityId(club.communityId)
+        }
+      } catch (error) {
+        console.error("Failed to fetch club details:", error)
+      }
+    }
+
+    if (clubId) {
+      fetchClubDetails()
+    }
+  }, [clubId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,6 +61,8 @@ export default function CreateEventPage() {
           location,
           maxAttendees: parseInt(maxAttendees),
           organizerId: user?.id,
+          communityId: communityId,
+          createdByUserId: user?.id,
         })
       })
 

@@ -77,6 +77,9 @@ export default function CreateEventPage() {
     setLoading(true)
 
     try {
+      // Get the selected club to retrieve its communityId
+      const selectedClub = clubs.find((c) => c.id === clubId)
+
       const response = await fetch("/api/events", {
         method: "POST",
         headers: {
@@ -91,6 +94,8 @@ export default function CreateEventPage() {
           maxAttendees: Number.parseInt(maxAttendees),
           clubId,
           organizerId: user?.id,
+          communityId: selectedClub?.communityId,
+          createdByUserId: user?.id,
         }),
       })
 

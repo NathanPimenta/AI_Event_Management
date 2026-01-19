@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getEvents as dbGetEvents, getEventsByClub as dbGetClubEvents, getEventsByCommunity as dbGetEventsByCommunity, createEvent as dbCreateEvent } from "@/lib/db"
+import { notifyNewEvent } from "@/lib/notifications"
 
 export async function GET(request: Request) {
   try {
@@ -30,6 +31,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const data = await request.json()
+    console.log("📝 Creating event:", { title: data.title, communityId: data.community_id || data.communityId, createdBy: data.createdByUserId })
 
     const event = await dbCreateEvent({
       ...data,
@@ -37,10 +39,32 @@ export async function POST(request: Request) {
       createdAt: new Date(),
     })
 
+    console.log("✅ Event created:", { eventId: event.id, title: event.title, communityId: event.communityId })
+
+    // Send notification to community members asynchronously (fire and forget)
+    if (event.id && event.communityId && data.createdByUserId) {
+      console.log("📧 Triggering notification for event:", event.id)
+      
+      // Fire the notification in the background without awaiting
+      // This ensures the API response is returned immediately
+      ;(async () => {
+        try {
+          await notifyNewEvent(event.id, data.createdByUserId)
+        } catch (err) {
+          console.error("Failed to send event notification:", err)
+        }
+      })()
+    } else {
+      console.warn("⚠️  Notification not triggered. Missing:", {
+        eventId: event.id,
+        communityId: event.communityId,
+        createdBy: data.createdByUserId
+      })
+    }
+
     return NextResponse.json(event)
   } catch (error) {
     console.error("Error creating event:", error)
     return NextResponse.json({ error: "An error occurred while creating the event" }, { status: 500 })
   }
 }
-

@@ -1,12 +1,9 @@
-require('dotenv').config()
+require('dotenv').config({ path: '.env.local' })
 const { Pool } = require('pg')
 const bcrypt = require('bcryptjs')
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  connectionString: process.env.DATABASE_URL
 })
 
 async function seed() {

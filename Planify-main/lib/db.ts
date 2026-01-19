@@ -554,6 +554,18 @@ export async function addMemberToClub(clubId: string, memberData: any) {
   return toCamelCase(result.rows[0])
 }
 
+/**
+ * Check if user is a member of a club
+ */
+export async function isUserClubMember(clubId: string, userId: string): Promise<boolean> {
+  const result = await query(
+    `SELECT id FROM club_members WHERE club_id = $1 AND user_id = $2 LIMIT 1`,
+    [clubId, userId]
+  )
+  
+  return result.rows.length > 0
+}
+
 export async function getUserClubs(userId: string) {
   const result = await query(
     `SELECT cl.*,

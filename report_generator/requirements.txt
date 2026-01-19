@@ -2,3 +2,5 @@ pandas
 matplotlib
 ollama
 seaborn
+markdown2
+weasyprint

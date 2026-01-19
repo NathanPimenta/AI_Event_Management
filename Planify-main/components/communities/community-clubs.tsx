@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { PlusCircle, Users, Calendar } from "lucide-react"
+import { PlusCircle, Users, Calendar, LogIn } from "lucide-react"
 import Link from "next/link"
 import { toast } from "@/hooks/use-toast"
+import { useAuth } from "@/hooks/use-auth"
+
 
 interface CommunityClubsProps {
   communityId: string
@@ -13,8 +15,12 @@ interface CommunityClubsProps {
 }
 
 export default function CommunityClubs({ communityId, isAdmin }: CommunityClubsProps) {
+  const { user } = useAuth()
   const [clubs, setClubs] = useState<any[]>([])
+  const [userClubs, setUserClubs] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [joiningClub, setJoiningClub] = useState<string | null>(null)
+
 
   useEffect(() => {
     const fetchClubs = async () => {
@@ -26,6 +32,13 @@ export default function CommunityClubs({ communityId, isAdmin }: CommunityClubsP
 
         const data = await response.json()
         setClubs(data)
+        if (user?.id) {
+          const userClubsResponse = await fetch(`/api/clubs/my-clubs?userId=${user.id}`)
+          if (userClubsResponse.ok) {
+            const userClubsData = await userClubsResponse.json()
+            setUserClubs(userClubsData.map((club: any) => club.id))
+          }
+        }
       } catch (error) {
         console.error("Error fetching clubs:", error)
         toast({
@@ -40,6 +53,48 @@ export default function CommunityClubs({ communityId, isAdmin }: CommunityClubsP
 
     fetchClubs()
   }, [communityId])
+  const handleJoinClub = async (clubId: string) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to join a club",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setJoiningClub(clubId)
+    try {
+      const response = await fetch(`/api/clubs/${clubId}/join`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to join club")
+      }
+
+      // Add club to user's clubs
+      setUserClubs([...userClubs, clubId])
+      toast({
+        title: "Success",
+        description: "You have successfully joined the club!",
+      })
+    } catch (error) {
+      console.error("Error joining club:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to join club",
+        variant: "destructive",
+      })
+    } finally {
+      setJoiningClub(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -103,11 +158,22 @@ export default function CommunityClubs({ communityId, isAdmin }: CommunityClubsP
                 </div>
               </CardContent>
               <CardFooter>
-                <Link href={`/clubs/${club.id}`} className="w-full">
-                  <Button variant="outline" className="w-full">
-                    View Club
+                {userClubs.includes(club.id) ? (
+                  <Link href={`/clubs/${club.id}`} className="w-full">
+                    <Button variant="outline" className="w-full">
+                      View Club
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    onClick={() => handleJoinClub(club.id)}
+                    disabled={joiningClub === club.id}
+                    className="w-full gap-2"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    {joiningClub === club.id ? "Joining..." : "Join Club"}
                   </Button>
-                </Link>
+                )}
               </CardFooter>
             </Card>
           ))}

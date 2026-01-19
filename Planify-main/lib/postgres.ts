@@ -1,4 +1,9 @@
+import 'dotenv/config'
+import { config } from 'dotenv'
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg'
+
+// Load .env.local explicitly
+config({ path: '.env.local' })
 
 // Connection pool configuration
 const pool = new Pool({

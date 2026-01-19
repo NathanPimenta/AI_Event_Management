@@ -16,11 +16,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+
+  // ✅ MOVED HERE
+  serverExternalPackages: ['mongodb'],
+
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
-    serverComponentsExternalPackages: ["mongodb"],
     reactServerComponents: true,
   },
 }

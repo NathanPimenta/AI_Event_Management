@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getEventById, addAttendeeToEvent } from "@/lib/db"
+import { getEventById, addAttendeeToEvent, isUserClubMember } from "@/lib/db"
 
 export async function POST(
   request: Request,
@@ -21,6 +21,19 @@ export async function POST(
       return NextResponse.json({ error: "You are already registered for this event" }, { status: 400 })
     }
 
+    // If event is associated with a club, check if user is a club member
+    if (event.clubId) {
+      const isClubMember = await isUserClubMember(event.clubId, userId)
+      if (!isClubMember) {
+        return NextResponse.json({ 
+          error: "You must be a member of the club to register for this event",
+          code: "NOT_CLUB_MEMBER",
+          clubId: event.clubId,
+          clubName: event.clubName
+        }, { status: 403 })
+      }
+    }
+
     // Check if event is full
     const currentAttendees = event.attendeeCount || (event.attendees ? event.attendees.length : 0)
     if (event.maxAttendees && currentAttendees >= event.maxAttendees) {
@@ -35,7 +48,9 @@ export async function POST(
       registeredAt: new Date(),
     })
 
-    return NextResponse.json({ success: true })
+    console.log(`✅ User ${userId} registered for event ${id}`)
+
+    return NextResponse.json({ success: true, message: "Successfully registered for the event" })
   } catch (error) {
     console.error("Error registering for event:", error)
     return NextResponse.json({ error: "An error occurred while registering for the event" }, { status: 500 })

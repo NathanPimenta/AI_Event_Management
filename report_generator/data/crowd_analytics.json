@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2025-03-15T09:00:00",
+    "zone_id": "main_hall",
+    "count": 50,
+    "density_level": "low"
+  },
+  {
+    "timestamp": "2025-03-15T10:00:00",
+    "zone_id": "main_hall",
+    "count": 150,
+    "density_level": "high"
+  },
+  {
+    "timestamp": "2025-03-15T11:00:00",
+    "zone_id": "breakout_room_1",
+    "count": 45,
+    "density_level": "medium"
+  },
+  {
+    "timestamp": "2025-03-15T13:00:00",
+    "zone_id": "cafeteria",
+    "count": 120,
+    "density_level": "high"
+  }
+]

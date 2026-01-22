@@ -2,3 +2,6 @@ pandas
 matplotlib
 ollama
 seaborn
+markdown2
+python-docx
+jinja2

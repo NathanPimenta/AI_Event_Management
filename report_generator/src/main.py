@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
+import jinja2
 
 import data_ingestor
 import quantitative_analyzer as qa
@@ -23,6 +24,8 @@ class EventReportConfig:
     demographics_chart: str = "participant_demographics.png"
     # --- END FIX ---
     
+    custom_template_path: Optional[Path] = None
+
     generate_ai_recommendations: bool = True
     
     @property
@@ -195,9 +198,36 @@ class EventReportGenerator:
         
         timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         
+        if self.config.custom_template_path and self.config.custom_template_path.exists():
+            print(f"📄 Using custom template: {self.config.custom_template_path}")
+            try:
+                with open(self.config.custom_template_path, 'r', encoding='utf-8') as tf:
+                    template_content = tf.read()
+                
+                template = jinja2.Template(template_content)
+                rendered_report = template.render(
+                    event_name=self.config.event_name,
+                    event_type=self.config.event_type,
+                    institution_name=self.config.institution_name,
+                    stats=stats,
+                    analysis=analysis,
+                    recommendations=recommendations,
+                    timestamp=timestamp,
+                    ratings_chart=self.config.ratings_chart,
+                    demographics_chart=self.config.demographics_chart
+                )
+                
+                with open(self.config.report_path, 'w', encoding='utf-8') as f:
+                    f.write(rendered_report)
+                    
+                print(f"\n✅ Report saved to: {self.config.report_path}")
+                return
+            except Exception as e:
+                print(f"⚠️ Failed to use custom template: {e}. Falling back to default.")
+
         with open(self.config.report_path, 'w', encoding='utf-8') as f:
-            # Header (this part is now fully dynamic)
-            f.write(f"# 📊 Post-Event Analysis Report\n\n")
+            # Header
+            f.write(f"# Post-Event Analysis Report\n\n")
             f.write(f"## {self.config.event_name}\n")
             f.write(f"**{self.config.event_type}**\n")
             f.write(f"*{self.config.institution_name}*\n\n")
@@ -205,7 +235,7 @@ class EventReportGenerator:
             f.write(f"*Report Generated: {timestamp}*\n\n")
             
             # --- Executive Summary ---
-            f.write("## 📋 Executive Summary\n\n")
+            f.write("## Executive Summary\n\n")
             f.write(f"The **{self.config.event_name}** concluded with **{stats.get('total_participants', 'N/A')} participants**")
             if 'institutions' in stats:
                 f.write(f" from **{stats['institutions']} institutions**.")
@@ -225,7 +255,7 @@ class EventReportGenerator:
 
             # --- Participant Demographics (Conditional Section) ---
             if stats.get('institutions') or stats.get('ticket_type_dist'):
-                f.write("---\n\n## 👥 Participant Demographics\n\n")
+                f.write("---\n\n## Participant Demographics\n\n")
                 
                 f.write("### Key Statistics\n\n")
                 f.write(f"- **Total Participants:** {stats.get('total_participants', 'N/A')}\n")
@@ -261,15 +291,15 @@ class EventReportGenerator:
 
             # --- Session Performance & Feedback (already quite robust) ---
             f.write("---\n\n")
-            f.write("## 🎯 Session Performance & Feedback\n\n")
+            f.write("## Session Performance & Feedback\n\n")
             f.write("### Overall Feedback Metrics\n\n")
             f.write(f"- **Total Feedback Responses:** {stats.get('total_feedback', 0)}\n")
-            f.write(f"- **Average Session Rating:** {stats.get('avg_rating', 0):.2f}/5 ⭐\n")
+            f.write(f"- **Average Session Rating:** {stats.get('avg_rating', 0):.2f}/5\n")
             f.write(f"- **Median Rating:** {stats.get('median_rating', 'N/A')}/5\n\n")
 
             if stats.get('excellent_ratings') is not None:
                 f.write("### Rating Distribution\n\n")
-                f.write(f"- **Excellent (≥4.5):** {stats.get('excellent_ratings', 0)} responses\n")
+                f.write(f"- **Excellent (>=4.5):** {stats.get('excellent_ratings', 0)} responses\n")
                 f.write(f"- **Good (4.0-4.5):** {stats.get('good_ratings', 0)} responses\n")
                 f.write(f"- **Average (3.5-4.0):** {stats.get('average_ratings', 0)} responses\n")
                 f.write(f"- **Needs Improvement (<3.5):** {stats.get('poor_ratings', 0)} responses\n\n")
@@ -277,12 +307,12 @@ class EventReportGenerator:
             if stats.get('top_session'):
                 f.write("### Session Highlights\n\n")
                 f.write(
-                    f"🏆 **Top Rated Session:** {stats['top_session']['name']} "
+                    f"**Top Rated Session:** {stats['top_session']['name']} "
                     f"({stats['top_session']['rating']:.2f}/5)\n\n"
                 )
                 if stats.get('bottom_session') and stats['bottom_session'].get('rating', 5) < 4.0:
                     f.write(
-                        f"⚠️ **Needs Attention:** {stats['bottom_session']['name']} "
+                        f"**Needs Attention:** {stats['bottom_session']['name']} "
                         f"({stats['bottom_session']['rating']:.2f}/5)\n\n"
                     )
 
@@ -303,19 +333,19 @@ class EventReportGenerator:
             
             # --- Qualitative, Social, and Recommendations ---
             f.write("---\n\n")
-            f.write("## 💬 Participant Feedback Analysis\n\n")
+            f.write("## Participant Feedback Analysis\n\n")
             f.write("*The following insights were generated using AI-powered analysis of participant feedback.*\n\n")
-            f.write("### ✅ What Participants Loved\n\n")
+            f.write("### What Participants Loved\n\n")
             f.write(f"{analysis.get('positive_themes', 'No feedback comments provided by participants.')}\n\n")
-            f.write("### 📈 Areas for Improvement\n\n")
+            f.write("### Areas for Improvement\n\n")
             f.write(f"{analysis.get('improvement_areas', 'No feedback comments provided by participants.')}\n\n")
 
             f.write("---\n\n")
-            f.write("## 📱 Social Media Sentiment\n\n")
+            f.write("## Social Media Sentiment\n\n")
             f.write(f"{analysis.get('social_sentiment', 'No social media data collected for this event.')}\n\n")
 
             f.write("---\n\n")
-            f.write("## 💡 Recommendations for Future Events\n\n")
+            f.write("## Recommendations for Future Events\n\n")
             f.write("*AI-generated actionable recommendations based on event data and feedback:*\n\n")
             f.write(f"{recommendations}\n\n")
 

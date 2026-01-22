@@ -4,7 +4,10 @@ from pathlib import Path
 import shutil
 import json
 import os
-from generator import CertificateGenerator
+try:
+    from .generator import CertificateGenerator
+except ImportError:
+    from certificate_generator.src.generator import CertificateGenerator
 
 app = FastAPI(title="Certificate Generator API")
 
@@ -22,7 +25,8 @@ async def generate_certificates_endpoint(
     config_json: str = Form(...),
     participants_csv: UploadFile = File(...),
     logo: UploadFile = File(...),
-    signature: UploadFile = File(...)
+    signature: UploadFile = File(...),
+    custom_template: UploadFile = File(None)
 ):
     """
     Endpoint to generate certificates.
@@ -48,6 +52,14 @@ async def generate_certificates_endpoint(
     signature_path = ASSETS_DIR / "signatures" / signature.filename
     with open(signature_path, "wb") as buffer:
         shutil.copyfileobj(signature.file, buffer)
+
+    # --- Handle Custom Template ---
+    custom_template_path = None
+    if custom_template:
+        custom_template_path = temp_dir / custom_template.filename
+        with open(custom_template_path, "wb") as buffer:
+            shutil.copyfileobj(custom_template.file, buffer)
+        config["custom_template_path"] = custom_template_path
 
     # --- Update config with file paths ---
     config["csv_path"] = csv_path

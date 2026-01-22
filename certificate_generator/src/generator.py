@@ -1,7 +1,12 @@
 import os
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML, CSS
+try:
+    from weasyprint import HTML, CSS
+    WEASYPRINT_AVAILABLE = True
+except OSError:
+    print("⚠️ WeasyPrint could not be loaded (likely missing Pango). PDF generation will be disabled.")
+    WEASYPRINT_AVAILABLE = False
 import qrcode
 from pathlib import Path
 import uuid
@@ -23,7 +28,16 @@ class CertificateGenerator:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         self.env = Environment(loader=FileSystemLoader(self.assets_dir / "templates"))
-        self.template = self.env.get_template(f"{config.get('style', 'modern')}.html")
+        
+        if "custom_template_path" in config and config["custom_template_path"]:
+            # Load custom template from the specific path
+            custom_path = Path(config["custom_template_path"])
+            # Create a new environment for the custom template directory
+            custom_env = Environment(loader=FileSystemLoader(custom_path.parent))
+            self.template = custom_env.get_template(custom_path.name)
+            print(f"   - Custom Template: {custom_path}")
+        else:
+            self.template = self.env.get_template(f"{config.get('style', 'modern')}.html")
         
         print("✅ CertificateGenerator initialized.")
         print(f"   - Style: {config.get('style', 'modern')}")
@@ -142,9 +156,17 @@ class CertificateGenerator:
             
             pdf_filename = f"Certificate_{name.replace(' ', '_')}.pdf"
             pdf_output_path = self.output_dir / pdf_filename
-            self._create_pdf(rendered_html, pdf_output_path)
             
-            generated_files.append(str(pdf_output_path))
+            if WEASYPRINT_AVAILABLE:
+                self._create_pdf(rendered_html, pdf_output_path)
+                generated_files.append(str(pdf_output_path))
+            else:
+                # Save HTML instead if PDF generation is not available (for debugging/testing)
+                html_output_path = self.output_dir / f"Certificate_{name.replace(' ', '_')}.html"
+                with open(html_output_path, "w") as f:
+                    f.write(rendered_html)
+                generated_files.append(str(html_output_path))
+            
             os.remove(qr_code_path)
 
         print(f"\n✅ Generation complete! {len(generated_files)} certificates created.")

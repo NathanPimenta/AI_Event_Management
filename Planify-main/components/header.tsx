@@ -55,6 +55,22 @@ export default function Header() {
                   <Users className="h-5 w-5" />
                   Communities
                 </Link>
+                <Link
+                  href="/layout-visualizer"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 text-lg font-semibold"
+                >
+                  <Users className="h-5 w-5" />
+                  Layout Visualizer
+                </Link>
+                <Link
+                  href="/ai-tools/certificate-generator"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 text-lg font-semibold"
+                >
+                  <Users className="h-5 w-5" />
+                  Certificates
+                </Link>
                 {user && (
                   <Link
                     href="/dashboard"
@@ -79,7 +95,13 @@ export default function Header() {
               Communities
             </Link>
             <Link href="/ai-tools/team-formation" className="font-medium transition-colors hover:text-primary">
-              AI Tools
+              AI Teams
+            </Link>
+            <Link href="/ai-tools/certificate-generator" className="font-medium transition-colors hover:text-primary">
+              Certificates
+            </Link>
+            <Link href="/layout-visualizer" className="font-medium transition-colors hover:text-primary">
+              Layout Visualizer
             </Link>
             {user && (
               <Link href="/dashboard" className="font-medium transition-colors hover:text-primary">

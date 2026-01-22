@@ -1,4 +1,6 @@
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
@@ -64,9 +66,12 @@ class EventAnalytics:
         # --- Conditional Analysis ---
 
         # Analyze country/institution if column exists
-        if 'country' in participant_df.columns:
-            stats['institutions'] = participant_df['country'].nunique()
-            stats['institution_dist'] = participant_df['country'].value_counts().to_dict()
+        # Analyze country/institution if column exists
+        col_institution = 'country' if 'country' in participant_df.columns else 'institution' if 'institution' in participant_df.columns else None
+        
+        if col_institution:
+            stats['institutions'] = participant_df[col_institution].nunique()
+            stats['institution_dist'] = participant_df[col_institution].value_counts().to_dict()
             stats['top_5_institutions'] = dict(list(stats['institution_dist'].items())[:5])
         
         # Analyze ticket type if column exists
@@ -121,26 +126,33 @@ class EventAnalytics:
                 'sessions_by_rating': {}
             }
         
+        # Determine rating column
+        col_rating = 'rating_score' if 'rating_score' in feedback_df.columns else 'rating' if 'rating' in feedback_df.columns else None
+        
+        if not col_rating:
+            print("⚠️  No rating column found in feedback data")
+            return stats
+            
         stats = {
             'total_feedback': len(feedback_df),
-            'avg_rating': feedback_df['rating_score'].mean(),
-            'median_rating': feedback_df['rating_score'].median(),
-            'std_rating': feedback_df['rating_score'].std(),
-            'sessions_by_rating': feedback_df.groupby('session_name')['rating_score']
+            'avg_rating': feedback_df[col_rating].mean(),
+            'median_rating': feedback_df[col_rating].median(),
+            'std_rating': feedback_df[col_rating].std(),
+            'sessions_by_rating': feedback_df.groupby('session_name')[col_rating]
                                            .mean()
                                            .sort_values(ascending=False)
                                            .to_dict()
         }
         
         # Rating distribution
-        stats['rating_distribution'] = feedback_df['rating_score'].value_counts().sort_index().to_dict()
+        stats['rating_distribution'] = feedback_df[col_rating].value_counts().sort_index().to_dict()
         
         # Response rate
         if 'attendee_id' in feedback_df.columns:
             stats['unique_respondents'] = feedback_df['attendee_id'].nunique()
         
         # Top and bottom rated sessions
-        session_ratings = feedback_df.groupby('session_name')['rating_score'].mean().sort_values(ascending=False)
+        session_ratings = feedback_df.groupby('session_name')[col_rating].mean().sort_values(ascending=False)
         if len(session_ratings) > 0:
             stats['top_session'] = {
                 'name': session_ratings.index[0],
@@ -159,12 +171,12 @@ class EventAnalytics:
         }
         
         # Performance categories
-        stats['excellent_ratings'] = (feedback_df['rating_score'] >= 4.5).sum()
-        stats['good_ratings'] = ((feedback_df['rating_score'] >= 4.0) & 
-                                 (feedback_df['rating_score'] < 4.5)).sum()
-        stats['average_ratings'] = ((feedback_df['rating_score'] >= 3.5) & 
-                                    (feedback_df['rating_score'] < 4.0)).sum()
-        stats['poor_ratings'] = (feedback_df['rating_score'] < 3.5).sum()
+        stats['excellent_ratings'] = (feedback_df[col_rating] >= 4.5).sum()
+        stats['good_ratings'] = ((feedback_df[col_rating] >= 4.0) & 
+                                 (feedback_df[col_rating] < 4.5)).sum()
+        stats['average_ratings'] = ((feedback_df[col_rating] >= 3.5) & 
+                                    (feedback_df[col_rating] < 4.0)).sum()
+        stats['poor_ratings'] = (feedback_df[col_rating] < 3.5).sum()
         
         return stats
     
@@ -230,7 +242,7 @@ class EventAnalytics:
         # Participant analytics
         participant_stats = self.get_participant_stats(participant_df)
         stats.update(participant_stats)
-        print(f"  ✓ Analyzed {stats['total_participants']} participants from {stats['institutions']} institutions")
+        print(f"  ✓ Analyzed {stats['total_participants']} participants from {stats.get('institutions', 0)} institutions")
         
         # Feedback analytics
         feedback_stats = self.get_feedback_stats(feedback_df)
@@ -268,9 +280,16 @@ class EventAnalytics:
             return False
         
         try:
+            # Determine rating column
+            col_rating = 'rating_score' if 'rating_score' in feedback_df.columns else 'rating' if 'rating' in feedback_df.columns else None
+            
+            if not col_rating:
+                print("⚠️  No rating column found for chart generation")
+                return False
+
             # Calculate session ratings
             ratings_data = feedback_df.groupby('session_name').agg({
-                'rating_score': ['mean', 'count', 'std']
+                col_rating: ['mean', 'count', 'std']
             }).round(2)
             ratings_data.columns = ['mean_rating', 'response_count', 'std_rating']
             ratings_data = ratings_data.sort_values('mean_rating', ascending=True)
@@ -372,8 +391,10 @@ class EventAnalytics:
                         fontsize=20, fontweight='bold', y=0.995)
             
             # 1. Top Institutions/Colleges
-            if 'country' in participant_df.columns:
-                institution_counts = participant_df['country'].value_counts().head(10)
+            col_institution = 'country' if 'country' in participant_df.columns else 'institution' if 'institution' in participant_df.columns else None
+            
+            if col_institution:
+                institution_counts = participant_df[col_institution].value_counts().head(10)
                 axes[0, 0].barh(institution_counts.index, institution_counts.values, 
                                color='#3498DB', alpha=0.8, edgecolor='#2C3E50')
                 axes[0, 0].set_xlabel('Number of Participants', fontweight='bold', fontsize=11)
@@ -383,6 +404,8 @@ class EventAnalytics:
                 
                 for i, v in enumerate(institution_counts.values):
                     axes[0, 0].text(v + 0.2, i, str(v), va='center', fontweight='bold')
+            else:
+                axes[0, 0].set_visible(False)
             
             # 2. Participant Type Distribution (Student/Faculty/Industry)
             if 'ticket_type' in participant_df.columns:
@@ -401,6 +424,8 @@ class EventAnalytics:
                 )
                 axes[0, 1].set_title('Participant Category Distribution', 
                                     fontweight='bold', fontsize=13)
+            else:
+                axes[0, 1].set_visible(False)
             
             # 3. Organization Size Distribution
             if 'company_size' in participant_df.columns:
@@ -419,6 +444,8 @@ class EventAnalytics:
                 
                 for i, v in enumerate(company_data.values):
                     axes[1, 0].text(i, v + 0.3, str(v), ha='center', fontweight='bold')
+            else:
+                axes[1, 0].set_visible(False)
             
             # 4. Registration Timeline
             if 'registration_date' in participant_df.columns:
@@ -444,6 +471,8 @@ class EventAnalytics:
                                    fontweight='bold', fontsize=10,
                                    bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.7),
                                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+            else:
+                axes[1, 1].set_visible(False)
             
             plt.tight_layout()
             plt.savefig(output_path, bbox_inches='tight', dpi=self.chart_config.dpi)

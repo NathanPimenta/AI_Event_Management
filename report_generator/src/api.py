@@ -10,8 +10,8 @@ from typing import List, Optional
 import json
 import uuid
 import io
-
 from pydantic import BaseModel
+
 try:
     import markdown2
 except ImportError as e:
@@ -54,6 +54,7 @@ class ReportRequest(BaseModel):
     institution_name: str
     ollama_model: str = "llama3:8b"
     generate_ai_recommendations: bool = True
+    use_custom_template: bool = False  # Added mapping for frontend request
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -98,7 +99,8 @@ REQUIRED_FILES = {
     'attendees.csv': {'type': 'csv', 'required': True},
     'feedback.csv': {'type': 'csv', 'required': True},
     'crowd_analytics.json': {'type': 'json', 'required': False},
-    'social_mentions.json': {'type': 'json', 'required': False}
+    'social_mentions.json': {'type': 'json', 'required': False},
+    'custom_template.tex': {'type': 'tex', 'required': False}  # Added template support
 }
 
 @app.post("/upload/{file_type}")
@@ -112,6 +114,8 @@ async def upload_file(file_type: str, file: UploadFile = File(...)):
     # Validate file extension
     expected_type = REQUIRED_FILES[file_type]['type']
     file_ext = file.filename.split('.')[-1].lower()
+    
+    # Simple extension check - note: file names can be tricky, but frontend sends specific names
     if file_ext != expected_type:
         raise HTTPException(
             status_code=400, 
@@ -153,6 +157,13 @@ async def generate_event_report(request: ReportRequest):
         # Generate a unique suffix for the report filename
         unique_id = str(uuid.uuid4())[:8]
         report_filename = f"event_report_{unique_id}.md"
+        
+        # Check for custom template
+        custom_template_path = None
+        if request.use_custom_template:
+            potential_path = DATA_DIR / "custom_template.tex"
+            if potential_path.exists():
+                custom_template_path = potential_path
 
         config = EventReportConfig(
             event_name=request.event_name,
@@ -160,7 +171,8 @@ async def generate_event_report(request: ReportRequest):
             institution_name=request.institution_name,
             ollama_model=request.ollama_model,
             generate_ai_recommendations=request.generate_ai_recommendations,
-            report_filename=report_filename
+            report_filename=report_filename,
+            custom_template_path=custom_template_path
         )
         
         generator = EventReportGenerator(config)
@@ -185,6 +197,8 @@ async def generate_event_report(request: ReportRequest):
         }
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=f"Failed to generate report: {str(e)}"
@@ -219,7 +233,7 @@ async def download_pdf_report(filename: str):
     ul { padding-left: 20px; }
     """
     
-    # Convert HTML to PDF in memory
+    # Convert HTML to PDF in memory - fix for relative image paths if any
     pdf_file = HTML(string=html_content, base_url=str(ROOT_DIR / "output")).write_pdf(stylesheets=[CSS(string=pdf_css)])
     
     pdf_stream = io.BytesIO(pdf_file)
@@ -247,4 +261,5 @@ async def get_files_status():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # Changed port to 8003 to match frontend
+    uvicorn.run(app, host="127.0.0.1", port=8003)

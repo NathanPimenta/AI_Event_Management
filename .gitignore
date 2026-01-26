@@ -68,3 +68,8 @@ build_output.log
 sent_emails.log
 *.csv
 *.txt
+*.png 
+*.pt
+*.ttf
+*.pdf
+*.gif

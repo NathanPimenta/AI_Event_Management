@@ -31,6 +31,21 @@ try:
 except Exception:
     _HEIF_AVAILABLE = False
 
+# --- Additional imports for CLIP and YOLO ---
+try:
+    from transformers import CLIPProcessor, CLIPModel
+    _CLIP_AVAILABLE = True
+except ImportError:
+    _CLIP_AVAILABLE = False
+    print("!!! WARNING: transformers not available for CLIP.")
+
+try:
+    from ultralytics import YOLO
+    _YOLO_AVAILABLE = True
+except ImportError:
+    _YOLO_AVAILABLE = False
+    print("!!! WARNING: ultralytics not available for YOLO.")
+
 # --- CONFIGURATION ---
 #DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1neAVyq2-TQkkNW5R_5WVjrr1WOjBy3UN?usp=sharing"
 DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1lU-F433mn_9iGjm2TkBVTngynWlSDTrq?usp=sharing"
@@ -40,17 +55,22 @@ MUSIC_FILE_PATH = "assets/background_music.mp3"
 MAX_FILES_TO_PROCESS = 100
 IMAGES_FOR_REEL = 15
 
+# User input for reel type
+REEL_TYPE = input("What kind of reel do you want to create? (e.g., 'birthday party', 'wedding ceremony', 'corporate event', 'sports game'): ").strip()
+if not REEL_TYPE:
+    REEL_TYPE = "event"  # Default fallback
+
 # Target video dimensions (vertical 9:16 reel)
 TARGET_W = 1080
 TARGET_H = 1920
 
-# --- AI MODEL SCORING WEIGHTS ---
-W_TECH = 0.2
-W_SEM = 0.4
-W_ENG = 0.4
+# --- AI MODEL SCORING WEIGHTS (Updated for Image Quality Focus) ---
+W_TECH = 0.5  # Increased from 0.2 - prioritize technical quality
+W_SEM = 0.25  # Decreased from 0.4 - semantic content less important
+W_ENG = 0.25  # Decreased from 0.4 - engagement secondary to quality
 
 # --- PATH TO YOUR TRAINED PYTORCH MODEL ---
-PYTORCH_NIMA_MODEL_PATH = "nima_efficientnet-b0_ava_4060.pth"
+PYTORCH_NIMA_MODEL_PATH = "planify_reelmaker/nima_efficientnet_b3_ava_4060.pth"
 
 # --- Device Selection (GPU if available, otherwise CPU) ---
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -150,14 +170,15 @@ def pad_image_to_target(input_path, output_path, target_w=TARGET_W, target_h=TAR
 print("--- Initializing AI Models (this may take a moment) ---")
 NIMA_MODEL_PT = None
 YOLO_MODEL = None
-EMOTION_MODEL = None
+CLIP_MODEL = None
+CLIP_PROCESSOR = None
 MODELS = None
 
 try:
     # 1) Load NIMA PyTorch model if class exists and path exists
     if NimaEfficientNet is not None and os.path.exists(PYTORCH_NIMA_MODEL_PATH):
         try:
-            NIMA_MODEL_PT = NimaEfficientNet()  # instantiate (adjust if constructor differs)
+            NIMA_MODEL_PT = NimaEfficientNet(model_variant="efficientnet-b3")  # instantiate (adjust if constructor differs)
             state_dict = torch.load(PYTORCH_NIMA_MODEL_PATH, map_location=DEVICE)
 
             # handle DataParallel 'module.' keys
@@ -179,19 +200,42 @@ try:
     else:
         print(f"!!! WARNING: Local PyTorch NIMA model file not found at '{PYTORCH_NIMA_MODEL_PATH}'. Using defaults.")
 
-    # 2) Semantic model placeholder (YOLO)
-    YOLO_MODEL = None  # TODO: load your YOLO model here
-    print("   - Semantic Model (YOLO) placeholder created.")
+    # 2) Load CLIP model
+    if _CLIP_AVAILABLE:
+        try:
+            CLIP_MODEL = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+            CLIP_PROCESSOR = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+            CLIP_MODEL.to(DEVICE)
+            CLIP_MODEL.eval()
+            print("   - CLIP Model loaded successfully.")
+        except Exception as ex:
+            print(f"!!! WARNING: Failed to load CLIP model: {ex}")
+            CLIP_MODEL = None
+            CLIP_PROCESSOR = None
+    else:
+        print("!!! WARNING: CLIP not available.")
 
-    # 3) Emotion model placeholder
-    EMOTION_MODEL = None  # TODO: load emotion model here
-    print("   - Emotion Model placeholder created.")
+    # 3) Load YOLO model
+    if _YOLO_AVAILABLE:
+        try:
+            YOLO_MODEL = YOLO('yolov8n.pt')  # Adjust path if you have a local model
+            print("   - YOLO Model loaded successfully.")
+        except Exception as ex:
+            print(f"!!! WARNING: Failed to load YOLO model: {ex}")
+            YOLO_MODEL = None
+    else:
+        print("!!! WARNING: YOLO not available.")
+
+    # 4) No emotion model needed
+    print("   - Emotion model removed as requested.")
 
     MODELS = {
         "nima_pt": NIMA_MODEL_PT,
         "yolo": YOLO_MODEL,
-        "emotion": EMOTION_MODEL,
-        "device": DEVICE
+        "clip": CLIP_MODEL,
+        "clip_processor": CLIP_PROCESSOR,
+        "device": DEVICE,
+        "reel_type": REEL_TYPE
     }
     print("--- Model Initialization Complete ---")
 
@@ -233,7 +277,8 @@ def run_pipeline():
 
     for media in clean_media_objects:
         try:
-            scores = image_scorer.get_all_scores(media['array'], MODELS)
+            is_original = media.get('is_original_image', True)  # Default to True for backward compatibility
+            scores = image_scorer.get_all_scores(media['array'], MODELS, is_original)
         except Exception as ex_score:
             print(f"   - ERROR scoring {media.get('name', 'unknown')}: {ex_score}")
             traceback.print_exc()
@@ -243,18 +288,62 @@ def run_pipeline():
                       (W_SEM  * scores.get('semantic_score', 0.0)) + \
                       (W_ENG  * scores.get('engagement_score', 0.0))
 
-        scored_media_data.append((media, final_score))
+        # Store detected objects for ordering
+        media_with_scores = media.copy()
+        media_with_scores['scores'] = scores
+        media_with_scores['final_score'] = final_score
+        media_with_scores['detected_objects'] = scores.get('detected_objects', [])
+
+        scored_media_data.append(media_with_scores)
         print(f"   - Scored {media['name']}: Tech({scores.get('technical_score',0):.2f}), "
               f"Sem({scores.get('semantic_score',0):.2f}), Eng({scores.get('engagement_score',0):.2f}) -> FINAL: {final_score:.2f}")
+        if scores.get('detected_objects'):
+            print(f"     - Detected objects: {', '.join(scores['detected_objects'])}")
 
     if not scored_media_data:
         print("Pipeline stopped: Could not score any images.")
         return
 
-    # Sort and select top
-    scored_media_data.sort(key=lambda item: item[1], reverse=True)
-    print(f"\n-> Selecting the top {IMAGES_FOR_REEL} media assets for the reel.")
-    top_media_objects = [item[0] for item in scored_media_data[:IMAGES_FOR_REEL]]
+    # Sort by final score first
+    scored_media_data.sort(key=lambda item: item['final_score'], reverse=True)
+
+    # Apply YOLO-based logical ordering for the top images
+    print(f"\n-> Applying logical ordering based on detected objects for reel type: '{REEL_TYPE}'")
+    top_scored_media = scored_media_data[:IMAGES_FOR_REEL]
+
+    # Define logical ordering patterns based on reel type
+    ordering_patterns = {
+        "birthday party": ["cake", "person", "balloon", "gift", "candle", "food", "drink"],
+        "wedding ceremony": ["person", "dress", "suit", "ring", "flower", "cake", "church", "dance"],
+        "corporate event": ["person", "microphone", "laptop", "presentation", "handshake", "group", "food"],
+        "sports game": ["person", "ball", "sports ball", "crowd", "field", "goal", "trophy", "team"],
+        "concert": ["person", "microphone", "guitar", "crowd", "stage", "light", "speaker", "drum"],
+        "graduation": ["person", "cap", "gown", "diploma", "stage", "crowd", "building", "book"],
+        "event": ["person", "crowd", "food", "drink", "stage", "microphone", "group"]  # Default
+    }
+
+    # Get ordering pattern for the reel type
+    pattern = ordering_patterns.get(REEL_TYPE.lower(), ordering_patterns["event"])
+
+    # Function to calculate ordering score based on detected objects
+    def get_ordering_score(media_item, pattern):
+        detected = media_item.get('detected_objects', [])
+        score = 0
+        for i, obj_type in enumerate(pattern):
+            if any(obj_type in detected_obj.lower() for detected_obj in detected):
+                score += len(pattern) - i  # Higher score for objects earlier in the pattern
+        return score
+
+    # Sort top images by ordering score (descending), then by final score (descending)
+    top_scored_media.sort(key=lambda item: (get_ordering_score(item, pattern), item['final_score']), reverse=True)
+
+    print(f"\n-> Selecting the top {IMAGES_FOR_REEL} media assets for the reel (ordered logically).")
+    top_media_objects = top_scored_media[:IMAGES_FOR_REEL]
+
+    # Display the ordered selection
+    for i, media in enumerate(top_media_objects, 1):
+        detected = media.get('detected_objects', [])
+        print(f"   {i}. {media['name']} (Score: {media['final_score']:.2f}) - Objects: {', '.join(detected) if detected else 'None'}")
 
     # MODULE 3: Save temp images for video gen
     print(f"\n-> Preparing top {len(top_media_objects)} assets for video generation...")

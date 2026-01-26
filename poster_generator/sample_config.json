@@ -1,0 +1,62 @@
+{
+    "global_settings": {
+        "output_format": "png",
+        "default_font": "Roboto"
+    },
+    "layers": [
+        {
+            "type": "text",
+            "content": "SUMMER BASH",
+            "position": {
+                "x": "center",
+                "y": 100
+            },
+            "style": {
+                "font": "Lobster",
+                "size": 120,
+                "color": "#FFD700",
+                "effect": "glow"
+            }
+        },
+        {
+            "type": "text",
+            "content": "Join us for the party!",
+            "position": {
+                "x": "center",
+                "y": 300
+            },
+            "style": {
+                "font": "Open Sans",
+                "size": 60,
+                "color": "white",
+                "effect": "shadow"
+            }
+        },
+        {
+            "type": "text",
+            "content": "June 15th, 2024",
+            "position": {
+                "x": 50,
+                "y": 1000
+            },
+            "style": {
+                "size": 40,
+                "color": "white"
+            }
+        },
+        {
+            "type": "text",
+            "content": "Call: 555-0199",
+            "position": {
+                "x": "center",
+                "y": 1200
+            },
+            "style": {
+                "font": "Oswald",
+                "size": 50,
+                "color": "white",
+                "effect": "outline"
+            }
+        }
+    ]
+}

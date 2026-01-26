@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
-import { Menu, User, LogOut, Home, Calendar, Users } from "lucide-react"
+import { Menu, User, LogOut, Home, Calendar, Users, Award, FileText, Search, ChevronDown, ImageIcon } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ModeToggle } from "./mode-toggle"
@@ -55,6 +55,49 @@ export default function Header() {
                   <Users className="h-5 w-5" />
                   Communities
                 </Link>
+                <div className="pl-2 border-l-2 border-muted space-y-2">
+                  <span className="text-sm text-muted-foreground font-medium">AI Tools</span>
+                  <Link
+                    href="/ai-tools/team-formation"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Team Formation
+                  </Link>
+                  <Link
+                    href="/ai-tools/certificate-generator"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <Award className="h-4 w-4" />
+                    Certificate Generator
+                  </Link>
+                  <Link
+                    href="/ai-tools/report-generator"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Report Generator
+                  </Link>
+                  <Link
+                    href="/ai-tools/scraper"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <Search className="h-4 w-4" />
+                    Scraper
+                  </Link>
+                  <Link
+                    href="/ai-tools/poster-generator"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    Poster Generator
+                  </Link>
+                </div>
                 <Link
                   href="/layout-visualizer"
                   onClick={() => setOpen(false)}
@@ -86,9 +129,46 @@ export default function Header() {
             <Link href="/communities" className="font-medium transition-colors hover:text-primary">
               Communities
             </Link>
-            <Link href="/ai-tools/team-formation" className="font-medium transition-colors hover:text-primary">
-              AI Tools
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="font-medium gap-1 h-auto p-0 hover:bg-transparent hover:text-primary">
+                  AI Tools
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/team-formation" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Team Formation
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/certificate-generator" className="flex items-center gap-2">
+                    <Award className="h-4 w-4" />
+                    Certificate Generator
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/report-generator" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Report Generator
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/scraper" className="flex items-center gap-2">
+                    <Search className="h-4 w-4" />
+                    Scraper
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/poster-generator" className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Poster Generator
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Link href="/layout-visualizer" className="font-medium transition-colors hover:text-primary">
               Layout Visualizer
             </Link>

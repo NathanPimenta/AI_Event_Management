@@ -5,7 +5,7 @@ import imagehash
 import shutil
 import numpy as np
 from PIL import Image
-from moviepy.editor import VideoFileClip
+from moviepy import VideoFileClip
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
@@ -14,16 +14,23 @@ import pillow_heif
 # --- CONFIGURATION ---
 # Google Drive settings
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-CREDENTIALS_FILE = 'credentials.json' # Make sure this file exists
+CREDENTIALS_FILE = 'planify_reelmaker/credentials.json' # Make sure this file exists
 
-# Quality filtering thresholds
-BLUR_THRESHOLD = 100.0  # Lower values are more blurry
-EXPOSURE_THRESHOLD_LOW = 30   # Average pixel intensity for underexposure
-EXPOSURE_THRESHOLD_HIGH = 225 # Average pixel intensity for overexposure
-SIMILARITY_THRESHOLD = 5     # pHash distance; lower means more similar
+# Quality filtering thresholds - RELAXED FOR MOBILE PHOTOS
+BLUR_THRESHOLD = 30.0  # Further reduced for mobile photos
+EXPOSURE_THRESHOLD_LOW = 15   # Allow very dark images
+EXPOSURE_THRESHOLD_HIGH = 240 # Allow very bright images
+SIMILARITY_THRESHOLD = 12     # Keep aggressive deduplication
+BRIGHTNESS_THRESHOLD_LOW = 20  # Allow very dark images
+BRIGHTNESS_THRESHOLD_HIGH = 235 # Allow very bright images
+CONTRAST_THRESHOLD = 10      # Allow very low contrast
+NOISE_THRESHOLD = 80.0       # Significantly increased for mobile photos
+IMAGE_PRIORITY_BONUS = 1.5    # Keep bonus for original images
 
-# Video processing settings
-SCENE_CHANGE_THRESHOLD = 30.0 # Threshold for detecting a new scene in a video
+# Video processing settings - REDUCED VIDEO FRAME EXTRACTION
+SCENE_CHANGE_THRESHOLD = 50.0 # Increased from 30 - fewer keyframes from videos
+MAX_KEYFRAMES_PER_VIDEO = 3   # New: limit keyframes per video
+IMAGE_PRIORITY_BONUS = 1.5    # Reduced from 2.0 - smaller bonus for original images
 
 # --- AUTHENTICATION ---
 def get_drive_service():
@@ -41,27 +48,71 @@ def get_drive_service():
     return None
 
 # --- CORE PRE-PROCESSING FUNCTIONS ---
-def filter_media_by_quality(image_array, image_name):
+def filter_media_by_quality(image_array, image_name, is_original_image=True):
     """
-    Performs initial quality checks on an image array (from memory).
+    Performs comprehensive quality checks on an image array.
     Returns True if the image passes, False otherwise.
+    is_original_image: True for original images, False for video keyframes
     """
     try:
-        # 1. Blurriness Check using Laplacian Variance
+        # Convert to grayscale for analysis
         gray = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
+
+        # 1. Blurriness Check using Laplacian Variance
         laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
         if laplacian_var < BLUR_THRESHOLD:
-            print(f"   - DISCARDING {image_name}: Blurry (Score: {laplacian_var:.2f})")
+            print(f"   - DISCARDING {image_name}: Too blurry (Score: {laplacian_var:.2f} < {BLUR_THRESHOLD})")
             return False
 
         # 2. Exposure Check using histogram analysis
         mean_exposure = np.mean(gray)
         if mean_exposure < EXPOSURE_THRESHOLD_LOW or mean_exposure > EXPOSURE_THRESHOLD_HIGH:
-            print(f"   - DISCARDING {image_name}: Bad Exposure (Value: {mean_exposure:.2f})")
+            print(f"   - DISCARDING {image_name}: Bad exposure (Value: {mean_exposure:.2f})")
             return False
-            
+
+        # 3. Brightness Check
+        if mean_exposure < BRIGHTNESS_THRESHOLD_LOW or mean_exposure > BRIGHTNESS_THRESHOLD_HIGH:
+            print(f"   - DISCARDING {image_name}: Poor brightness (Value: {mean_exposure:.2f})")
+            return False
+
+        # 4. Contrast Check using standard deviation
+        contrast = np.std(gray)
+        if contrast < CONTRAST_THRESHOLD:
+            print(f"   - DISCARDING {image_name}: Low contrast (Value: {contrast:.2f} < {CONTRAST_THRESHOLD})")
+            return False
+
+        # 5. Noise Check using total variation
+        # Calculate noise as the difference between original and blurred image
+        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+        noise_level = np.mean(np.abs(gray - blurred))
+        if noise_level > NOISE_THRESHOLD:
+            print(f"   - DISCARDING {image_name}: Too noisy (Noise: {noise_level:.2f} > {NOISE_THRESHOLD})")
+            return False
+
+        # 6. Image size check - ensure minimum resolution
+        height, width = image_array.shape[:2]
+        min_dimension = min(height, width)
+        if min_dimension < 500:  # Minimum 500px on smallest dimension
+            print(f"   - DISCARDING {image_name}: Too small ({width}x{height})")
+            return False
+
+        # 7. Aspect ratio check - avoid extremely skewed images
+        aspect_ratio = max(width, height) / min(width, height)
+        if aspect_ratio > 3.0:  # Maximum 3:1 aspect ratio
+            print(f"   - DISCARDING {image_name}: Extreme aspect ratio ({aspect_ratio:.2f}:1)")
+            return False
+
         # If all checks pass
+        quality_score = (laplacian_var / 200) + (contrast / 100) + (1 - noise_level/5)
+        quality_score = min(quality_score, 3.0)  # Cap at 3.0
+
+        # Bonus for original images
+        if is_original_image:
+            quality_score += IMAGE_PRIORITY_BONUS
+
+        print(f"   - ACCEPTED {image_name}: Quality score {quality_score:.2f} (Blur: {laplacian_var:.1f}, Contrast: {contrast:.1f}, Noise: {noise_level:.2f})")
         return True
+
     except Exception as e:
         print(f"   - Warning: Quality check failed for {image_name}. Error: {e}")
         return False
@@ -69,11 +120,12 @@ def filter_media_by_quality(image_array, image_name):
 def process_video_from_stream(video_stream, video_name):
     """
     Processes a video from an in-memory stream to extract keyframes.
-    Returns a list of tuples: (numpy_array, frame_name)
+    Returns a list of tuples: (numpy_array, frame_name, is_original_image)
+    Limited keyframes per video to prioritize original images.
     """
-    print(f"-> Processing video: {video_name}")
+    print(f"-> Processing video: {video_name} (Limited to {MAX_KEYFRAMES_PER_VIDEO} keyframes)")
     keyframes = []
-    
+
     # Write stream to a temporary file for moviepy/opencv to read
     temp_video_path = f"temp_{video_name}"
     with open(temp_video_path, 'wb') as f:
@@ -82,43 +134,49 @@ def process_video_from_stream(video_stream, video_name):
     try:
         cap = cv2.VideoCapture(temp_video_path)
         prev_frame = None
-        
-        while cap.isOpened():
+        keyframe_count = 0
+
+        while cap.isOpened() and keyframe_count < MAX_KEYFRAMES_PER_VIDEO:
             ret, frame = cap.read()
             if not ret:
                 break
-            
+
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            
+
             if prev_frame is not None:
                 # Calculate the Mean Squared Error between consecutive frames
                 mse = np.mean((gray - prev_frame) ** 2)
-                
+
                 # If MSE exceeds threshold, it's a new scene, save the frame
                 if mse > SCENE_CHANGE_THRESHOLD:
                     # Convert frame from BGR (OpenCV) to RGB (PIL/moviepy)
                     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    keyframes.append((rgb_frame, f"{os.path.splitext(video_name)[0]}_keyframe_{len(keyframes)+1}.jpg"))
-            
+                    keyframes.append((rgb_frame, f"{os.path.splitext(video_name)[0]}_keyframe_{len(keyframes)+1}.jpg", False))
+                    keyframe_count += 1
+
             prev_frame = gray
 
-        # If no scenes were detected, just take the first frame
-        if not keyframes:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        # If no scenes were detected but we haven't reached the limit, take the middle frame
+        if not keyframes and keyframe_count < MAX_KEYFRAMES_PER_VIDEO:
+            # Get total frames
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            middle_frame = total_frames // 2
+
+            cap.set(cv2.CAP_PROP_POS_FRAMES, middle_frame)
             ret, frame = cap.read()
             if ret:
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                keyframes.append((rgb_frame, f"{os.path.splitext(video_name)[0]}_keyframe_1.jpg"))
+                keyframes.append((rgb_frame, f"{os.path.splitext(video_name)[0]}_keyframe_1.jpg", False))
 
         cap.release()
-        print(f"   - Extracted {len(keyframes)} keyframes from video.")
+        print(f"   - Extracted {len(keyframes)} keyframes from video (limited to {MAX_KEYFRAMES_PER_VIDEO}).")
     except Exception as e:
         print(f"   - Warning: Could not process video {video_name}. Error: {e}")
     finally:
         # Clean up the temporary video file
         if os.path.exists(temp_video_path):
             os.remove(temp_video_path)
-            
+
     return keyframes
 
 # --- MAIN PIPELINE FUNCTION ---
@@ -173,8 +231,8 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
         # Process based on file type
         if 'video' in mime_type:
             keyframes = process_video_from_stream(fh, file_name)
-            for frame_array, frame_name in keyframes:
-                processed_media.append({'name': frame_name, 'array': frame_array})
+            for frame_array, frame_name, is_original in keyframes:
+                processed_media.append({'name': frame_name, 'array': frame_array, 'is_original_image': is_original})
         else: # Assumes image
             try:
                 # Convert HEIC/HEIF in memory
@@ -185,10 +243,10 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
                     ).convert("RGB")
                 else:
                     pil_image = Image.open(fh).convert("RGB")
-                
+
                 # Convert PIL image to OpenCV format (numpy array) for quality checks
                 image_array = np.array(pil_image)
-                processed_media.append({'name': file_name, 'array': image_array})
+                processed_media.append({'name': file_name, 'array': image_array, 'is_original_image': True})
 
             except Exception as e:
                 print(f"   - Warning: Could not process image {file_name}. Skipping. Error: {e}")
@@ -196,10 +254,11 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
     print(f"\n-> Total raw media assets (images + keyframes): {len(processed_media)}")
 
     # 2. Filter for quality (blur & exposure)
-    print("-> Starting quality filtering...")
+    print("-> Starting quality filtering (prioritizing original images)...")
     quality_media = []
     for media in processed_media:
-        if filter_media_by_quality(media['array'], media['name']):
+        is_original = media.get('is_original_image', True)  # Default to True for backward compatibility
+        if filter_media_by_quality(media['array'], media['name'], is_original):
             quality_media.append(media)
 
     print(f"-> Quality filtering complete. Kept {len(quality_media)} assets.")

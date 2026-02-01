@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/hooks/use-auth"
-import { Users, Calendar, MessageSquare, Wand2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { Users, Calendar, MessageSquare, Wand2, Download } from "lucide-react"
 
 // Fallback event shape for initial state
 const mockEvent = {
@@ -28,29 +29,126 @@ const mockEvent = {
 export default function ManageEventPage() {
   const { id } = useParams()
   const [event, setEvent] = useState<any>(mockEvent)
+  const [attendees, setAttendees] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [savingEvent, setSavingEvent] = useState(false)
+  const [downloadingAttendees, setDownloadingAttendees] = useState(false)
   const [runningTF, setRunningTF] = useState(false)
   const [tfResults, setTfResults] = useState<any | null>(null)
   const [tfLogs, setTfLogs] = useState<string>("")
   const { user } = useAuth()
+  const { toast } = useToast()
   const router = useRouter()
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    const fetchEventAndAttendees = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`/api/events/${id}`)
-        if (!res.ok) throw new Error("Failed to fetch event")
-        const data = await res.json()
-        setEvent(data)
+        // Fetch event details
+        const eventRes = await fetch(`/api/events/${id}`)
+        if (!eventRes.ok) throw new Error("Failed to fetch event")
+        const eventData = await eventRes.json()
+        setEvent(eventData)
+
+        // Fetch attendees
+        const attendeesRes = await fetch(`/api/events/${id}/attendees`)
+        if (attendeesRes.ok) {
+          const attendeesData = await attendeesRes.json()
+          setAttendees(attendeesData)
+        }
       } catch (error) {
-        console.error("Failed to fetch event:", error)
+        console.error("Failed to fetch event/attendees:", error)
       } finally {
         setLoading(false)
       }
     }
-    if (id) fetchEvent()
+    if (id) fetchEventAndAttendees()
   }, [id])
+
+  const handleDownloadAttendees = async () => {
+    try {
+      setDownloadingAttendees(true)
+      const response = await fetch(`/api/events/${id}/attendees/export?title=${encodeURIComponent(event.title)}`)
+      if (!response.ok) throw new Error("Failed to download attendees")
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_attendees_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(link)
+      
+      toast({
+        title: "Success!",
+        description: "Attendees list downloaded successfully.",
+        variant: "default",
+      })
+    } catch (error) {
+      console.error("Failed to download attendees:", error)
+      toast({
+        title: "Error",
+        description: "Failed to download attendees. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setDownloadingAttendees(false)
+    }
+  }
+
+  const handleSaveEvent = async () => {
+    try {
+      setSavingEvent(true)
+      const response = await fetch(`/api/events/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: event.title,
+          description: event.description,
+          date: event.date,
+          endDate: event.endDate,
+          location: event.location,
+          maxAttendees: event.maxAttendees,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save event")
+      }
+
+      const updatedEvent = await response.json()
+      setEvent(updatedEvent)
+      
+      toast({
+        title: "Success!",
+        description: "Event details updated successfully.",
+        variant: "default",
+      })
+    } catch (error) {
+      console.error("Failed to save event:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save event details. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setSavingEvent(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    // Reload event data to discard changes
+    if (id) {
+      fetch(`/api/events/${id}`)
+        .then(res => res.json())
+        .then(data => setEvent(data))
+        .catch(error => console.error("Failed to reload event:", error))
+    }
+  }
 
   const runTeamFormation = async () => {
     try {
@@ -91,7 +189,7 @@ export default function ManageEventPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Manage Event: {event.title}</h1>
           <p className="text-muted-foreground">
-            {event.date ? new Date(event.date).toLocaleDateString() : ""} • {event.attendees} / {event.maxAttendees}{" "}
+            {event.date ? new Date(event.date).toLocaleDateString() : ""} • {attendees.length} / {event.maxAttendees}{" "}
             registered
           </p>
         </div>
@@ -183,20 +281,69 @@ export default function ManageEventPage() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-              <Button variant="outline">Cancel</Button>
-              <Button>Save Changes</Button>
+              <Button variant="outline" onClick={handleCancelEdit} disabled={savingEvent}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEvent} disabled={savingEvent}>
+                {savingEvent ? "Saving..." : "Save Changes"}
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
 
         <TabsContent value="attendees">
           <Card>
-            <CardHeader>
-              <CardTitle>Attendees</CardTitle>
-              <CardDescription>Manage event attendees</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Attendees</CardTitle>
+                <CardDescription>Total: {attendees.length} attendees</CardDescription>
+              </div>
+              <Button 
+                onClick={handleDownloadAttendees} 
+                disabled={downloadingAttendees || attendees.length === 0 || user?.role !== 'community_admin'}
+                className="gap-2"
+                title={user?.role !== 'community_admin' ? 'Only admins can download attendees' : ''}
+              >
+                <Download className="h-4 w-4" />
+                {downloadingAttendees ? "Downloading..." : "Download Excel"}
+              </Button>
             </CardHeader>
             <CardContent>
-              <p>Attendee management functionality would go here</p>
+              {user?.role !== 'community_admin' && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    ℹ️ Only event admins can download the attendees list.
+                  </p>
+                </div>
+              )}
+              {attendees.length === 0 ? (
+                <p className="text-muted-foreground">No attendees yet</p>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted border-b">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-medium">Name</th>
+                        <th className="px-4 py-2 text-left font-medium">Email</th>
+                        <th className="px-4 py-2 text-left font-medium">Registered At</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {attendees.map((attendee, index) => (
+                        <tr key={attendee.id} className={index % 2 === 0 ? "bg-white" : "bg-muted/30"}>
+                          <td className="px-4 py-2">{attendee.name}</td>
+                          <td className="px-4 py-2">{attendee.email}</td>
+                          <td className="px-4 py-2">
+                            {attendee.registeredAt 
+                              ? new Date(attendee.registeredAt).toLocaleDateString() 
+                              : "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

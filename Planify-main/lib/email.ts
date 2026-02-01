@@ -5,16 +5,39 @@
 
 import nodemailer from 'nodemailer'
 
+let transporter: any = null
+
 // Initialize email transporter with Brevo SMTP
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
-  port: parseInt(process.env.EMAIL_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-})
+function getTransporter() {
+  if (transporter) {
+    return transporter
+  }
+
+  const host = process.env.EMAIL_HOST || 'smtp-relay.brevo.com'
+  const port = parseInt(process.env.EMAIL_PORT || '587', 10)
+  const user = process.env.EMAIL_USER
+  const pass = process.env.EMAIL_PASSWORD
+
+  console.log(`🔧 Initializing email transporter with host: ${host}:${port}`)
+  console.log(`🔧 Using auth user: ${user ? user.substring(0, 10) + '...' : 'Not set'}`)
+
+  transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    connectionTimeout: 10000,
+    socketTimeout: 10000,
+    auth: {
+      user,
+      pass,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+  })
+
+  return transporter
+}
 
 export interface EmailPayload {
   to: string | string[]
@@ -38,7 +61,9 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
     const recipients = Array.isArray(payload.to) ? payload.to.join(', ') : payload.to
     console.log(`📧 Attempting to send email to: ${recipients}`)
     
-    const info = await transporter.sendMail({
+    const emailTransporter = getTransporter()
+    
+    const info = await emailTransporter.sendMail({
       from: process.env.EMAIL_FROM,
       to: recipients,
       subject: payload.subject,
@@ -49,7 +74,13 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
     console.log(`✅ Email sent successfully: ${info.messageId}`)
     return true
   } catch (error) {
-    console.error('❌ Email sending failed:', error)
+    console.error('❌ Email sending failed:')
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error code:', (error as any).code)
+    } else {
+      console.error('Error:', error)
+    }
     return false
   }
 }
@@ -253,5 +284,100 @@ export async function sendEventCancellationNotification(
     subject: `❌ Event Cancelled: ${eventData.title}`,
     html,
     text: `Event Cancelled: ${eventData.title}\n\nReason: ${reason}`,
+  })
+}
+
+/**
+ * Send community invitations to newly registered user
+ */
+export async function sendCommunityInvitationsEmail(
+  recipientEmail: string,
+  userName: string,
+  communities: Array<{
+    id: string
+    name: string
+    description?: string
+    inviteCode: string
+  }>
+): Promise<boolean> {
+  if (communities.length === 0) {
+    console.log(' No communities available to send invitations')
+    return true
+  }
+
+  const communitiesList = communities
+    .map(
+      (community, index) => `
+      <div class="community-card">
+        <h3 style="margin-top: 0; color: #667eea;">${index + 1}. ${community.name}</h3>
+        ${community.description ? `<p><strong>About:</strong> ${community.description}</p>` : ''}
+        <div class="invite-code">
+          <p><strong>Invite Code:</strong> <code>${community.inviteCode}</code></p>
+        </div>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/communities/join?code=${community.inviteCode}" class="button">Join Community</a>
+      </div>
+    `
+    )
+    .join('')
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 5px; }
+          .content { background: #f9f9f9; padding: 20px; margin: 20px 0; border-radius: 5px; }
+          .communities-section { margin: 20px 0; }
+          .community-card { background: white; padding: 15px; border-left: 4px solid #667eea; margin: 15px 0; border-radius: 4px; }
+          .invite-code { background: #f0f4ff; padding: 10px; border-radius: 4px; margin: 10px 0; }
+          .invite-code code { background: #e0e6ff; padding: 5px 10px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+          .button { display: inline-block; background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 10px; font-size: 14px; }
+          .button:hover { background: #764ba2; }
+          .footer { color: #666; font-size: 12px; text-align: center; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px; }
+          .welcome-text { font-size: 16px; line-height: 1.8; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>👋 Welcome to Our Community Platform, ${userName}!</h1>
+          </div>
+          
+          <div class="content">
+            <p class="welcome-text">Thank you for registering! We're excited to have you on board. Here are some communities you can join to connect with others, collaborate on projects, and participate in amazing events.</p>
+            
+            <div class="communities-section">
+              <h2 style="color: #667eea;">🌐 Available Communities</h2>
+              <p>Click any button below to join a community using the provided invite code:</p>
+              
+              ${communitiesList}
+            </div>
+            
+            <div style="background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #0066cc;">💡 Tip</h3>
+              <p>You can also browse all communities directly from your dashboard and use the invite codes to join at any time!</p>
+            </div>
+            
+            <p style="margin-top: 20px;">Happy connecting,<br><strong>The Community Team</strong></p>
+          </div>
+          
+          <div class="footer">
+            <p>You're receiving this email because you just registered for an account on our platform.</p>
+            <p>&copy; ${new Date().getFullYear()} Event Management System. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+
+  return sendEmail({
+    to: recipientEmail,
+    subject: `🎉 Welcome! Join Available Communities`,
+    html,
+    text: `Welcome to our community platform!\n\nHere are communities you can join:\n\n${communities
+      .map((c) => `${c.name}\nInvite Code: ${c.inviteCode}\n`)
+      .join('\n')}`,
   })
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { createUser, getUserByEmail } from "@/lib/db"
+import { createUser, getUserByEmail, getCommunities } from "@/lib/db"
+import { sendCommunityInvitationsEmail } from "@/lib/email"
 import bcrypt from "bcryptjs"
 
 export async function POST(request: Request) {
@@ -23,6 +24,26 @@ export async function POST(request: Request) {
       role: "audience",
       createdAt: new Date(),
     })
+
+    try {
+      console.log(`📬 Fetching communities for new user: ${email}`)
+      const communities = await getCommunities()
+      console.log(`📬 Found ${communities.length} communities`)
+      
+      // Extract necessary fields for email
+      const communitiesForEmail = communities.map((community: any) => ({
+        id: community.id,
+        name: community.name,
+        description: community.description,
+        inviteCode: community.inviteCode,
+      }))
+
+      console.log(`📬 Sending community invitations email to: ${email}`)
+      const emailSent = await sendCommunityInvitationsEmail(email, name, communitiesForEmail)
+      console.log(`📬 Community invitations email ${emailSent ? 'sent successfully' : 'failed to send'}`)
+    } catch (emailError) {
+      console.error("Error sending community invitations email:", emailError)
+    }
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user

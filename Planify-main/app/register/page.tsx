@@ -33,11 +33,8 @@ export default function RegisterPage() {
 
     try {
       await signUp(name, email, password)
-      toast({
-        title: "Success!",
-        description: "Account created successfully. Welcome to our community! You'll receive an email with available communities to join.",
-        variant: "default",
-      })
+      // Store flag to show toast on dashboard
+      localStorage.setItem("showRegistrationToast", "true")
       router.push("/dashboard")
     } catch (err: any) {
       setError(err.message || "Failed to create account")

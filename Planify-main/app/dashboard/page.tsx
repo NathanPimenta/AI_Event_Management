@@ -1,7 +1,9 @@
 "use client"
 
 import { useAuth } from "@/hooks/use-auth"
+import { useToast } from "@/hooks/use-toast"
 import { redirect } from "next/navigation"
+import { useEffect, useRef } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -16,6 +18,23 @@ import { usePermissions } from "@/hooks/use-permissions"
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const { can } = usePermissions()
+  const { toast } = useToast()
+  const toastShownRef = useRef(false)
+
+  // Show registration success toast if flag exists
+  useEffect(() => {
+    if (typeof window !== "undefined" && !toastShownRef.current && localStorage.getItem("showRegistrationToast")) {
+      toastShownRef.current = true
+      setTimeout(() => {
+        toast({
+          title: "Success!",
+          description: "Account created successfully. Welcome to our community! You'll receive an email with available communities to join.",
+          variant: "default",
+        })
+        localStorage.removeItem("showRegistrationToast")
+      }, 300)
+    }
+  }, [])
 
   // If not logged in, redirect to login page
   if (!loading && !user) {

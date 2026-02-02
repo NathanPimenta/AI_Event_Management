@@ -8,21 +8,23 @@ type ToastProps = {
   variant?: "default" | "destructive"
 }
 
-export function useToast() {
-  const toast = (props: ToastProps) => {
-    if (props.variant === "destructive") {
-      sonnerToast.error(props.title, {
-        description: props.description,
-      })
-    } else {
-      sonnerToast.success(props.title, {
-        description: props.description,
-      })
-    }
+const toast = (props: ToastProps) => {
+  const { title = '', description = '', variant = 'default' } = props
+  
+  if (variant === "destructive") {
+    sonnerToast.error(title, {
+      description: description,
+    })
+  } else {
+    sonnerToast.success(title, {
+      description: description,
+    })
   }
+}
 
+export function useToast() {
   return { toast }
 }
 
-export { sonnerToast as toast }
+export { toast }
 

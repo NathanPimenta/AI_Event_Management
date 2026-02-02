@@ -10,7 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { Users, Calendar, MessageSquare, Wand2, Download } from "lucide-react"
+import { Users, Calendar, MessageSquare, Wand2, Download, FileText } from "lucide-react"
+import { MaterialRequestsManager } from "@/components/materials/material-requests-manager"
+import { MaterialSubmissionPanel } from "@/components/materials/material-submission-panel"
+import { AttendeeSubmissionReport } from "@/components/materials/attendee-submission-report"
 
 // Fallback event shape for initial state
 const mockEvent = {
@@ -205,6 +208,10 @@ export default function ManageEventPage() {
             <Users className="h-4 w-4" />
             Attendees
           </TabsTrigger>
+          <TabsTrigger value="materials" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Materials
+          </TabsTrigger>
           <TabsTrigger value="queries" className="gap-2">
             <MessageSquare className="h-4 w-4" />
             Queries
@@ -342,6 +349,37 @@ export default function ManageEventPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="materials">
+          <Card>
+            <CardHeader>
+              <CardTitle>Material Requests & Submissions</CardTitle>
+              <CardDescription>Manage material requests from attendees and track submissions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {user?.role === 'community_admin' && (
+                <div className="space-y-4">
+                  <div className="border-b pb-6">
+                    <h3 className="text-lg font-semibold mb-4">Create & Manage Requests</h3>
+                    <MaterialRequestsManager eventId={id as string} isAdmin={true} />
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4">Material Submissions</h3>
+                <MaterialSubmissionPanel eventId={id as string} />
+              </div>
+
+              {user?.role === 'community_admin' && (
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Attendee Submission Report</h3>
+                  <AttendeeSubmissionReport eventId={id as string} isAdmin={true} />
                 </div>
               )}
             </CardContent>

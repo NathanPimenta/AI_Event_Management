@@ -12,3 +12,4 @@ imagehash
 numpy<2.0.0
 efficientnet-pytorch
 ultralytics
+exifread  # pure-Python fallback for EXIF extraction; installing system `exiftool` is recommended for best results

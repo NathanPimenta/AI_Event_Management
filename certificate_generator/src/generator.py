@@ -1,5 +1,7 @@
 import os
+import io
 import pandas as pd
+import numpy as np
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML, CSS
 import qrcode
@@ -98,11 +100,41 @@ class CertificateGenerator:
         )
 
     def generate_all(self) -> list:
-        """Main method to generate all certificates."""
+        """Main method to generate all certificates.
+
+        Accepts several `csv_path` types in `self.config`:
+        - str / Path -> treated as file path
+        - file-like object -> read via pandas
+        - bytes/bytearray -> read from BytesIO
+        - numpy.ndarray / list / dict -> converted to DataFrame directly
+        - pandas.DataFrame -> used as-is
+        """
+        csv_source = self.config.get("csv_path")
+
+        # Helpful debug output
+        print(f"   - CSV source type: {type(csv_source)}")
+
         try:
-            participants_df = pd.read_csv(self.config["csv_path"])
+            if isinstance(csv_source, pd.DataFrame):
+                participants_df = csv_source.copy()
+            elif isinstance(csv_source, (str, Path)):
+                participants_df = pd.read_csv(csv_source)
+            elif hasattr(csv_source, "read"):
+                # file-like object
+                participants_df = pd.read_csv(csv_source)
+            elif isinstance(csv_source, (bytes, bytearray)):
+                participants_df = pd.read_csv(io.BytesIO(csv_source))
+            elif isinstance(csv_source, np.ndarray):
+                participants_df = pd.DataFrame(csv_source)
+            elif isinstance(csv_source, (list, dict)):
+                participants_df = pd.DataFrame(csv_source)
+            else:
+                raise TypeError(f"Unsupported csv_path type: {type(csv_source)}")
         except FileNotFoundError:
             print(f"❌ ERROR: Participants CSV not found at {self.config['csv_path']}")
+            return []
+        except Exception as e:
+            print(f"❌ ERROR: Failed to load participants CSV: {e}")
             return []
 
         # --- AI Color Generation ---

@@ -261,6 +261,136 @@ Recommendations for Future Events:"""
         
         return recommendations
 
+    def fill_docx_template(self, template_path: 'Path', context_data: Dict[str, any]) -> Dict[str, str]:
+        """
+        Instruct the LLM to strictly fill a .docx template.
+
+        The method extracts a textual skeleton of the template and provides it along with
+        the structured context_data. The LLM is instructed to return a JSON object only,
+        where keys are exact placeholder labels found in the template and values are the
+        corresponding text/image filenames to be inserted.
+        """
+        import json
+        from pathlib import Path
+        from docx import Document
+
+        template_path = Path(template_path)
+        if not template_path.exists():
+            raise FileNotFoundError(f"Template not found: {template_path}")
+
+        # Extract a textual skeleton from the docx: paragraphs + table cell texts
+        doc = Document(str(template_path))
+        parts = []
+        for p in doc.paragraphs:
+            text = p.text.strip()
+            if text:
+                parts.append(text)
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    if cell.text and cell.text.strip():
+                        parts.append(cell.text.strip())
+
+        skeleton = "\n".join(parts)
+
+        prompt = f"""
+You are an assistant that must STRICTLY fill a Word (.docx) template.
+
+Below is the textual skeleton of the uploaded template (extracted from the .docx). The skeleton contains labels and any image markers.
+
+Template Skeleton:
+{skeleton}
+
+User Data (JSON):
+{json.dumps(context_data, ensure_ascii=False, indent=2)}
+
+Instructions (IMPORTANT):
+- Return ONLY a valid JSON object and nothing else.
+- Keys in the JSON must match the exact labels/placeholders in the template skeleton (case-sensitive) that should be replaced.
+- For textual placeholders return plain strings containing the content to insert.
+- For image placeholders return a filename (e.g., "logo.png" or "poster.png") corresponding to an uploaded image.
+- Do NOT modify the template structure or return the entire document; return only the mapping for placeholders.
+
+Provide the JSON mapping now."""
+
+        # Call LLM with deterministic settings
+        orig_temp = self.config.temperature
+        self.config.temperature = 0.0
+        try:
+            response = self._call_llm(prompt, "fill_docx_template")
+        finally:
+            self.config.temperature = orig_temp
+
+        # Parse JSON
+        try:
+            # Some LLM responses may be wrapped in Markdown code fences; remove them
+            resp = response.strip()
+            if resp.startswith('```'):
+                # remove triple-backtick wrappers and optional language tag
+                parts = resp.split('```')
+                if len(parts) >= 3:
+                    resp = parts[1]
+                else:
+                    resp = resp.replace('```', '')
+            # Locate the JSON object between the first { and last }
+            first = resp.find('{')
+            last = resp.rfind('}')
+            resp_candidate = resp[first:last+1] if first != -1 and last != -1 else resp
+
+            # Some LLMs place multiline content inside triple-quoted strings ("""...""") which is
+            # invalid JSON. Convert any triple-quoted blocks into proper JSON string literals.
+            import re
+            def _replace_triple_quotes(match):
+                inner = match.group(1)
+                # Use json.dumps to properly escape newlines/quotes
+                return json.dumps(inner)
+
+            resp_candidate = re.sub(r'"""(.*?)"""', _replace_triple_quotes, resp_candidate, flags=re.S)
+
+            parsed = json.loads(resp_candidate)
+            if not isinstance(parsed, dict):
+                raise ValueError("LLM did not return a JSON object as expected")
+            return parsed
+        except Exception as e:
+            raise ValueError(f"Failed to parse LLM response as JSON: {e}\nResponse content: {response}")
+
+    def fill_tex_template(self, template_path: 'Path', context_data: Dict[str, any]) -> str:
+        """
+        Instruct the LLM to strictly fill a .tex (LaTeX) template and return the full
+        filled .tex content as plain text (the same format as the uploaded template).
+        """
+        import json
+        from pathlib import Path
+
+        template_path = Path(template_path)
+        if not template_path.exists():
+            raise FileNotFoundError(f"Template not found: {template_path}")
+
+        template_text = template_path.read_text(encoding='utf-8')
+
+        prompt = f"""
+You are an assistant that must STRICTLY fill a LaTeX (.tex) template.
+
+Below is the EXACT LaTeX template content. Fill placeholders using the User Data, and return ONLY the complete filled .tex source. Do not include any explanations or extra text.
+
+TEMPLATE:
+{template_text}
+
+USER DATA (JSON):
+{json.dumps(context_data, ensure_ascii=False, indent=2)}
+
+RETURN the filled LaTeX document now, and nothing else.
+"""
+        # Deterministic call
+        orig_temp = self.config.temperature
+        self.config.temperature = 0.0
+        try:
+            response = self._call_llm(prompt, "fill_tex_template")
+        finally:
+            self.config.temperature = orig_temp
+
+        return response
+
 
 # Convenience functions for backward compatibility
 def get_llm_summary(comments_list: List[str], model_name: str = "llama3:8b") -> Tuple[str, str]:

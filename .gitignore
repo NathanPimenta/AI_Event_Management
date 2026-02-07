@@ -32,7 +32,8 @@ credentials.json
 # This assumes you don't need to commit any other JPG files.
 # If you do, consider putting all output into a folder like /output/ and ignore that instead.
 *.jpg
-
+*.JPG
+*.png
 
 # # # # # # # # # # # # # # # # # # # # # #
 #         Python Cache & Files          #
@@ -73,3 +74,5 @@ sent_emails.log
 *.ttf
 *.pdf
 *.gif
+*.mp4
+*.md

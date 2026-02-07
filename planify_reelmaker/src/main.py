@@ -12,6 +12,7 @@ import traceback
 from . import intelligent_ingestor
 from . import video_generator
 from . import image_scorer
+from . import exif_utils
 
 # --- Import your PyTorch model definition ---
 try:
@@ -54,6 +55,8 @@ OUTPUT_VIDEO_PATH = "output/final_reel.mp4"
 MUSIC_FILE_PATH = "assets/background_music.mp3"
 MAX_FILES_TO_PROCESS = 100
 IMAGES_FOR_REEL = 15
+# When True, try to extract EXIF timestamps from saved images and order the top assets by time
+APPLY_EXIF_TIMESTAMP_ORDERING = True
 
 # User input for reel type
 REEL_TYPE = input("What kind of reel do you want to create? (e.g., 'birthday party', 'wedding ceremony', 'corporate event', 'sports game'): ").strip()
@@ -351,6 +354,7 @@ def run_pipeline():
         os.makedirs(TEMP_MEDIA_DIR, exist_ok=True)
 
     top_image_paths = []
+    top_media_pairs = []  # list of dicts: {'media': media, 'path': saved_path}
     converted_count = 0
     skipped_count = 0
 
@@ -365,6 +369,7 @@ def run_pipeline():
                 written_path = safe_save_image_from_array(media['array'], save_path)
                 if written_path:
                     top_image_paths.append(written_path)
+                    top_media_pairs.append({'media': media, 'path': written_path})
                     if written_path.lower().endswith(".jpg") and not save_name.lower().endswith(".jpg"):
                         converted_count += 1
                 else:
@@ -378,6 +383,56 @@ def run_pipeline():
             skipped_count += 1
             print(f"   - Warning: Could not save temporary file for {media.get('name','unknown')}. Skipping. Error: {e_save}")
             traceback.print_exc()
+
+    if not top_image_paths:
+        print("!!! ERROR: No valid media files could be saved for video generation.")
+        return
+
+    print(f"   - Saved {len(top_image_paths)} images to temporary directory. Converted {converted_count}, skipped {skipped_count}.")
+
+    # Attempt EXIF timestamp-based ordering for the saved images; prefer original downloaded files when available
+    if APPLY_EXIF_TIMESTAMP_ORDERING:
+        try:
+            # Build list of paths to query EXIF from: prefer original download_path (raw bytes), fall back to saved image
+            exif_query_paths = []
+            path_to_pair = {}
+            for pair in top_media_pairs:
+                media = pair['media']
+                download_path = media.get('download_path')
+                if download_path and os.path.exists(download_path):
+                    key = download_path
+                else:
+                    key = pair['path']
+                exif_query_paths.append(key)
+                path_to_pair[key] = pair
+
+            ts_map = exif_utils.get_timestamps(exif_query_paths)
+
+            # Attach timestamps to media when found and reorder
+            with_ts = []
+            without_ts = []
+            for key, pair in path_to_pair.items():
+                t = ts_map.get(key)
+                if t:
+                    pair['media']['timestamp'] = t
+                    pair['timestamp'] = t
+                    with_ts.append(pair)
+                else:
+                    without_ts.append(pair)
+
+            if with_ts:
+                with_ts.sort(key=lambda p: p['timestamp'])  # oldest -> newest
+                top_media_pairs = with_ts + without_ts
+                print(f"-> Reordered top media by EXIF timestamps (found {len(with_ts)} timestamps).")
+            else:
+                print("-> No EXIF timestamps found; skipping timestamp ordering.")
+        except Exception as e_ts:
+            print(f"-> Warning: EXIF timestamp ordering failed: {e_ts}")
+            traceback.print_exc()
+
+    # Rebuild ordered lists after potential reordering
+    top_image_paths = [p['path'] for p in top_media_pairs]
+    top_media_objects = [p['media'] for p in top_media_pairs]
 
     if not top_image_paths:
         print("!!! ERROR: No valid media files could be saved for video generation.")
@@ -422,6 +477,15 @@ def run_pipeline():
             print(f"\n-> Cleaned up temporary directory: {TEMP_MEDIA_DIR}")
         except Exception as e_rm:
             print(f"\n-> Warning: Could not remove temporary directory {TEMP_MEDIA_DIR}. Error: {e_rm}")
+
+    # Also clean up raw downloads used for EXIF extraction, if present
+    temp_download_dir = 'temp_downloads/'
+    if os.path.exists(temp_download_dir):
+        try:
+            shutil.rmtree(temp_download_dir)
+            print(f"\n-> Cleaned up temporary downloads directory: {temp_download_dir}")
+        except Exception as e_rm:
+            print(f"\n-> Warning: Could not remove temporary downloads directory {temp_download_dir}. Error: {e_rm}")
 
     print(f"\n--- Pipeline Finished Successfully. AI-curated reel saved at: {OUTPUT_VIDEO_PATH} ---")
 

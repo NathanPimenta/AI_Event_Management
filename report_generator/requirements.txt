@@ -4,3 +4,7 @@ ollama
 seaborn
 markdown2
 weasyprint
+python-docx
+fastapi
+uvicorn
+python-multipart

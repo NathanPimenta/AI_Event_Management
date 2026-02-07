@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
-import { Menu, User, LogOut, Home, Calendar, Users, Award, FileText, Search, ChevronDown, ImageIcon } from "lucide-react"
+import { Menu, User, LogOut, Home, Calendar, Users, Award, FileText, Search, ChevronDown, ImageIcon, Images } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ModeToggle } from "./mode-toggle"
@@ -97,6 +97,14 @@ export default function Header() {
                     <ImageIcon className="h-4 w-4" />
                     Poster Generator
                   </Link>
+                  <Link
+                    href="/ai-tools/image-curator"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <Images className="h-4 w-4" />
+                    Image Curator
+                  </Link>
                 </div>
                 <Link
                   href="/layout-visualizer"
@@ -165,6 +173,12 @@ export default function Header() {
                   <Link href="/ai-tools/poster-generator" className="flex items-center gap-2">
                     <ImageIcon className="h-4 w-4" />
                     Poster Generator
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/image-curator" className="flex items-center gap-2">
+                    <Images className="h-4 w-4" />
+                    Image Curator
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>

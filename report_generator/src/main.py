@@ -1,4 +1,5 @@
 import os
+import docx
 from pathlib import Path
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from datetime import datetime
 import data_ingestor
 import quantitative_analyzer as qa
 import llm_analyzer
+from docx_generator import DocxReportGenerator, MissingTemplateAsset, MissingTemplatePlaceholder
 
 @dataclass
 class EventReportConfig:
@@ -202,25 +204,154 @@ class EventReportGenerator:
         
         if self.config.custom_template_path and self.config.custom_template_path.exists():
             print(f"ℹ️ Custom template found at: {self.config.custom_template_path}")
-            # In a full implementation, we would read this .tex file and fill in placeholders.
-            # For now, let's just create a companion .tex file with simple substitution as a POC.
-            try:
-                with open(self.config.custom_template_path, 'r') as tf:
-                    template_content = tf.read()
-                
-                # Simple replacement of placeholders if they exist in the sample template
-                # This assumes the user's template might have {{event_name}} style placeholders
-                filled_tex = template_content.replace("{{event_name}}", self.config.event_name) \
-                                             .replace("{{event_type}}", self.config.event_type) \
-                                             .replace("{{institution_name}}", self.config.institution_name)
-                
-                # Save the filled .tex file alongside the markdown report
-                tex_output_path = self.config.report_path.with_suffix('.tex')
-                with open(tex_output_path, 'w') as tf_out:
-                    tf_out.write(filled_tex)
-                print(f"✅ Generated LaTeX report based on custom template: {tex_output_path}")
-            except Exception as e:
-                print(f"⚠️ Failed to process custom template: {e}")
+            
+            if self.config.custom_template_path.suffix == '.docx':
+                    docx_output_path = self.config.report_path.with_suffix('.docx')
+                    
+                    # Prepare complete data dictionary
+                    report_data = {
+                        'event_name': self.config.event_name,
+                        'event_type': self.config.event_type,
+                        'institution_name': self.config.institution_name,
+                        'date': 'March 15, 2025', # Hardcoded for demo or extract from config
+                        'venue': 'Main Auditorium',
+                        'target_audience': 'Students & Faculty',
+                        'total_participants': stats.get('total_participants', 0),
+                        'avg_rating': stats.get('avg_rating', 0),
+                        'positive_themes': analysis.get('positive_themes', ''),
+                        'improvement_areas': analysis.get('improvement_areas', ''),
+                        'recommendations': recommendations,
+                        'male_count': stats.get('male_count', 0),
+                        'female_count': stats.get('female_count', 0),
+                        'student_list_table': stats.get('student_list_table', []),
+                        'detailed_report': f"The {self.config.event_name} was a significant event organized by {self.config.institution_name}. " \
+                                           f"It attracted {stats.get('total_participants')} participants. " \
+                                           f"Feedback was generally positive with an average rating of {stats.get('avg_rating', 0):.2f}. " \
+                                           f"\n\nHighlights included: {analysis.get('positive_themes', '')}"
+                    }
+                    
+                    # Prepare chart paths
+                    # Prefer uploaded images in the module's data folder if they exist (uploaded via API)
+                    data_dir = Path(__file__).parent.parent / 'data'
+                    charts = {
+                        'ratings_chart': (data_dir / 'ratings_chart.png') if (data_dir / 'ratings_chart.png').exists() else self.config.ratings_chart_path,
+                        'demographics': (data_dir / 'demographics.png') if (data_dir / 'demographics.png').exists() else self.config.demographics_chart_path,
+                        # Use uploaded poster/snapshot/logo if provided, otherwise fall back to placeholders in output
+                        'poster': (data_dir / 'poster.png') if (data_dir / 'poster.png').exists() else (self.config.output_dir / "poster_placeholder.png"),
+                        'snapshot': (data_dir / 'snapshot.png') if (data_dir / 'snapshot.png').exists() else (self.config.output_dir / "snapshot_placeholder.png"),
+                        'logo': (data_dir / 'logo.png') if (data_dir / 'logo.png').exists() else (self.config.output_dir / "logo_placeholder.png")
+                    }
+
+                    # If users uploaded generic report_image_* files via the frontend "Include images" flow,
+                    # use them as sensible fallbacks for any missing template image markers (snapshot/poster/logo).
+                    report_images = sorted([p for p in data_dir.glob('report_image_*') if p.is_file()])
+
+                    # Helper to pop next available report image
+                    def _pop_report_image():
+                        return report_images.pop(0) if report_images else None
+
+                    # Assign fallbacks in a prioritized order
+                    try:
+                        if (not charts.get('snapshot')) or (charts.get('snapshot') and not charts['snapshot'].exists()):
+                            candidate = _pop_report_image()
+                            if candidate:
+                                charts['snapshot'] = candidate
+                        if (not charts.get('poster')) or (charts.get('poster') and not charts['poster'].exists()):
+                            candidate = _pop_report_image()
+                            if candidate:
+                                charts['poster'] = candidate
+                        if (not charts.get('logo')) or (charts.get('logo') and not charts['logo'].exists()):
+                            candidate = _pop_report_image()
+                            if candidate:
+                                charts['logo'] = candidate
+                    except Exception:
+                        # Non-critical: if any filesystem issues occur, ignore and proceed; generator will report missing assets
+                        pass
+                    
+                    # Create generator and attempt to generate. We will consult the LLM to fill template placeholders strictly
+                    from docx_generator import MissingTemplateAsset, MissingTemplatePlaceholder
+
+                    # Ask the LLM to fill the .docx template strictly using provided data
+                    try:
+                        llm_config = llm_analyzer.LLMConfig(model_name=self.config.ollama_model)
+                        llm_analyzer_instance = llm_analyzer.EventFeedbackAnalyzer(llm_config)
+
+                        print("🔗 Asking LLM to fill the .docx template. Passing the entire template content for strict adherence.")
+                        llm_mapping = llm_analyzer_instance.fill_docx_template(self.config.custom_template_path, report_data)
+                        if isinstance(llm_mapping, dict):
+                            # Merge or override report_data with mappings returned by LLM
+                            report_data.update(llm_mapping)
+                            print("✅ Applied LLM-provided template mapping to report data.")
+
+                            # If LLM mapping referenced image filenames for known markers, prefer uploaded images
+                            data_dir = Path(__file__).parent.parent / 'data'
+                            for key, val in llm_mapping.items():
+                                if isinstance(val, str) and val.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                                    fn = data_dir / val
+                                    if fn.exists():
+                                        # Map common marker keys to charts entries
+                                        if 'poster' in key.lower() or 'event poster' in key.lower():
+                                            charts['poster'] = fn
+                                        if 'snapshot' in key.lower() or 'snapshot of' in key.lower():
+                                            charts['snapshot'] = fn
+                                        if 'logo' in key.lower():
+                                            charts['logo'] = fn
+                                        if 'feedback' in key.lower() or 'ratings' in key.lower():
+                                            charts['ratings_chart'] = fn
+                        else:
+                            print("⚠️ LLM did not provide a mapping; proceeding with default report data.")
+                    except Exception as e:
+                        print(f"⚠️ LLM template fill failed: {e}")
+
+                    generator = DocxReportGenerator(self.config.custom_template_path)
+                    try:
+                        generator.generate_report(report_data, docx_output_path, charts)
+                        print(f"✅ Generated strict Word report based on custom template: {docx_output_path}")
+                    except MissingTemplatePlaceholder as e:
+                        print(f"❌ Template validation failed: {e}")
+                        print("Please update your .docx template to include the required placeholders and retry.")
+                        raise
+                    except MissingTemplateAsset as e:
+                        markers = [m.get('marker') for m in e.missing_assets]
+                        print(f"❌ Missing assets required by the template: {markers}")
+                        print("Frontend is expected to prompt the user for the required images. Aborting Word report generation.")
+                        raise
+                    except Exception as e:
+                        print(f"⚠️ Failed to process custom .docx template: {e}")
+                        import traceback
+                        traceback.print_exc()
+            
+            else:
+                # Existing logic for .tex or other text-based templates
+                try:
+                    # Build a context dict similar to the docx branch for the LLM
+                    context_data = {
+                        'event_name': self.config.event_name,
+                        'event_type': self.config.event_type,
+                        'institution_name': self.config.institution_name,
+                        'date': 'March 15, 2025',
+                        'venue': 'Main Auditorium',
+                        'total_participants': stats.get('total_participants', 0),
+                        'avg_rating': stats.get('avg_rating', 0),
+                        'positive_themes': analysis.get('positive_themes', ''),
+                        'improvement_areas': analysis.get('improvement_areas', ''),
+                        'recommendations': recommendations,
+                    }
+
+                    # Use the LLM to fill the LaTeX template strictly
+                    llm_config = llm_analyzer.LLMConfig(model_name=self.config.ollama_model)
+                    llm_analyzer_instance = llm_analyzer.EventFeedbackAnalyzer(llm_config)
+
+                    print("🔗 Asking LLM to fill the LaTeX template. Passing the entire template content for strict adherence.")
+                    filled_tex = llm_analyzer_instance.fill_tex_template(self.config.custom_template_path, context_data)
+
+                    # Save the filled .tex file alongside the markdown report
+                    tex_output_path = self.config.report_path.with_suffix('.tex')
+                    with open(tex_output_path, 'w', encoding='utf-8') as tf_out:
+                        tf_out.write(filled_tex)
+                    print(f"✅ Generated LaTeX report based on custom template: {tex_output_path}")
+                except Exception as e:
+                    print(f"⚠️ Failed to process custom template: {e}")
 
         # Continue with standard Markdown report generation
         with open(self.config.report_path, 'w', encoding='utf-8') as f:
@@ -407,6 +538,9 @@ class EventReportGenerator:
         except KeyboardInterrupt:
             print("\n\n⚠️  Report generation cancelled by user.")
             return False
+        except (MissingTemplateAsset, MissingTemplatePlaceholder):
+            # Re-raise template related exceptions so API callers can present meaningful errors.
+            raise
         except Exception as e:
             print(f"\n❌ ERROR during report generation: {e}")
             import traceback

@@ -31,6 +31,7 @@ sys.path.append(str(Path(__file__).parent))
 
 from data_ingestor import load_data
 from main import EventReportGenerator, EventReportConfig
+from docx_generator import MissingTemplateAsset, MissingTemplatePlaceholder
 
 app = FastAPI(title="Event Report Generator API")
 
@@ -100,37 +101,70 @@ REQUIRED_FILES = {
     'feedback.csv': {'type': 'csv', 'required': True},
     'crowd_analytics.json': {'type': 'json', 'required': False},
     'social_mentions.json': {'type': 'json', 'required': False},
-    'custom_template.tex': {'type': 'tex', 'required': False}  # Added template support
+    'custom_template.tex': {'type': 'tex', 'required': False},  # Added template support
+    'custom_template.docx': {'type': 'docx', 'required': False},
+    'poster.png': {'type': 'image', 'required': False}, # Normalized name for uploads
+    'snapshot.png': {'type': 'image', 'required': False} # Normalized name for uploads
 }
 
 @app.post("/upload/{file_type}")
 async def upload_file(file_type: str, file: UploadFile = File(...)):
     """
-    Handle file uploads for different data types
+    Handle file uploads for different data types. Accepts the predefined required files
+    or common image extensions for template assets (png/jpg/gif).
     """
-    if file_type not in REQUIRED_FILES:
-        raise HTTPException(status_code=400, detail=f"Invalid file type: {file_type}")
+    # Basic sanitization: only accept a simple filename (no paths)
+    safe_name = Path(file_type).name
+    if safe_name != file_type or ".." in file_type or "/" in file_type:
+        raise HTTPException(status_code=400, detail=f"Invalid file name: {file_type}")
+
+    # Determine file extension
+    file_ext = file.filename.split('.')[-1].lower() if file.filename and '.' in file.filename else ''
+
+    allowed_exts = {'csv', 'json', 'tex', 'docx', 'png', 'jpg', 'jpeg', 'gif'}
+
+    if file_type in REQUIRED_FILES:
+        expected_type = REQUIRED_FILES[file_type]['type']
+        if expected_type == 'image':
+             if file_ext not in ['png', 'jpg', 'jpeg']:
+                 raise HTTPException(status_code=400, detail=f"Invalid image format. Expected png/jpg/jpeg, got {file_ext}")
+        elif file_ext != expected_type:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file extension. Expected {expected_type}, got {file_ext}"
+            )
+    else:
+        # Accept image uploads or other supported extensions
+        if file_ext not in allowed_exts:
+            raise HTTPException(status_code=400, detail=f"Unsupported file extension: {file_ext}")
+
+    # Determine safe filename for saving
+    save_name = safe_name
     
-    # Validate file extension
-    expected_type = REQUIRED_FILES[file_type]['type']
-    file_ext = file.filename.split('.')[-1].lower()
+    # Check if this is a known image type like 'poster.png' or 'snapshot.png'
+    # The frontend might send 'poster' or 'poster.jpg' -> we want to normalize logically if possible, 
+    # OR we just rely on the frontend sending 'poster.png' as the path param even if the file is jpg.
+    # Current frontend sends logical name as path param.
+    # But let's respect the extension from the actual uploaded file for images to be safe.
     
-    # Simple extension check - note: file names can be tricky, but frontend sends specific names
-    if file_ext != expected_type:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Invalid file extension. Expected {expected_type}, got {file_ext}"
-        )
-    
+    if file_type in ['poster.png', 'snapshot.png']:
+         actual_ext = file.filename.split('.')[-1].lower() if '.' in file.filename else 'png'
+         # Force save as poster.png or snapshot.png regardless of extension? 
+         # Or save as poster.jpg and update main.py to look for both?
+         # Simpler: Save as the requested logical name (e.g. poster.png) but we must Ensure it is a valid image.
+         # The 'type': 'image' check above ensures extension is valid.
+         # Let's save as the `file_type` provided in URL for consistency with MAIN.PY expectations.
+         pass
+
     # Save the uploaded file
-    file_path = DATA_DIR / file_type
+    file_path = DATA_DIR / save_name
     try:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
-    
-    return {"message": f"Successfully uploaded {file_type}"}
+
+    return {"message": f"Successfully uploaded {safe_name}"}
 
 @app.post("/generate-report")
 async def generate_event_report(request: ReportRequest):
@@ -161,9 +195,13 @@ async def generate_event_report(request: ReportRequest):
         # Check for custom template
         custom_template_path = None
         if request.use_custom_template:
-            potential_path = DATA_DIR / "custom_template.tex"
-            if potential_path.exists():
-                custom_template_path = potential_path
+            potential_path_tex = DATA_DIR / "custom_template.tex"
+            potential_path_docx = DATA_DIR / "custom_template.docx"
+            
+            if potential_path_docx.exists():
+                 custom_template_path = potential_path_docx
+            elif potential_path_tex.exists():
+                custom_template_path = potential_path_tex
 
         config = EventReportConfig(
             event_name=request.event_name,
@@ -176,8 +214,37 @@ async def generate_event_report(request: ReportRequest):
         )
         
         generator = EventReportGenerator(config)
-        success = generator.generate()
-        
+        try:
+            success = generator.generate()
+        except MissingTemplateAsset as e:
+            # Return helpful payload describing the missing assets and directives
+            def suggest_filename(marker: str, idx: int) -> str:
+                m = marker.lower()
+                if 'logo' in m:
+                    return 'logo.png'
+                if 'poster' in m:
+                    return 'poster.png'
+                if 'snapshot' in m:
+                    return 'snapshot.png'
+                if 'feedback' in m or 'ratings' in m:
+                    return 'ratings_chart.png'
+                return f'report_image_{idx + 1}.png'
+
+            details = [{
+                'marker': m['marker'],
+                'directives': m.get('directives', {}),
+                'suggested_filename': suggest_filename(m['marker'], i)
+            } for i, m in enumerate(e.missing_assets)]
+            raise HTTPException(status_code=400, detail={
+                'error': 'missing_template_assets',
+                'missing_assets': details
+            })
+        except MissingTemplatePlaceholder as e:
+            raise HTTPException(status_code=400, detail={
+                'error': 'missing_placeholders',
+                'placeholders': e.missing_placeholders
+            })
+
         if not success:
             raise HTTPException(status_code=500, detail="Failed to generate report")
         

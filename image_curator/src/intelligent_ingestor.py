@@ -17,8 +17,11 @@ from . import exif_utils
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 # Dynamic path resolution for credentials
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # points to planify_reelmaker/
-CREDENTIALS_FILE = os.path.join(BASE_DIR, 'credentials.json')
+# BASE_DIR points to image_curator/; prefer the existing planify_reelmaker credentials
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # points to parent dir (image_curator/)
+# Use the credentials.json from the sibling `planify_reelmaker` module if available
+REPO_ROOT = os.path.dirname(BASE_DIR)
+CREDENTIALS_FILE = os.path.join(REPO_ROOT, 'planify_reelmaker', 'credentials.json')
 
 # Temporary path to store raw downloaded files for EXIF extraction
 TEMP_DOWNLOAD_DIR = 'temp_downloads/'
@@ -151,21 +154,16 @@ def process_video_from_stream(video_stream, video_name):
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             if prev_frame is not None:
-                # Calculate the Mean Squared Error between consecutive frames
                 mse = np.mean((gray - prev_frame) ** 2)
 
-                # If MSE exceeds threshold, it's a new scene, save the frame
                 if mse > SCENE_CHANGE_THRESHOLD:
-                    # Convert frame from BGR (OpenCV) to RGB (PIL/moviepy)
                     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     keyframes.append((rgb_frame, f"{os.path.splitext(video_name)[0]}_keyframe_{len(keyframes)+1}.jpg", False))
                     keyframe_count += 1
 
             prev_frame = gray
 
-        # If no scenes were detected but we haven't reached the limit, take the middle frame
         if not keyframes and keyframe_count < MAX_KEYFRAMES_PER_VIDEO:
-            # Get total frames
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             middle_frame = total_frames // 2
 
@@ -180,7 +178,6 @@ def process_video_from_stream(video_stream, video_name):
     except Exception as e:
         print(f"   - Warning: Could not process video {video_name}. Error: {e}")
     finally:
-        # Clean up the temporary video file
         if os.path.exists(temp_video_path):
             os.remove(temp_video_path)
 
@@ -207,11 +204,18 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
 
     print(f"-> Accessing Google Drive folder: {folder_id}")
     
-    # Query for all image and video files in the specified folder
     query = f"'{folder_id}' in parents and (mimeType contains 'image/' or mimeType contains 'video/')"
-    results = service.files().list(
-        q=query, pageSize=max_files, fields="files(id, name, mimeType)").execute()
-    items = results.get('files', [])
+    
+    # Fetch all items with pagination (no limit, fetch everything)
+    items = []
+    page_token = None
+    while True:
+        results = service.files().list(
+            q=query, pageSize=1000, fields="files(id, name, mimeType)", pageToken=page_token).execute()
+        items.extend(results.get('files', []))
+        page_token = results.get('nextPageToken')
+        if not page_token:
+            break
 
     if not items:
         print("-> No media files found in the folder.")
@@ -221,11 +225,9 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
     
     processed_media = []
     
-    # 1. Download, convert, and extract keyframes
     for item in items:
         file_id, file_name, mime_type = item['id'], item['name'], item['mimeType']
         
-        # Download the file into an in-memory bytes buffer
         request = service.files().get_media(fileId=file_id)
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
@@ -235,25 +237,19 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
             _, done = downloader.next_chunk()
         fh.seek(0) # Reset stream position to the beginning
 
-        # Process based on file type
         if 'video' in mime_type:
             keyframes = process_video_from_stream(fh, file_name)
             for frame_array, frame_name, is_original in keyframes:
                 processed_media.append({'name': frame_name, 'array': frame_array, 'is_original_image': is_original})
         else: # Assumes image
             try:
-                # Ensure temp download dir exists and save original file bytes for EXIF extraction
                 os.makedirs(TEMP_DOWNLOAD_DIR, exist_ok=True)
-                # Prefix with file id to avoid name collisions
                 tmp_name = f"{file_id}_{file_name}"
                 tmp_path = os.path.join(TEMP_DOWNLOAD_DIR, tmp_name)
-                # Write raw bytes
                 with open(tmp_path, 'wb') as out_f:
                     out_f.write(fh.getbuffer())
-                # Reset buffer position for further reading
                 fh.seek(0)
 
-                # Convert HEIC/HEIF in memory
                 if file_name.lower().endswith(('.heic', '.heif')):
                     heif_file = pillow_heif.read_heif(fh)
                     pil_image = Image.frombytes(
@@ -262,7 +258,6 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
                 else:
                     pil_image = Image.open(fh).convert("RGB")
 
-                # Convert PIL image to OpenCV format (numpy array) for quality checks
                 image_array = np.array(pil_image)
                 processed_media.append({
                     'name': file_name,
@@ -276,10 +271,6 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
 
     print(f"\n-> Total raw media assets (images + keyframes): {len(processed_media)}")
 
-    # Note: raw downloads are saved to TEMP_DOWNLOAD_DIR for later EXIF extraction
-    # (we intentionally avoid extracting EXIF here to ensure ordering is performed on the
-    # final top assets — this keeps original file bytes available for accurate DateTimeOriginal).
-    # 2. Filter for quality (blur & exposure)
     print("-> Starting quality filtering (prioritizing original images)...")
     quality_media = []
     for media in processed_media:
@@ -289,20 +280,17 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
 
     print(f"-> Quality filtering complete. Kept {len(quality_media)} assets.")
     
-    # 3. De-duplicate the quality-filtered images
     print("-> Starting de-duplication...")
     unique_hashes = {}
     final_media_list = []
     
     for media in quality_media:
         try:
-            # Convert numpy array back to PIL Image for hashing
             pil_image = Image.fromarray(media['array'])
             h = imagehash.phash(pil_image)
             
             found_similar = False
             for existing_hash in unique_hashes.keys():
-                # Compare perceptual hash distance
                 if abs(h - existing_hash) <= SIMILARITY_THRESHOLD:
                     found_similar = True
                     print(f"   - DISCARDING {media['name']}: Visually similar to {unique_hashes[existing_hash]['name']}")
@@ -319,15 +307,12 @@ def run_ingestion_pipeline(drive_folder_url, max_files=50):
     print(f"--- Pre-processing Complete. {len(final_media_list)} media assets are ready for scoring. ---")
     return final_media_list
 
-# --- EXAMPLE USAGE (for testing this file directly) ---
 if __name__ == "__main__":
     DRIVE_FOLDER_URL = "YOUR_GOOGLE_DRIVE_FOLDER_URL_HERE"
     
     if DRIVE_FOLDER_URL == "YOUR_GOOGLE_DRIVE_FOLDER_URL_HERE":
         print("!!! ERROR: Please update the DRIVE_FOLDER_URL in intelligent_ingestor.py to test it.")
     else:
-        # The output `clean_media_objects` is a list of dictionaries.
-        # Each dictionary looks like: {'name': 'image_name.jpg', 'array': <numpy_array_of_image>}
         clean_media_objects = run_ingestion_pipeline(DRIVE_FOLDER_URL)
         
         print("\nFinal list of media to be sent to the scoring engine:")

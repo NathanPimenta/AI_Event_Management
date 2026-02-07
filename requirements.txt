@@ -30,6 +30,7 @@ google-auth-oauthlib
 # Media & Processing
 moviepy==1.0.3
 Pillow
+exifread  # pure-Python EXIF fallback; installing system `exiftool` is recommended for full feature parity
 pillow-heif
 opencv-python
 imagehash

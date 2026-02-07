@@ -102,6 +102,28 @@ class EventAnalytics:
                 stats['last_registration'] = str(daily_reg.index.max())
                 stats['registration_period_days'] = (daily_reg.index.max() - daily_reg.index.min()).days
         
+        # Analyze gender if column exists
+        if 'gender' in participant_df.columns:
+            stats['gender_dist'] = participant_df['gender'].value_counts().to_dict()
+            stats['male_count'] = stats['gender_dist'].get('Male', 0)
+            stats['female_count'] = stats['gender_dist'].get('Female', 0)
+        
+        # Prepare student list for report table (S. No., Name, Branch)
+        student_list = []
+        for i, row in participant_df.iterrows():
+            # Attempt to infer branch from institution or role or ticket type if implicit
+            # Since the requirement asks for "Date: ... Venue: ... Target Audience ..." usually implies 
+            # branch is relevant for student participants.
+            # We'll map 'institution' or 'department' to Branch if available, else 'N/A'
+            branch = row.get('institution', 'N/A')
+            
+            student_list.append({
+                's_no': i + 1,
+                'name': row.get('name', 'N/A'),
+                'branch': branch
+            })
+        stats['student_list_table'] = student_list
+        
         return stats
     
     def get_feedback_stats(self, feedback_df: pd.DataFrame) -> Dict[str, Any]:
@@ -123,24 +145,24 @@ class EventAnalytics:
         
         stats = {
             'total_feedback': len(feedback_df),
-            'avg_rating': feedback_df['rating_score'].mean(),
-            'median_rating': feedback_df['rating_score'].median(),
-            'std_rating': feedback_df['rating_score'].std(),
-            'sessions_by_rating': feedback_df.groupby('session_name')['rating_score']
+            'avg_rating': feedback_df['rating'].mean(),
+            'median_rating': feedback_df['rating'].median(),
+            'std_rating': feedback_df['rating'].std(),
+            'sessions_by_rating': feedback_df.groupby('session_name')['rating']
                                            .mean()
                                            .sort_values(ascending=False)
                                            .to_dict()
         }
         
         # Rating distribution
-        stats['rating_distribution'] = feedback_df['rating_score'].value_counts().sort_index().to_dict()
+        stats['rating_distribution'] = feedback_df['rating'].value_counts().sort_index().to_dict()
         
         # Response rate
         if 'attendee_id' in feedback_df.columns:
             stats['unique_respondents'] = feedback_df['attendee_id'].nunique()
         
         # Top and bottom rated sessions
-        session_ratings = feedback_df.groupby('session_name')['rating_score'].mean().sort_values(ascending=False)
+        session_ratings = feedback_df.groupby('session_name')['rating'].mean().sort_values(ascending=False)
         if len(session_ratings) > 0:
             stats['top_session'] = {
                 'name': session_ratings.index[0],
@@ -159,12 +181,12 @@ class EventAnalytics:
         }
         
         # Performance categories
-        stats['excellent_ratings'] = (feedback_df['rating_score'] >= 4.5).sum()
-        stats['good_ratings'] = ((feedback_df['rating_score'] >= 4.0) & 
-                                 (feedback_df['rating_score'] < 4.5)).sum()
-        stats['average_ratings'] = ((feedback_df['rating_score'] >= 3.5) & 
-                                    (feedback_df['rating_score'] < 4.0)).sum()
-        stats['poor_ratings'] = (feedback_df['rating_score'] < 3.5).sum()
+        stats['excellent_ratings'] = (feedback_df['rating'] >= 4.5).sum()
+        stats['good_ratings'] = ((feedback_df['rating'] >= 4.0) & 
+                                 (feedback_df['rating'] < 4.5)).sum()
+        stats['average_ratings'] = ((feedback_df['rating'] >= 3.5) & 
+                                    (feedback_df['rating'] < 4.0)).sum()
+        stats['poor_ratings'] = (feedback_df['rating'] < 3.5).sum()
         
         return stats
     
@@ -230,7 +252,10 @@ class EventAnalytics:
         # Participant analytics
         participant_stats = self.get_participant_stats(participant_df)
         stats.update(participant_stats)
-        print(f"  ✓ Analyzed {stats['total_participants']} participants from {stats['institutions']} institutions")
+        if 'institutions' in stats:
+            print(f"  ✓ Analyzed {stats['total_participants']} participants from {stats['institutions']} institutions")
+        else:
+             print(f"  ✓ Analyzed {stats['total_participants']} participants")
         
         # Feedback analytics
         feedback_stats = self.get_feedback_stats(feedback_df)
@@ -270,7 +295,7 @@ class EventAnalytics:
         try:
             # Calculate session ratings
             ratings_data = feedback_df.groupby('session_name').agg({
-                'rating_score': ['mean', 'count', 'std']
+                'rating': ['mean', 'count', 'std']
             }).round(2)
             ratings_data.columns = ['mean_rating', 'response_count', 'std_rating']
             ratings_data = ratings_data.sort_values('mean_rating', ascending=True)
@@ -493,7 +518,7 @@ if __name__ == "__main__":
     
     sample_feedback = pd.DataFrame({
         'session_name': ['AI/ML Workshop', 'Web Dev Hackathon', 'Data Science Talk', 'Cloud Computing'] * 30,
-        'rating_score': [4.7, 4.5, 3.8, 4.2] * 30,
+        'rating': [4.7, 4.5, 3.8, 4.2] * 30,
         'attendee_id': range(1, 121)
     })
     

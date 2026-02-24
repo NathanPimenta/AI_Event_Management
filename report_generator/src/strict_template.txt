@@ -1,0 +1,160 @@
+IMPORTANT INSTRUCTIONS:
+
+1. Generate the report STRICTLY in the format provided below.
+2. DO NOT change headings.
+3. DO NOT remove any section.
+4. DO NOT add extra sections.
+5. Replace placeholders inside {{ }} using user-provided data.
+6. Wherever [USER_UPLOAD_REQUIRED] appears, DO NOT generate text — leave it exactly as written.
+7. Use formal academic language.
+8. Objectives and Outcomes must be in bullet format using ❖ symbol.
+9. Detailed Report must be written in paragraph format.
+10. Do NOT explain anything outside the template.
+
+------------------------------------------------------------
+                    DON BOSCO INSTITUTE OF TECHNOLOGY
+            Premier Automobiles Road, Kurla West, Mumbai - 400070
+
+                    {{DEPARTMENT_NAME}}
+
+                Report on - {{EVENT_NAME}}
+
+------------------------------------------------------------
+
+Title: {{EVENT_TITLE}}
+
+Date: {{EVENT_DATE}}
+
+Time: {{EVENT_TIME}}
+
+Venue: {{EVENT_VENUE}}
+
+Target Audience: {{TARGET_AUDIENCE}}
+
+No. of Participants Present: {{TOTAL_PARTICIPANTS}}
+
+No. of Girl Participants Present: {{GIRL_PARTICIPANTS}}
+
+No. of Boy Participants Present: {{BOY_PARTICIPANTS}}
+
+Resource Person: {{RESOURCE_PERSON_NAME}}
+
+Organization of Recourse Person: {{RESOURCE_PERSON_ORGANIZATION}}
+
+Organizing Department / Committee / Authority: {{ORGANIZING_BODY}}
+
+Faculty Coordinator: {{FACULTY_COORDINATOR_NAME}}
+
+------------------------------------------------------------
+
+Objectives:
+
+❖ {{OBJECTIVE_1}}
+❖ {{OBJECTIVE_2}}
+❖ {{OBJECTIVE_3}}
+
+------------------------------------------------------------
+
+Outcomes:
+
+❖ {{OUTCOME_1}}
+❖ {{OUTCOME_2}}
+❖ {{OUTCOME_3}}
+
+------------------------------------------------------------
+
+Detailed Report:
+
+{{DETAILED_REPORT_PARAGRAPH_GENERATED_FROM_USER_INPUT}}
+
+------------------------------------------------------------
+
+Snapshot of the Event:
+
+[USER_UPLOAD_REQUIRED: GEOTAGGED_PHOTOGRAPH_1]
+
+[USER_UPLOAD_REQUIRED: GEOTAGGED_PHOTOGRAPH_2]
+
+------------------------------------------------------------
+
+Feedback Analysis:
+
+{{FEEDBACK_SUMMARY_TEXT}}
+
+[USER_UPLOAD_REQUIRED: BAR_GRAPH_OR_PIE_CHART_IMAGE]
+
+------------------------------------------------------------
+
+Event Poster:
+
+[USER_UPLOAD_REQUIRED: EVENT_POSTER_IMAGE]
+
+------------------------------------------------------------
+
+Social Media Links:
+
+Facebook: {{FACEBOOK_LINK}}
+
+Instagram: {{INSTAGRAM_LINK}}
+
+LinkedIn: {{LINKEDIN_LINK}}
+
+------------------------------------------------------------
+
+Registration Details:
+
+No. of DBIT Students: {{DBIT_STUDENTS_COUNT}}
+
+No. of non-DBIT students: {{NON_DBIT_STUDENTS_COUNT}}
+
+------------------------------------------------------------
+
+List of Students Who Attended the Event:
+
+| S. No. | Name | Branch |
+|--------|------|--------|
+{{STUDENT_TABLE_ROWS_GENERATED_FROM_USER_DATA}}
+
+------------------------------------------------------------
+
+Report Approved By:
+
+Name of the Faculty: {{APPROVER_1_NAME}}
+
+Post of the Faculty: {{APPROVER_1_POST}}
+
+In Institute/ Department/ Student Club/ Chapter/ Professional Body
+
+------------------------------------------------------------
+
+Report Approved By:
+
+Name of the Faculty: {{APPROVER_2_NAME}}
+
+Post of the Faculty: {{APPROVER_2_POST}}
+
+In Institute/ Department/ Student Club/ Chapter/ Professional Body
+
+------------------------------------------------------------
+
+Report Prepared By:
+
+Name of the Student: {{PREPARER_1_NAME}}
+
+Post of the Student: {{PREPARER_1_POST}}
+
+In the Student Council/ Student Club/ Chapter/ Professional Body
+
+------------------------------------------------------------
+
+Report Prepared By:
+
+Name of the Student: {{PREPARER_2_NAME}}
+
+Post of the Student: {{PREPARER_2_POST}}
+
+In the Student Council/ Student Club/ Chapter/ Professional Body
+
+------------------------------------------------------------
+
+END OF REPORT

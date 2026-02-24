@@ -1,0 +1,156 @@
+------------------------------------------------------------
+                    DON BOSCO INSTITUTE OF TECHNOLOGY
+            Premier Automobiles Road, Kurla West, Mumbai - 400070
+
+                    Department of Computer Engineering
+
+                Report on - Teknack 2026
+
+------------------------------------------------------------
+
+Title: Teknack 2026
+
+Date: 27th Mar 2026
+
+Time: 12:12 PM
+
+Venue: Main Auditorium
+
+Target Audience: FE SE
+
+No. of Participants Present: 8
+
+No. of Girl Participants Present: 0
+
+No. of Boy Participants Present: 0
+
+Resource Person: Mr. Suraj Naik
+
+Organization of Recourse Person: Hansa Equity
+
+Organizing Department / Committee / Authority: ACM
+
+Faculty Coordinator: Dr Seema Nehete
+
+------------------------------------------------------------
+
+Objectives:
+
+❖ Teach Git
+❖ Git actions
+❖ Game Development
+
+------------------------------------------------------------
+
+Outcomes:
+
+❖ Game assets
+❖ Git actions
+❖ Game creation
+
+------------------------------------------------------------
+
+Detailed Report:
+
+The Teknack 2026 event successfully convened a diverse group of individuals to participate in an immersive learning experience focused on game development and version control. Participants were guided through hands-on training sessions, where they learned the fundamentals of generating game assets and creating game pipelines using industry-standard tools and software. A key highlight of the event was the emphasis placed on version control, as attendees gained practical knowledge on utilizing Git to manage their project's codebase, collaborate with team members, and track changes throughout the development process. Through this comprehensive training program, attendees acquired valuable skills in both game development and version control, equipping them to tackle real-world projects with confidence and precision.
+
+------------------------------------------------------------
+
+Snapshot of the Event:
+
+[USER_UPLOAD_REQUIRED: GEOTAGGED_PHOTOGRAPH_1]
+
+[USER_UPLOAD_REQUIRED: GEOTAGGED_PHOTOGRAPH_2]
+
+------------------------------------------------------------
+
+Feedback Analysis:
+
+The feedback received for Teknack 2026 generally indicates a high level of satisfaction among participants regarding the event's content and overall organization. The majority of attendees appreciated the insightful discussions on generative models, with many praising the informative nature of the presentations. The practical coding session was also well-received, providing a hands-on opportunity for participants to engage with the material.
+
+However, some constructive criticism emerged, primarily focusing on the technical aspects of the event. A few participants felt that the content was too advanced and required more introductory material, particularly for beginners. Additionally, some attendees experienced issues with the wifi connectivity, which hindered their ability to fully participate in the practical coding session. Despite these minor drawbacks, the feedback suggests that Teknack 2026 effectively addressed a crucial topic and provided valuable insights into generative models, making it a successful event overall.
+
+[USER_UPLOAD_REQUIRED: BAR_GRAPH_OR_PIE_CHART_IMAGE]
+
+------------------------------------------------------------
+
+Event Poster:
+
+[USER_UPLOAD_REQUIRED: EVENT_POSTER_IMAGE]
+
+------------------------------------------------------------
+
+Social Media Links:
+
+Facebook: dfghj
+
+Instagram: ghgjk
+
+LinkedIn: vb nm
+
+------------------------------------------------------------
+
+Registration Details:
+
+No. of DBIT Students: 47
+
+No. of non-DBIT students: 22
+
+------------------------------------------------------------
+
+List of Students Who Attended the Event:
+
+| S. No. | Name | Branch |
+|--------|------|--------|
+| 1 | John Doe | University of Tech |
+| 2 | Jane Smith | State College |
+| 3 | Alice Johnson | University of Tech |
+| 4 | Bob Brown | Global Corp |
+| 5 | Charlie Davis | State College |
+| 6 | Diana Evans | Tech Institute |
+| 7 | Evan Foster | Global Corp |
+| 8 | Fiona Green | University of Tech |
+
+------------------------------------------------------------
+
+Report Approved By:
+
+Name of the Faculty: dfg
+
+Post of the Faculty: dfgh
+
+In Institute/ Department/ Student Club/ Chapter/ Professional Body
+
+------------------------------------------------------------
+
+Report Approved By:
+
+Name of the Faculty: fgvhb
+
+Post of the Faculty: vbn
+
+In Institute/ Department/ Student Club/ Chapter/ Professional Body
+
+------------------------------------------------------------
+
+Report Prepared By:
+
+Name of the Student: bnm
+
+Post of the Student: vvbnm
+
+In the Student Council/ Student Club/ Chapter/ Professional Body
+
+------------------------------------------------------------
+
+Report Prepared By:
+
+Name of the Student: vbn
+
+Post of the Student: vbn
+
+In the Student Council/ Student Club/ Chapter/ Professional Body
+
+------------------------------------------------------------
+
+END OF REPORT

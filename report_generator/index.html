@@ -1,513 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Event Report Generator - CommunityHub</title>
+    <title>AI Event Report Generator</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Markdown renderer and sanitizer for safe report rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.10/purify.min.js"></script>
     <style>
-        /* Custom styles to match your theme */
-        body {
-            background-color: #0d1117;
-            /* A deep navy/charcoal background */
-            color: #c9d1d9;
-            /* Light gray text for readability */
-        }
-
-        .card {
-            background-color: #161b22;
-            /* Slightly lighter card background */
-            border: 1px solid #30363d;
-            border-radius: 8px;
-        }
-
-        .input-field {
-            background-color: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            color: #c9d1d9;
-        }
-
-        .btn-primary {
-            background-color: #238636;
-            /* A nice green for primary actions */
-            color: white;
-            font-weight: 600;
-            border-radius: 6px;
-            transition: background-color 0.3s;
-        }
-
-        .btn-primary:hover {
-            background-color: #2ea043;
-        }
-
-        .btn-primary:disabled {
-            background-color: #23863655;
-            cursor: not-allowed;
-        }
-
-        .upload-card.success {
-            border-color: #238636;
-        }
-
-        .upload-card.error {
-            border-color: #da3633;
-        }
-
-        /* Style for the rendered markdown report */
-        .markdown-body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-        }
-
-        .markdown-body h1,
-        .markdown-body h2,
-        .markdown-body h3 {
-            border-bottom: 1px solid #30363d;
-            padding-bottom: 0.3em;
-            margin-top: 24px;
-            margin-bottom: 16px;
-            font-weight: 600;
-        }
-
-        .markdown-body h1 {
-            font-size: 2em;
-        }
-
-        .markdown-body h2 {
-            font-size: 1.5em;
-        }
-
-        .markdown-body h3 {
-            font-size: 1.25em;
-        }
-
-        .markdown-body ul {
-            list-style-type: disc;
-            padding-left: 2em;
-        }
-
-        .markdown-body li {
-            margin-bottom: 0.5em;
-        }
-
-        .markdown-body code {
-            background-color: #2d333b;
-            padding: 0.2em 0.4em;
-            margin: 0;
-            font-size: 85%;
-            border-radius: 6px;
-        }
-
-        .markdown-body blockquote {
-            padding: 0 1em;
-            color: #8b949e;
-            border-left: 0.25em solid #30363d;
-        }
-
-        .markdown-body img {
-            max-width: 100%;
-            border-radius: 6px;
-            margin-top: 1em;
-            margin-bottom: 1em;
-        }
+        body { background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+        .card { background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; }
+        .input-field { background-color: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; width: 100%; padding: 0.5rem; }
+        .btn-primary { background-color: #238636; color: white; font-weight: 600; border-radius: 6px; transition: background-color 0.3s; padding: 0.5rem 1rem; }
+        .btn-primary:hover { background-color: #2ea043; }
+        .btn-primary:disabled { background-color: #23863655; cursor: not-allowed; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9em; }
+        .section-title { font-size: 1.25em; font-weight: 600; margin-bottom: 1rem; border-bottom: 1px solid #30363d; padding-bottom: 0.5rem; color: white; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1rem; }
     </style>
 </head>
-
 <body>
-    <!-- Header Navigation (Mirrors your existing UI) -->
-    <header class="bg-[#161b22] border-b border-[#30363d]">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="text-2xl font-bold">CommunityHub</div>
-            <div>
-                <a href="#" class="px-4 hover:text-white">Communities</a>
-                <a href="#" class="px-4 hover:text-white">Events</a>
-            </div>
-            <div>
-                <a href="#" class="px-3 py-2 border border-[#30363d] rounded-md hover:bg-[#21262d]">Log In</a>
-                <a href="#" class="ml-2 px-3 py-2 bg-white text-black rounded-md font-semibold">Sign Up</a>
-            </div>
-        </nav>
+    <header class="bg-[#161b22] border-b border-[#30363d] p-4">
+        <div class="container mx-auto text-2xl font-bold">CommunityHub - Report Generator</div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="container mx-auto p-6 md:p-12">
-        <div class="max-w-4xl mx-auto">
+    <main class="container mx-auto p-6 md:p-12 max-w-5xl">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">Event Report Form</h1>
+            <p class="text-[#8b949e]">Fill in the details to generate your PDF report using the strict DBIT template.</p>
+        </div>
 
-            <!-- Page Header -->
-            <div class="text-center mb-12">
-                <h1 class="text-4xl font-bold text-white">AI Event Report Generator</h1>
-                <p class="mt-4 text-lg text-[#8b949e]">Upload your event data to generate a comprehensive, AI-powered
-                    analysis.</p>
-            </div>
-
-            <!-- Report Generation Form -->
-            <div id="report-form">
-                <!-- Step 1: Event Details -->
-                <div class="card p-8 mb-8">
-                    <h2 class="text-2xl font-semibold mb-6 text-white"><i
-                            class="fa-solid fa-pen-to-square mr-3"></i>Step 1: Configure Your Report</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="event_name" class="block mb-2 font-medium">Event Name</label>
-                            <input type="text" id="event_name" class="input-field w-full p-2.5"
-                                placeholder="e.g., TechFest 2025" required>
-                        </div>
-                        <div>
-                            <label for="event_type" class="block mb-2 font-medium">Event Type</label>
-                            <input type="text" id="event_type" class="input-field w-full p-2.5"
-                                placeholder="e.g., AI/ML Workshop Series" required>
-                        </div>
-                    </div>
-                    <div class="mt-6">
-                        <label for="institution_name" class="block mb-2 font-medium">Institution / Department</label>
-                        <input type="text" id="institution_name" class="input-field w-full p-2.5"
-                            placeholder="e.g., Department of Computer Science" required>
-                    </div>
-                </div>
-
-                <!-- Step 2: Upload Files -->
-                <div class="card p-8 mb-8">
-                    <h2 class="text-2xl font-semibold mb-6 text-white"><i
-                            class="fa-solid fa-file-arrow-up mr-3"></i>Step 2: Upload Your Data</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Attendee File Upload -->
-                        <div id="upload-attendees"
-                            class="upload-card p-4 border-2 border-dashed border-[#30363d] rounded-lg text-center">
-                            <h3 class="font-semibold text-white">Participant Data</h3>
-                            <p class="text-sm text-[#8b949e] mb-2">attendees.csv <span
-                                    class="font-bold text-red-400">(Required)</span></p>
-                            <input type="file" id="attendees_file" class="hidden" accept=".csv">
-                            <button onclick="document.getElementById('attendees_file').click()"
-                                class="w-full p-4 rounded-md bg-[#21262d] hover:bg-[#30363d]">
-                                <i class="fa-solid fa-upload mr-2"></i>
-                                <span id="attendees-status">Click to upload</span>
-                            </button>
-                        </div>
-
-                        <!-- Feedback File Upload -->
-                        <div id="upload-feedback"
-                            class="upload-card p-4 border-2 border-dashed border-[#30363d] rounded-lg text-center">
-                            <h3 class="font-semibold text-white">Feedback Data</h3>
-                            <p class="text-sm text-[#8b949e] mb-2">feedback.csv <span
-                                    class="font-bold text-red-400">(Required)</span></p>
-                            <input type="file" id="feedback_file" class="hidden" accept=".csv">
-                            <button onclick="document.getElementById('feedback_file').click()"
-                                class="w-full p-4 rounded-md bg-[#21262d] hover:bg-[#30363d]">
-                                <i class="fa-solid fa-upload mr-2"></i>
-                                <span id="feedback-status">Click to upload</span>
-                            </button>
-                        </div>
-
-                        <!-- Crowd Analytics File Upload -->
-                        <div id="upload-crowd"
-                            class="upload-card p-4 border-2 border-dashed border-[#30363d] rounded-lg text-center">
-                            <h3 class="font-semibold text-white">Crowd Analytics</h3>
-                            <p class="text-sm text-[#8b949e] mb-2">crowd_analytics.json <span
-                                    class="text-yellow-400">(Optional)</span></p>
-                            <input type="file" id="crowd_file" class="hidden" accept=".json">
-                            <button onclick="document.getElementById('crowd_file').click()"
-                                class="w-full p-4 rounded-md bg-[#21262d] hover:bg-[#30363d]">
-                                <i class="fa-solid fa-upload mr-2"></i>
-                                <span id="crowd-status">Click to upload</span>
-                            </button>
-                        </div>
-
-                        <!-- Social Mentions File Upload -->
-                        <div id="upload-social"
-                            class="upload-card p-4 border-2 border-dashed border-[#30363d] rounded-lg text-center">
-                            <h3 class="font-semibold text-white">Social Media Mentions</h3>
-                            <p class="text-sm text-[#8b949e] mb-2">social_mentions.json <span
-                                    class="text-yellow-400">(Optional)</span></p>
-                            <input type="file" id="social_file" class="hidden" accept=".json">
-                            <button onclick="document.getElementById('social_file').click()"
-                                class="w-full p-4 rounded-md bg-[#21262d] hover:bg-[#30363d]">
-                                <i class="fa-solid fa-upload mr-2"></i>
-                                <span id="social-status">Click to upload</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 3: Generate Report Button -->
-                <div class="text-center">
-                    <button id="generate-btn" class="btn-primary px-12 py-4 text-lg" disabled>
-                        <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Generate Report
-                    </button>
-                    <p id="error-message" class="text-red-400 mt-4 h-4"></p>
+        <div id="report-form" class="card p-8 shadow-lg">
+            <!-- Event Meta -->
+            <div class="mb-8">
+                <h2 class="section-title">1. Event Metadata</h2>
+                <div class="grid-2">
+                    <div class="form-group"><label>Department Name</label><input type="text" id="department_name" class="input-field" placeholder="e.g. Department of Computer Engineering" value="Department of Computer Engineering"></div>
+                    <div class="form-group"><label>Event Category / Type</label><input type="text" id="event_type" class="input-field" placeholder="e.g. National Level Technical Workshop" value="National Level Technical Workshop"></div>
+                    <div class="form-group"><label>Event Title</label><input type="text" id="title" class="input-field" placeholder="Full Title of Event" value="Advanced AI Workshop"></div>
+                    <div class="form-group"><label>Date</label><input type="text" id="date" class="input-field" placeholder="DD Month YYYY" value="15 January 2026"></div>
+                    <div class="form-group"><label>Time</label><input type="text" id="time" class="input-field" placeholder="Start - End" value="10:00 AM to 4:00 PM"></div>
+                    <div class="form-group"><label>Venue</label><input type="text" id="venue" class="input-field" placeholder="Location" value="Seminar Hall 1"></div>
                 </div>
             </div>
 
-            <!-- Loading State -->
-            <div id="loading-state" class="hidden text-center card p-8">
-                <i class="fa-solid fa-spinner fa-spin text-4xl mb-4"></i>
-                <h2 class="text-2xl font-semibold text-white">Generating Your Report...</h2>
-                <p class="text-[#8b949e]">The AI is analyzing the data. This may take a moment.</p>
-            </div>
-
-            <!-- Results Section -->
-            <div id="results-section" class="hidden">
-                <div class="text-center mb-8">
-                    <h2 class="text-3xl font-bold text-white">Your Report is Ready!</h2>
-                    <p class="text-[#8b949e]">Review the AI-generated analysis for the <span id="result-event-name"
-                            class="font-bold text-white"></span> event.</p>
-                </div>
-                <div class="card p-8">
-                    <div class="flex justify-end mb-4 space-x-4">
-                        <a id="download-md-btn" href="#"
-                            class="px-4 py-2 border border-[#30363d] rounded-md hover:bg-[#21262d]">
-                            <i class="fa-solid fa-file-code mr-2"></i>Download .md
-                        </a>
-                        <a id="download-pdf-btn" href="#" class="btn-primary px-4 py-2">
-                            <i class="fa-solid fa-file-pdf mr-2"></i>Download .pdf
-                        </a>
-                    </div>
-                    <div id="report-content" class="markdown-body">
-                        <!-- The generated markdown report will be rendered here -->
-                    </div>
-                </div>
-                <div class="text-center mt-8">
-                    <button onclick="window.location.reload()"
-                        class="px-8 py-3 border border-[#30363d] rounded-md hover:bg-[#21262d]">
-                        <i class="fa-solid fa-plus mr-2"></i>Generate Another Report
-                    </button>
+            <!-- Participants -->
+            <div class="mb-8">
+                <h2 class="section-title">2. Participants & Registration</h2>
+                <div class="grid-2">
+                    <div class="form-group"><label>Target Audience</label><input type="text" id="target_audience" class="input-field" placeholder="e.g. FE/COMP/IT" value="FE/COMP/IT"></div>
+                    <div class="form-group"><label>Total Participants</label><input type="number" id="total_participants" class="input-field" value="120"></div>
+                    <div class="form-group"><label>Girls</label><input type="number" id="girl_participants" class="input-field" value="45"></div>
+                    <div class="form-group"><label>Boys</label><input type="number" id="boy_participants" class="input-field" value="75"></div>
+                    <div class="form-group"><label>DBIT Students</label><input type="number" id="dbit_students" class="input-field" value="110"></div>
+                    <div class="form-group"><label>Non-DBIT Students</label><input type="number" id="non_dbit_students" class="input-field" value="10"></div>
                 </div>
             </div>
 
+            <!-- Organizers -->
+            <div class="mb-8">
+                <h2 class="section-title">3. Organizers & Signatories</h2>
+                <div class="grid-2">
+                    <div class="form-group"><label>Resource Person</label><input type="text" id="resource_person" class="input-field" value="Dr. John Doe"></div>
+                    <div class="form-group"><label>Resource Person Org</label><input type="text" id="resource_org" class="input-field" value="IIT Bombay"></div>
+                    <div class="form-group"><label>Organizing Body</label><input type="text" id="organizing_body" class="input-field" value="CSI Student Chapter"></div>
+                    <div class="form-group"><label>Faculty Coordinator</label><input type="text" id="faculty_coordinator" class="input-field" value="Prof. Jane Doe"></div>
+                    <div class="form-group"><label>Prepared By (Name)</label><input type="text" id="prepared_name" class="input-field" value="Nathan Pimenta"></div>
+                    <div class="form-group"><label>Prepared By (Post)</label><input type="text" id="prepared_post" class="input-field" value="Technical Head"></div>
+                    <div class="form-group"><label>Approved By (Name)</label><input type="text" id="approved_name" class="input-field" value="Dr. Alice Brown"></div>
+                    <div class="form-group"><label>Approved By (Post)</label><input type="text" id="approved_post" class="input-field" value="Head of Department"></div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="mb-8">
+                <h2 class="section-title">4. Content & Analysis</h2>
+                <div class="form-group"><label>Objectives (One per line)</label><textarea id="objectives" class="input-field" rows="3">To provide foundational knowledge.&#10;To introduce practical implementations.</textarea></div>
+                <div class="form-group"><label>Outcomes (One per line)</label><textarea id="outcomes" class="input-field" rows="3">Participants gained clarity on concepts.&#10;Students understood strategies.</textarea></div>
+                <div class="form-group"><label>Detailed Report Paragraphs</label><textarea id="detailed_report" class="input-field" rows="5">The workshop commenced at 10:00 AM.</textarea></div>
+                <div class="form-group"><label>Snapshot Description</label><textarea id="snapshot_description" class="input-field" rows="2">Candid interactions during the event.</textarea></div>
+                <div class="form-group"><label>Feedback Summary</label><textarea id="feedback_text" class="input-field" rows="2">Feedback was excellent. 92% rated highly.</textarea></div>
+            </div>
+
+            <!-- Social Media URLs -->
+            <div class="mb-8">
+                <h2 class="section-title">5. Social Media</h2>
+                <div class="grid-2">
+                    <div class="form-group"><label>Facebook URL</label><input type="url" id="facebook" class="input-field"></div>
+                    <div class="form-group"><label>Instagram URL</label><input type="url" id="instagram" class="input-field"></div>
+                    <div class="form-group"><label>LinkedIn URL</label><input type="url" id="linkedin" class="input-field"></div>
+                </div>
+            </div>
+
+            <!-- Files -->
+            <div class="mb-8">
+                <h2 class="section-title">6. Images & Data (Optional Uploads)</h2>
+                <div class="grid-2">
+                    <div class="form-group"><label>College Logo</label><input type="file" id="college_logo" class="input-field" accept="image/png, image/jpeg"></div>
+                    <div class="form-group"><label>Club Logo</label><input type="file" id="club_logo" class="input-field" accept="image/png, image/jpeg"></div>
+                    <div class="form-group"><label>Event Photo 1</label><input type="file" id="photo1" class="input-field" accept="image/png, image/jpeg"></div>
+                    <div class="form-group"><label>Event Photo 2</label><input type="file" id="photo2" class="input-field" accept="image/png, image/jpeg"></div>
+                    <div class="form-group"><label>Feedback Chart</label><input type="file" id="feedback_image" class="input-field" accept="image/png, image/jpeg"></div>
+                    <div class="form-group"><label>Event Poster</label><input type="file" id="poster_image" class="input-field" accept="image/png, image/jpeg"></div>
+                    <div class="form-group"><label>Attendees Data (CSV with Name, Branch)</label><input type="file" id="attendees_csv" class="input-field" accept=".csv"></div>
+                </div>
+            </div>
+
+            <div class="text-center mt-6">
+                <button id="generate-btn" class="btn-primary w-full text-lg py-3"><i class="fa-solid fa-file-pdf mr-2"></i>Compile PDF Report</button>
+                <p id="status-msg" class="mt-4 text-[#8b949e]"></p>
+                <a id="download-link" href="#" target="_blank" class="hidden text-green-400 mt-2 block font-bold text-lg"><i class="fa-solid fa-download mr-1"></i> Download Generated PDF</a>
+            </div>
         </div>
     </main>
 
     <script>
-        // Front-end logic with robust API base and safe markdown rendering
-        // API resolution strategy:
-        // 1) Try same-origin (useful when the API is served from the same host or proxied)
-        // 2) Fallback to the local report API at http://127.0.0.1:8000
-        let API_BASE = (typeof location !== 'undefined') ? `${location.protocol}//${location.host}` : 'http://127.0.0.1:8000';
+        let API_BASE = (typeof location !== 'undefined') ? `${location.protocol}//${location.host}` : 'http://127.0.0.1:8003';
 
-        const fileInputs = {
-            'attendees.csv': document.getElementById('attendees_file'),
-            'feedback.csv': document.getElementById('feedback_file'),
-            'crowd_analytics.json': document.getElementById('crowd_file'),
-            'crowd_analytics.json': document.getElementById('crowd_file'),
-            'social_mentions.json': document.getElementById('social_file'),
-            'poster.png': document.getElementById('poster_file'),    // Maps to /upload/poster.png
-            'snapshot.png': document.getElementById('snapshot_file'), // Maps to /upload/snapshot.png
-        };
-
-        const statusLabels = {
-            'attendees.csv': document.getElementById('attendees-status'),
-            'feedback.csv': document.getElementById('feedback-status'),
-            'crowd_analytics.json': document.getElementById('crowd-status'),
-            'social_mentions.json': document.getElementById('social-status'),
-            'poster.png': document.getElementById('poster-status'),
-            'snapshot.png': document.getElementById('snapshot-status'),
-        };
-
-        const uploadCards = {
-            'attendees.csv': document.getElementById('upload-attendees'),
-            'feedback.csv': document.getElementById('upload-feedback'),
-            'crowd_analytics.json': document.getElementById('upload-crowd'),
-            'crowd_analytics.json': document.getElementById('upload-crowd'),
-            'social_mentions.json': document.getElementById('upload-social'),
-            'poster.png': document.getElementById('upload-poster'),
-            'snapshot.png': document.getElementById('upload-snapshot'),
+        async function uploadFile(fileInput, filename) {
+            if (!fileInput.files.length) return;
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            await fetch(`${API_BASE}/upload/${filename}`, { method: 'POST', body: formData });
         }
 
-        const requiredFiles = ['attendees.csv', 'feedback.csv'];
-        const uploadedFiles = new Set();
-        const generateBtn = document.getElementById('generate-btn');
-        const errorMessage = document.getElementById('error-message');
+        document.getElementById('generate-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('generate-btn');
+            const status = document.getElementById('status-msg');
+            const downloadLink = document.getElementById('download-link');
+            
+            btn.disabled = true;
+            status.innerText = 'Uploading files (if any)...';
+            status.className = 'mt-4 text-yellow-400';
+            downloadLink.classList.add('hidden');
 
-        // Try same-origin first, then fallback to http://127.0.0.1:8000 if unavailable
-        (async function initFilesStatus() {
-            const candidates = [
-                (typeof location !== 'undefined') ? `${location.protocol}//${location.host}` : null,
-                'http://127.0.0.1:8000'
-            ].filter(Boolean);
-
-            let status = null;
-            for (const base of candidates) {
-                try {
-                    const controller = new AbortController();
-                    const id = setTimeout(() => controller.abort(), 2000);
-                    const res = await fetch(`${base}/files-status`, { signal: controller.signal });
-                    clearTimeout(id);
-                    if (res.ok) {
-                        API_BASE = base; // select this working base
-                        status = await res.json();
-                        break;
-                    }
-                } catch (e) {
-                    // try next candidate
-                }
-            }
-
-            if (!status) {
-                console.warn('No accessible Event Report API found (tried same-origin and http://127.0.0.1:8000). Uploads/generation will fail until an API is available.');
-                return;
-            }
-
-            Object.keys(status).forEach(fn => {
-                if (status[fn].uploaded) {
-                    uploadedFiles.add(fn);
-                    if (statusLabels[fn]) statusLabels[fn].innerText = 'Already uploaded';
-                    if (uploadCards[fn]) uploadCards[fn].classList.add('success');
-                }
-            });
-            checkFormCompletion();
-        })();
-
-        // Handle file uploads
-        Object.keys(fileInputs).forEach(fileName => {
-            const input = fileInputs[fileName];
-            let fileType = fileName.split('.').pop(); // 'csv' or 'json' or 'png'
-
-            // Handling image uploads where multiple extensions are valid but we map to a specific key
-            if (fileName.includes('poster') || fileName.includes('snapshot')) {
-                fileType = ['png', 'jpg', 'jpeg'];
-            } else {
-                fileType = [fileType];
-            }
-
-            input.addEventListener('change', async (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                // Simple frontend validation for file type
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (!fileType.includes(ext)) {
-                    alert(`Invalid file type. Please upload a valid file (${fileType.join(', ')}).`);
-                    return;
-                }
-
-                const statusLabel = statusLabels[fileName];
-                const card = uploadCards[fileName];
-
-                statusLabel.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i>Uploading...`;
-                card.classList.remove('error', 'success');
-
-                // --- API Call to Upload File ---
-                const formData = new FormData();
-                formData.append('file', file);
-
-                try {
-                    // The endpoint is /upload/{file_type} where file_type is the full filename
-                    const response = await fetch(`${API_BASE}/upload/${fileName}`, {
-                        method: 'POST',
-                        body: formData,
-                    });
-
-                    if (response.ok) {
-                        statusLabel.innerHTML = `<i class="fa-solid fa-check-circle mr-2"></i>${file.name}`;
-                        card.classList.add('success');
-                        uploadedFiles.add(fileName);
-                        checkFormCompletion();
-                    } else {
-                        let errorData = null;
-                        try { errorData = await response.json(); } catch (e) { errorData = { detail: await response.text() } }
-                        statusLabel.innerText = 'Upload Failed!';
-                        card.classList.add('error');
-                        errorMessage.innerText = errorData.detail || 'An unknown error occurred.';
-                        uploadedFiles.delete(fileName);
-                    }
-                } catch (error) {
-                    statusLabel.innerText = 'Upload Failed!';
-                    card.classList.add('error');
-                    errorMessage.innerText = 'Could not connect to the server.';
-                    console.error('Upload Error:', error);
-                    uploadedFiles.delete(fileName);
-                }
-                checkFormCompletion();
-            });
-        });
-
-        // Check if all required files are uploaded to enable the button
-        function checkFormCompletion() {
-            const allRequiredUploaded = requiredFiles.every(file => uploadedFiles.has(file));
-            generateBtn.disabled = !allRequiredUploaded;
-        }
-
-        // Handle report generation
-        generateBtn.addEventListener('click', async () => {
-            // Clear previous errors
-            errorMessage.innerText = '';
-
-            // 1. Get event details from form
-            const eventDetails = {
-                event_name: document.getElementById('event_name').value,
-                event_type: document.getElementById('event_type').value,
-                institution_name: document.getElementById('institution_name').value,
-            };
-
-            // Basic validation
-            if (!eventDetails.event_name || !eventDetails.event_type || !eventDetails.institution_name) {
-                errorMessage.innerText = 'Please fill in all event details.';
-                return;
-            }
-
-            // 2. Switch to loading view
-            document.getElementById('report-form').classList.add('hidden');
-            document.getElementById('loading-state').classList.remove('hidden');
-
-            // 3. --- API Call to Generate Report ---
             try {
+                // Upload files
+                await uploadFile(document.getElementById('college_logo'), 'college_logo.png');
+                await uploadFile(document.getElementById('club_logo'), 'club_logo.png');
+                await uploadFile(document.getElementById('photo1'), 'photo1.png');
+                await uploadFile(document.getElementById('photo2'), 'photo2.png');
+                await uploadFile(document.getElementById('feedback_image'), 'feedback_image.png');
+                await uploadFile(document.getElementById('poster_image'), 'poster_image.png');
+                await uploadFile(document.getElementById('attendees_csv'), 'attendees.csv');
+
+                status.innerText = 'Compiling LaTeX... This can take 5-10 seconds.';
+                
+                // Build JSON Payload
+                const getVal = id => document.getElementById(id).value;
+                const getList = id => getVal(id).split('\n').map(l => l.trim()).filter(l => l);
+
+                const payload = {
+                    "institute": {},
+                    "event_meta": {
+                        "department_name": getVal('department_name'),
+                        "event_type": getVal('event_type'),
+                        "title": getVal('title'),
+                        "date": getVal('date'),
+                        "time": getVal('time'),
+                        "venue": getVal('venue')
+                    },
+                    "participants": {
+                        "target_audience": getVal('target_audience'),
+                        "total_participants": parseInt(getVal('total_participants')) || 0,
+                        "girl_participants": parseInt(getVal('girl_participants')) || 0,
+                        "boy_participants": parseInt(getVal('boy_participants')) || 0
+                    },
+                    "organizers": {
+                        "resource_person": getVal('resource_person'),
+                        "resource_org": getVal('resource_org'),
+                        "organizing_body": getVal('organizing_body'),
+                        "faculty_coordinator": getVal('faculty_coordinator')
+                    },
+                    "content": {
+                        "objectives": getList('objectives'),
+                        "outcomes": getList('outcomes'),
+                        "detailed_report": getVal('detailed_report'),
+                        "snapshot_description": getVal('snapshot_description')
+                    },
+                    "feedback": {
+                        "feedback_text": getVal('feedback_text')
+                    },
+                    "social_media": {
+                        "facebook": getVal('facebook'),
+                        "instagram": getVal('instagram'),
+                        "linkedin": getVal('linkedin')
+                    },
+                    "registration": {
+                        "dbit_students": parseInt(getVal('dbit_students')) || 0,
+                        "non_dbit_students": parseInt(getVal('non_dbit_students')) || 0
+                    },
+                    "signatories": {
+                        "prepared_name": getVal('prepared_name'),
+                        "prepared_post": getVal('prepared_post'),
+                        "approved_name": getVal('approved_name'),
+                        "approved_post": getVal('approved_post')
+                    }
+                };
+
                 const response = await fetch(`${API_BASE}/generate-report`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(eventDetails),
+                    body: JSON.stringify(payload)
                 });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    // 4. Display results
-                    document.getElementById('loading-state').classList.add('hidden');
-                    document.getElementById('results-section').classList.remove('hidden');
-
-                    // Replace relative image paths in markdown so marked can render them with absolute API base
-                    let mdContent = (result.content || '').replace(/!\[(.*?)\]\((?!https?:\/\/)(.*?)\)/g, `![$1](${API_BASE}/static/output/$2)`);
-
-                    // Use marked + DOMPurify for safe rendering
-                    const rawHtml = (typeof marked !== 'undefined') ? marked.parse(mdContent) : mdContent.replace(/\n/g, '<br>');
-                    const safeHtml = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(rawHtml) : rawHtml;
-
-                    document.getElementById('report-content').innerHTML = safeHtml;
-                    document.getElementById('result-event-name').innerText = eventDetails.event_name;
-
-                    // --- MODIFICATION: Set up both download links ---
-                    const uniqueReportFilename = result.report_filename || 'event_report.md';
-
-                    // 1) .md download (in-memory blob)
-                    const mdBlob = new Blob([result.content], { type: 'text/markdown' });
-                    const mdUrl = URL.createObjectURL(mdBlob);
-                    const mdBtn = document.getElementById('download-md-btn');
-                    mdBtn.href = mdUrl;
-                    mdBtn.download = uniqueReportFilename;
-
-                    // 2) PDF download - request backend conversion endpoint
-                    const pdfBtn = document.getElementById('download-pdf-btn');
-                    pdfBtn.href = `${API_BASE}/download-report/pdf?filename=${encodeURIComponent(uniqueReportFilename)}`;
-                    pdfBtn.target = "_blank";
-
+                    status.innerText = '✅ Report generated successfully!';
+                    status.className = 'mt-4 text-green-400';
+                    downloadLink.href = API_BASE + result.pdf_url;
+                    downloadLink.classList.remove('hidden');
                 } else {
-                    throw new Error(result.detail || 'Failed to generate report.');
+                    status.innerText = '❌ Error: ' + (result.detail || 'Failed');
+                    status.className = 'mt-4 text-red-400';
                 }
-            } catch (error) {
-                document.getElementById('loading-state').classList.add('hidden');
-                document.getElementById('report-form').classList.remove('hidden'); // Show form again
-                errorMessage.innerText = `Error: ${error.message}`;
-                console.error('Generation Error:', error);
+
+            } catch (err) {
+                status.innerText = '❌ Request failed: ' + err.message;
+                status.className = 'mt-4 text-red-400';
+            } finally {
+                btn.disabled = false;
             }
         });
     </script>
-
 </body>
-
 </html>

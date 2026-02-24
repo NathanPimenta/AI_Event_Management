@@ -2,167 +2,321 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <title>Certificate of Achievement</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Certificate of Achievement</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Merriweather:wght@300;700&family=Open+Sans:wght@400;600&display=swap"
+        rel="stylesheet">
+
     <style>
+        :root {
+            /* --- COLOR PALETTE --- */
+            --bg-color: {{ colors.background | default('#fdfbf7') }};
+            --text-color: {{ colors.text | default('#2c3e50') }};
+            --accent-color: {{ colors.accent | default('#c0392b') }};
+            --header-color: {{ colors.header | default('#1a252f') }};
+            --border-color: {{ colors.border | default('#1a252f') }};
+            
+            /* --- FONTS --- */
+            --header-font: {{ fonts.header_family | default('\'Merriweather\', serif') }};
+            --body-font: {{ fonts.body_family | default('\'Open Sans\', sans-serif') }};
+            --signature-font: 'Great Vibes', cursive;
+            
+            /* --- LAYOUT --- */
+            --border-width: {{ styles.border_width | default('2px') }};
+            --box-shadow: {{ styles.shadow | default('0 10px 25px rgba(0,0,0,0.1)') }};
+            --logo-width: {{ layout.logo_width | default('100px') }};
+            --logo-max-height: {{ layout.logo_max_height | default('60px') }};
+            --content-top: {{ layout.content_top | default('120px') }};
+        }
+
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            font-family: "Georgia", serif;
-            background: #f4f4f4;
-        }
-
-        .certificate-container {
-            width: 1000px;
-            height: 700px;
-            margin: 40px auto;
-            padding: 40px;
-            background: #ffffff;
-            border: 12px solid #1e3a8a;
-            box-sizing: border-box;
-            position: relative;
-        }
-
-        .certificate-inner {
-            border: 4px solid #c7a008;
-            height: 100%;
-            padding: 40px;
-            box-sizing: border-box;
+            background-color: #e0e0e0;
+            /* Grey background for browser view */
+            font-family: var(--body-font);
             display: flex;
-            flex-direction: row;
-            gap: 30px;
-        }
-
-        /* LEFT LOGO SECTION */
-        .logo-section {
-            width: 180px;
-            display: flex;
-            align-items: flex-start;
             justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
 
-        .logo-section img {
-            max-width: 160px;
-            max-height: 160px;
+        /* Simulates A4 Landscape Paper */
+        .page-frame {
+            width: 297mm;
+            height: 210mm;
+            background-color: var(--bg-color);
+            position: relative;
+            box-shadow: var(--box-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            /* Clips the watermark */
+        }
+
+        .certificate-border {
+            width: calc(100% - 40px);
+            height: calc(100% - 40px);
+            border: 10px solid transparent;
+            /* Double border effect using box-shadow and border */
+            border-image: linear-gradient(to bottom right, #b8860b 0%, #d4af37 100%);
+            border-image-slice: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 40px;
+            padding-top: var(--content-top);
+            box-sizing: border-box;
+        }
+
+        /* Fixed Logos at Top */
+        .fixed-logo {
+            position: fixed;
+            width: var(--logo-width);
+            max-height: var(--logo-max-height);
+            height: auto;
+            z-index: 999;
             object-fit: contain;
         }
 
-        /* RIGHT CONTENT SECTION */
-        .content-section {
-            flex: 1;
-            text-align: center;
-            position: relative;
+        .fixed-logo--college {
+            top: 24px;
+            left: 24px;
         }
 
-        .title {
-            font-size: 48px;
-            font-weight: bold;
-            color: #1e3a8a;
+        .fixed-logo--club {
+            top: 24px;
+            right: 24px;
+        }
+
+        /* Corners Decoration */
+        .certificate-border::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border: 2px solid var(--accent-color);
+            pointer-events: none;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .org-name {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 3px;
             margin-bottom: 10px;
         }
 
-        .subtitle {
-            font-size: 22px;
-            margin-bottom: 40px;
-            color: #444;
+        h1 {
+            font-family: var(--header-font);
+            font-size: 3.5rem;
+            color: var(--header-color);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .name {
-            font-size: 42px;
-            font-weight: bold;
-            margin: 20px 0;
-            color: #111827;
-            border-bottom: 2px solid #000;
-            display: inline-block;
-            padding: 0 20px;
+        .gold-line {
+            width: 150px;
+            height: 4px;
+            background: #d4af37;
+            margin: 10px auto;
         }
 
-        .description {
-            font-size: 20px;
-            margin: 30px auto;
-            max-width: 700px;
-            line-height: 1.6;
-            color: #374151;
-        }
-
-        .event-name {
-            font-weight: bold;
-            color: #1e40af;
-        }
-
-        .date {
-            margin-top: 10px;
-            font-size: 16px;
-        }
-
-        .footer {
-            position: absolute;
-            bottom: 40px;
-            left: 0;
-            right: 0;
+        /* Body */
+        .main-content {
+            flex-grow: 1;
+            text-align: center;
             display: flex;
-            justify-content: space-around;
-            font-size: 16px;
-            color: #374151;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .signature {
+        .presented-text {
+            font-size: 1.2rem;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
+        .recipient-name {
+            font-family: var(--signature-font);
+            /* Using cursive for name looks elegant */
+            font-size: 4rem;
+            color: var(--accent-color);
+            margin: 10px 0 20px 0;
+            line-height: 1;
+        }
+
+        .achievement-desc {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            max-width: 700px;
+            margin: 0 auto;
+            color: var(--text-color);
+        }
+
+        /* Footer */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 30px;
+            padding: 0 40px;
+        }
+
+        .signature-block,
+        .date-block {
+            text-align: center;
+            width: 200px;
+        }
+
+        .sign-preview {
+            font-family: var(--signature-font);
+            font-size: 2.5rem;
+            color: #000;
+            margin-bottom: 5px;
+        }
+
+        .line {
+            border-top: 1px solid #333;
+            margin-bottom: 5px;
+        }
+
+        .label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #7f8c8d;
+            letter-spacing: 1px;
+        }
+
+        /* QR Code Styling */
+        .qr-block {
             text-align: center;
         }
 
-        .signature-line {
-            margin-top: 50px;
-            border-top: 2px solid #000;
-            width: 200px;
-            margin-left: auto;
-            margin-right: auto;
+        .qr-block img {
+            width: 80px;
+            height: 80px;
+            border: 1px solid #ddd;
+            padding: 4px;
+            background: #fff;
+        }
+
+        /* Watermark */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 8rem;
+            color: rgba(0, 0, 0, 0.03);
+            font-weight: bold;
+            text-transform: uppercase;
+            z-index: 0;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* Print Settings */
+        @media print {
+            body {
+                background: none;
+                display: block;
+            }
+
+            .page-frame {
+                box-shadow: none;
+                width: 100%;
+                height: 100%;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="certificate-container">
-        <div class="certificate-inner">
 
-            <!-- LEFT LOGO -->
-            <div class="logo-section">
-                <img src="{{ logo_url }}" alt="Institution Logo" />
+    <div class="page-frame">
+        <div class="watermark">{{ achievement_type }}</div>
+
+        <!-- Fixed Logos -->
+        {% if college_logo_path %}
+        <img class="fixed-logo fixed-logo--college" src="file://{{ college_logo_path }}" alt="Institution Logo">
+        {% endif %}
+
+        {% if club_logo_path %}
+        <img class="fixed-logo fixed-logo--club" src="file://{{ club_logo_path }}" alt="Club Logo">
+        {% endif %}
+
+        <div class="certificate-border">
+
+            <div class="header">
+                <div class="org-name">{{ institution_name }}</div>
+                <h1>{{ event_name }}</h1>
+                <div class="gold-line"></div>
             </div>
 
-            <!-- RIGHT CONTENT -->
-            <div class="content-section">
+            <div class="main-content">
+                <div class="presented-text">This certificate is proudly presented to</div>
 
-                <div class="title">Certificate of Achievement</div>
-                <div class="subtitle">This certificate is proudly presented to</div>
+                <div class="recipient-name">{{ name }}</div>
 
-                <div class="name">{{ name }}</div>
+                <div class="achievement-desc">
+                    For securing <strong>{{ rank }} Place</strong> in the <strong>{{ event_name }}</strong>.
+                    <br>
+                    Your exceptional skill, strategy, and competitive spirit have distinguished you among your peers.
+                </div>
+            </div>
 
-                <div class="description">
-                    For outstanding performance and recognition for
-                    <strong>{{ achievement_type }}</strong>
-                    at the event
-                    <span class="event-name">{{ event_name }}</span>.
+            <div class="footer">
+
+                <div class="date-block">
+                    <div style="font-size: 1.2rem; margin-bottom: 10px;">{{ event_date }}</div>
+                    <div class="line"></div>
+                    <div class="label">Date Awarded</div>
                 </div>
 
-                <div class="date">
-                    Awarded on {{ event_date }}
+                <div class="qr-block">
+                    {% if qr_code_path %}
+                    <img src="file://{{ qr_code_path }}" alt="QR Code">
+                    {% endif %}
+                    <div style="font-size: 0.6rem; margin-top: 4px; color: #7f8c8d;">SCAN TO VERIFY</div>
                 </div>
 
-                <div class="footer">
-                    <div class="signature">
-                        <div class="signature-line"></div>
-                        Event Coordinator
-                    </div>
-
-                    <div class="signature">
-                        <div class="signature-line"></div>
-                        Institution Head
-                    </div>
+                <div class="signature-block">
+                    {% if signature_path %}
+                    <img src="file://{{ signature_path }}" alt="Signature"
+                        style="width: 150px; height: auto; margin-bottom: 5px;">
+                    {% else %}
+                    <div class="sign-preview">Authorized Signatory</div>
+                    {% endif %}
+                    <div class="line"></div>
+                    <div class="label">{{ signature_name }}</div>
                 </div>
 
             </div>
+
         </div>
     </div>
+
 </body>
 
 </html>

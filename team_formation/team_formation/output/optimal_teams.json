@@ -1,6 +1,6 @@
 {
   "event_name": "InnovateTech AI Conference 2025",
-  "fitness_score": 2863.26,
+  "fitness_score": 2863.99,
   "total_participants_assigned": 16,
   "roles": {
     "REG_DESK": {
@@ -14,22 +14,12 @@
       ],
       "assigned_participants": [
         {
-          "id": "P06",
-          "name": "Fiona Clark",
-          "year": 2,
-          "past_events": 1,
+          "id": "P14",
+          "name": "Nora King",
+          "year": 3,
+          "past_events": 2,
           "skill_levels": {
             "Communication": 3,
-            "Organization": 3
-          }
-        },
-        {
-          "id": "P18",
-          "name": "Ruby Carter",
-          "year": 2,
-          "past_events": 1,
-          "skill_levels": {
-            "Communication": 2,
             "Organization": 2
           }
         },
@@ -44,13 +34,23 @@
           }
         },
         {
-          "id": "P14",
-          "name": "Nora King",
-          "year": 3,
+          "id": "P09",
+          "name": "Ian Martinez",
+          "year": 2,
           "past_events": 2,
           "skill_levels": {
-            "Communication": 3,
+            "Communication": 2,
             "Organization": 2
+          }
+        },
+        {
+          "id": "P06",
+          "name": "Fiona Clark",
+          "year": 2,
+          "past_events": 1,
+          "skill_levels": {
+            "Communication": 3,
+            "Organization": 3
           }
         }
       ]
@@ -86,10 +86,10 @@
           }
         },
         {
-          "id": "P09",
-          "name": "Ian Martinez",
+          "id": "P15",
+          "name": "Oscar Wright",
           "year": 2,
-          "past_events": 2,
+          "past_events": 0,
           "skill_levels": {
             "AV Setup": 2,
             "Troubleshooting": 2
@@ -150,20 +150,20 @@
           }
         },
         {
-          "id": "P10",
-          "name": "Jane Rodriguez",
+          "id": "P19",
+          "name": "Sam Evans",
           "year": 3,
-          "past_events": 4,
+          "past_events": 3,
           "skill_levels": {
             "Organization": 3,
             "Coordination": 3
           }
         },
         {
-          "id": "P19",
-          "name": "Sam Evans",
+          "id": "P10",
+          "name": "Jane Rodriguez",
           "year": 3,
-          "past_events": 3,
+          "past_events": 4,
           "skill_levels": {
             "Organization": 3,
             "Coordination": 3
@@ -192,8 +192,8 @@
           }
         },
         {
-          "id": "P03",
-          "name": "Charlie Brown",
+          "id": "P17",
+          "name": "Quinn Baker",
           "year": 4,
           "past_events": 5,
           "skill_levels": {
@@ -215,8 +215,8 @@
       ],
       "assigned_participants": [
         {
-          "id": "P17",
-          "name": "Quinn Baker",
+          "id": "P03",
+          "name": "Charlie Brown",
           "year": 4,
           "past_events": 5,
           "skill_levels": {

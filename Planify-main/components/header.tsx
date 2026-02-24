@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
-import { Menu, User, LogOut, Home, Calendar, Users, Award, FileText, Search, ChevronDown, ImageIcon, Images } from "lucide-react"
+import { Menu, User, LogOut, Home, Calendar, Users, Award, FileText, Search, ChevronDown, ImageIcon, Images, Video } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ModeToggle } from "./mode-toggle"
@@ -179,6 +179,12 @@ export default function Header() {
                   <Link href="/ai-tools/image-curator" className="flex items-center gap-2">
                     <Images className="h-4 w-4" />
                     Image Curator
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/planify-reelmaker" className="flex items-center gap-2">
+                    <Video className="h-4 w-4" />
+                    Reel Maker
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>

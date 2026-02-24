@@ -1,0 +1,569 @@
+\documentclass[twocolumn]{svjour3}
+\smartqed
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{array}
+
+\begin{document}
+
+\title{Planify: A Full-Project Agentic Platform for AI-Assisted Event Management}
+
+\author{First Author \and Second Author}
+\institute{Department, Institution \\ \email{author@institution.edu}}
+
+\date{Received: date / Accepted: date}
+
+\maketitle
+
+\begin{abstract}
+This paper presents \textit{Planify}, a full-stack event management platform that integrates a role-aware community system with seven AI modules: agentic talent scraping, genetic-algorithm team formation, image curation, AI poster design, agentic certificate generation, post-event report generation, and automated reel synthesis. The system combines a Next.js and PostgreSQL core with Python FastAPI services and local model inference, including CLIP, YOLOv8, and NIMA-based scoring. We provide a complete implementation-grounded description of architecture, module interfaces, optimization objectives, scoring equations, and orchestration flows. We also provide pseudocode for all major pipelines and a rigorous methodology-only evaluation framework without fabricated empirical results. The manuscript is intended as a reproducible, system-level reference for AI-augmented event operations.
+\keywords{event management systems \and agentic pipelines \and multimodal AI \and genetic algorithms \and multimedia generation}
+\end{abstract}
+
+\section{Introduction}
+Modern event operations require both transactional workflows (communities, clubs, events, members, tasks) and high-variance creative work (outreach discovery, team assignment, media curation, content generation, certificates, and reports). Most deployed systems treat these separately, causing duplicated effort and weak operational traceability.
+
+Planify addresses this gap by combining:
+\begin{itemize}[leftmargin=*]
+\item A structured platform layer (users, communities, clubs, events, tasks, queries, RBAC).
+\item AI microservices that automate high-cost planning and content workflows.
+\item API-level integration between a Next.js frontend and Python FastAPI services.
+\item Reproducible modular pipelines with explicit scoring functions and verification steps.
+\end{itemize}
+
+This paper documents the complete implemented project rather than a single module. It is methodology-centric and does not report fabricated performance numbers.
+
+\section{Related Work}
+The Planify architecture draws from prior work in several domains. Aesthetic prediction uses NIMA-style quality estimation~\cite{talebi2018nima} with EfficientNet backbones~\cite{tan2019efficientnet}. Semantic image relevance leverages CLIP-style text-image similarity~\cite{radford2021clip} and object-level scene cues from YOLOv8~\cite{ultralytics2023yolov8}. Video synthesis relies on programmatic editing abstractions in MoviePy~\cite{moviepy}. Team assignment uses evolutionary optimization inspired by classical genetic algorithm formulations~\cite{holland1975adaptation,goldberg1989ga}. Deduplication uses perceptual hashing concepts~\cite{zauner2010phash}. The platform and service layer is built with modern web and API stacks (Next.js, FastAPI, PostgreSQL)~\cite{nextjs,fastapi,postgresql}.
+
+\section{End-to-End System Architecture}
+\subsection{System Context (Diagram Spec)}
+\textbf{Diagram 1 specification (System Context):}
+\begin{itemize}[leftmargin=*]
+\item External actors: community admins, club leads, members, attendees.
+\item Core platform: Next.js app + PostgreSQL.
+\item AI services: Scraper, Team Optimizer, Image Curator, Poster Generator, Certificate Generator, Report Generator, ReelMaker.
+\item Model/tool layer: Ollama, CLIP, YOLOv8, NIMA, ComfyUI, WeasyPrint.
+\item Storage artifacts: JSON outputs, curated images, posters, certificates, DOCX/PDF reports, reels.
+\end{itemize}
+
+\subsection{Container-Level View (Diagram Spec)}
+\textbf{Diagram 2 specification (Container Diagram):}
+\begin{itemize}[leftmargin=*]
+\item Web tier: Next.js routes in \texttt{Planify-main/app/api/*}.
+\item Database tier: PostgreSQL schema in \texttt{Planify-main/lib/migrations/001\_initial\_schema.sql}.
+\item AI services: FastAPI apps in module folders.
+\item Inter-service communication: HTTP/JSON or multipart upload.
+\item Deployment assumption: services run locally on dedicated ports per workflow execution.
+\end{itemize}
+
+\subsection{Interface Contract Table}
+\begin{table*}[t]
+\centering
+\caption{Implemented integration contracts in Planify.}
+\label{tab:interfaces}
+\begin{tabular}{p{0.32\linewidth}p{0.22\linewidth}p{0.36\linewidth}}
+\toprule
+Platform Route / Client Call & Upstream Endpoint & Purpose \\
+\midrule
+\texttt{Planify-main/app/api/scraper/route.ts} & \texttt{http://localhost:8002/scrape/} & Agentic candidate discovery (speakers, judges, mentors, sponsors) \\
+\texttt{Planify-main/app/api/team-formation/proxy/route.ts} & \texttt{http://127.0.0.1:8001/form-teams/} & GA-based role assignment from requirements and participants \\
+\texttt{Planify-main/app/api/image-curator/route.ts} & \texttt{http://localhost:8004/curate} & Async image curation job submission \\
+\texttt{Planify-main/app/api/poster-generator/*} & \texttt{http://localhost:8003/*} & Background generation, overlay design, final rendering \\
+Frontend direct call & \texttt{http://127.0.0.1:8002/certificates/generate} & Certificate batch generation \\
+Frontend direct calls & \texttt{http://127.0.0.1:8003/upload/*}, \texttt{/generate-report} & Report data upload and report synthesis \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Core Platform Layer}
+The platform layer provides account, membership, and event operations. The schema includes users, communities, clubs, club/community memberships, events, attendees, tasks, and event queries. Role-based permissions are encoded in both SQL permission tables and an application-level RBAC matrix.
+
+\textbf{Core capabilities:}
+\begin{itemize}[leftmargin=*]
+\item Community and club lifecycle management.
+\item Event creation, registration, attendance handling, and query handling.
+\item Task assignment and status tracking.
+\item Role-aware operations through \texttt{audience}, \texttt{community\_member}, and \texttt{community\_admin}.
+\item Integration stubs and proxies to AI microservices.
+\end{itemize}
+
+\section{AI Module I: Agentic Talent Scraper}
+The scraper pipeline combines LLM reasoning, web search, page relevance filtering, and structured extraction.
+
+\subsection{Method}
+\begin{enumerate}[leftmargin=*]
+\item Classify event context and infer target roles.
+\item Generate diverse role-specific search queries.
+\item Extract and confidence-rank URLs from search outputs.
+\item Fetch pages (Selenium-first, requests fallback).
+\item Apply event relevance checks (token overlap and year consistency).
+\item Extract structured candidates via LLM prompts.
+\item Deduplicate and optionally enrich with profile/contact signals.
+\end{enumerate}
+
+\subsection{URL Confidence Model}
+For URL $u$, a heuristic confidence score is computed as:
+\begin{equation}
+C(u) = C_0 + \sum_j b_j(u) - \sum_k p_k(u), \quad C(u) \in [0,1],
+\end{equation}
+where $C_0$ is base confidence, $b_j$ are domain/path boosts (for professional and role-relevant cues), and $p_k$ are penalties (for low-relevance domains or noisy URL patterns).
+
+\section{AI Module II: Team Formation Optimizer (GA)}
+The team optimizer solves role-assignment with hard/soft penalties and evolutionary search.
+
+\subsection{Fitness Function (Implementation-Grounded)}
+For role $r$, required quantity $q_r$, assigned count $n_r$, and assigned participant set $A_r$:
+\begin{equation}
+R_r =
+\begin{cases}
++200, & n_r = q_r \\
+-300(q_r-n_r), & n_r < q_r \\
+-150(n_r-q_r), & n_r > q_r
+\end{cases}
+\end{equation}
+
+Participant skill contribution for participant $i \in A_r$ and required skill set $\mathcal{S}_r$:
+\begin{equation}
+K_{i,r} = \sum_{s \in \mathcal{S}_r} \phi(\ell_{i,s}) + 50\cdot\mathbb{I}[\text{all required skills found}],
+\end{equation}
+with
+\begin{equation}
+\phi(\ell)=
+\begin{cases}
+30\ell, & \ell\ge2 \\
+5, & \ell=1 \\
+-40, & \ell=0 \text{ or missing value} \\
+-20, & \text{skill column absent}
+\end{cases}
+\end{equation}
+
+Average role skill score is $\bar{K}_r = \frac{1}{|A_r|}\sum_{i \in A_r}K_{i,r}$.
+
+Experience term (if \texttt{past\_events} exists):
+\begin{equation}
+E_r = 0.3\left(10\cdot\overline{e}_r + \min(2\cdot\mathrm{Var}(e_r),20)\right).
+\end{equation}
+
+Total fitness used in implementation:
+\begin{equation}
+F = \sum_r\left(R_r + 0.8\bar{K}_r + E_r\right) + 500\cdot\mathbb{I}[\forall r, n_r=q_r] - 1000D - \mathrm{Var}(\{n_r\}),
+\end{equation}
+where $D$ is duplicate participant assignments across multiple roles.
+
+\subsection{Evolutionary Operators}
+\begin{itemize}[leftmargin=*]
+\item Population size: 100; generations: 50.
+\item Tournament selection (size 5).
+\item Role-wise crossover with duplicate-repair.
+\item Mutation types: reassign, swap, remove-add.
+\item Elitism: top 5 individuals preserved per generation.
+\end{itemize}
+
+\section{AI Module III: Image Curator}
+Image Curator performs quality-aware asset ranking for event galleries.
+
+\subsection{Ingestion and Filtering}
+From Google Drive media folders, the module:
+\begin{itemize}[leftmargin=*]
+\item Downloads images and videos.
+\item Extracts up to 3 video keyframes per video.
+\item Filters by blur, exposure, brightness, contrast, noise, resolution, and aspect ratio.
+\item Deduplicates with perceptual hash distance threshold 12.
+\end{itemize}
+
+\subsection{Technical Score}
+Given RGB image $I$ and grayscale projection $G$:
+\begin{align}
+S_{blur} &= \mathrm{clip}\left(\frac{\mathrm{Var}(\nabla^2G)}{25},0,10\right), \\
+S_{exp} &= \mathrm{clip}\left(10 - \frac{|127.5-\mu_G|}{12.75},0,10\right), \\
+S_{ctr} &= \mathrm{clip}\left(\frac{\sigma_G}{25},0,10\right), \\
+S_{bri} &= \mathrm{clip}\left(10 - \frac{|128-\mu_G|}{12.8},0,10\right), \\
+S_{noi} &= \mathrm{clip}\left(10 - \frac{\mu|G-\mathcal{B}(G)|}{2},0,10\right), \\
+S_{res} &= \mathrm{clip}\left(\frac{HW}{100000},0,10\right).
+\end{align}
+
+Weighted technical score:
+\begin{equation}
+S_{tech} = 0.25S_{blur}+0.20S_{exp}+0.15S_{ctr}+0.15S_{bri}+0.15S_{noi}+0.10S_{res},
+\end{equation}
+with a 20\% bonus for original still images (capped at 10).
+
+\subsection{Engagement Score (NIMA)}
+Let model output be a 10-bin aesthetic distribution $p_k$ for score levels $k=1..10$:
+\begin{equation}
+S_{eng}=\sum_{k=1}^{10}k\,p_k.
+\end{equation}
+
+Final image curation score:
+\begin{equation}
+S_{curator}=0.40\,S_{tech}+0.60\,S_{eng}.
+\end{equation}
+
+\section{AI Module IV: Poster Generator}
+This module uses a two-stage pipeline:
+\begin{enumerate}[leftmargin=*]
+\item ComfyUI workflow generates a themed background with requested dimensions.
+\item LLM-based layout agent produces JSON layer instructions (text content, positions, font, effects).
+\item Renderer composites layers with style effects (shadow, outline, glow).
+\end{enumerate}
+
+Poster generation is deterministic at rendering time and stochastic at design generation time due to LLM output.
+
+\section{AI Module V: Certificate Generator}
+The certificate module is an agentic pipeline over participant CSV input and style/assets configuration.
+
+\subsection{Pipeline}
+\begin{enumerate}[leftmargin=*]
+\item Data intake from CSV/DataFrame-like inputs.
+\item Template selection (modern/formal/custom).
+\item AI design generation (color/font/style objects).
+\item Asset resolution (club logo, college logo, signature).
+\item Layout computation (safe margins, logo positions).
+\item Context assembly per participant (including QR code).
+\item Quality-control reinforcement before rendering.
+\item HTML rendering and PDF generation via WeasyPrint.
+\end{enumerate}
+
+\subsection{Readability Safeguard}
+Contrast is checked using luminance:
+\begin{equation}
+Y(c)=\frac{0.299R+0.587G+0.114B}{255},
+\end{equation}
+and low-contrast foreground/background pairs are corrected by selecting a contrasting text color.
+
+\section{AI Module VI: Report Generator}
+The report module fuses quantitative analytics with qualitative LLM summaries.
+
+\subsection{Quantitative Metrics}
+For rating set $\mathcal{R}=\{r_i\}_{i=1}^{N}$:
+\begin{align}
+\mu_r &= \frac{1}{N}\sum_{i=1}^{N}r_i, \\
+\tilde{r} &= \mathrm{median}(\mathcal{R}), \\
+\sigma_r &= \sqrt{\frac{1}{N}\sum_{i=1}^{N}(r_i-\mu_r)^2}.
+\end{align}
+
+Bucket counts:
+\begin{align}
+N_{exc} &= |\{i: r_i\ge4.5\}|, \\
+N_{good} &= |\{i: 4.0\le r_i<4.5\}|, \\
+N_{avg} &= |\{i: 3.5\le r_i<4.0\}|, \\
+N_{poor} &= |\{i: r_i<3.5\}|.
+\end{align}
+
+The pipeline optionally fills strict user-provided \texttt{.docx} or \texttt{.tex} templates through an LLM-driven mapping stage, with explicit missing-asset and missing-placeholder handling.
+
+\section{AI Module VII: ReelMaker (Advanced Media Pipeline)}
+ReelMaker is a multi-stage summarization and synthesis system for short vertical videos.
+
+\subsection{Keyframe Trigger and Ranking}
+Video scene-change keyframes are extracted when frame MSE exceeds threshold:
+\begin{equation}
+\mathrm{MSE}(f_t,f_{t-1}) = \frac{1}{HW}\sum_{x,y}\left(f_t(x,y)-f_{t-1}(x,y)\right)^2 > 50.
+\end{equation}
+
+Semantic score combines object density and CLIP prompt margin:
+\begin{equation}
+S_{sem}=5+\Delta_{obj}+4\left(\overline{p}_{pos}-\overline{p}_{neg}\right),
+\end{equation}
+where $\Delta_{obj}=+2$ for 1--10 objects, $-1$ for $>10$ objects.
+
+Final media ranking:
+\begin{equation}
+S_{reel}=0.50\,S_{tech}+0.25\,S_{sem}+0.25\,S_{eng}.
+\end{equation}
+
+\subsection{Audio-Video Synchronization}
+For $N$ selected images and transition duration $T$:
+\begin{equation}
+\texttt{clip\_duration}=\frac{\texttt{audio\_duration} + (N-1)T}{N}.
+\end{equation}
+
+This compensates overlap caused by crossfades.
+
+\section{Cross-Module Orchestration and Dataflow}
+\subsection{Sequence Diagram Spec}
+\textbf{Diagram 3 specification (Create event to AI outputs):}
+\begin{enumerate}[leftmargin=*]
+\item Admin creates event via platform API.
+\item User invokes one AI tool from \texttt{/ai-tools/*} interface.
+\item Next.js API route proxies to service (or frontend calls service directly for some modules).
+\item Service executes module-specific pipeline and stores artifacts.
+\item Response returns artifact paths/URLs and metadata.
+\item Artifacts are consumed by event workflow (promotion, operations, reporting, certificates, highlights).
+\end{enumerate}
+
+\subsection{Dataflow Diagram Specs}
+\textbf{Diagram 4 (Per-module I/O):}
+\begin{itemize}[leftmargin=*]
+\item Scraper: event details $\rightarrow$ candidate JSON + outreach logs.
+\item Team GA: requirements JSON + participants CSV $\rightarrow$ optimal teams JSON.
+\item Curator: Drive folder URL $\rightarrow$ curated image set.
+\item Poster: prompt + content + intent $\rightarrow$ composited poster image.
+\item Certificate: config + CSV + assets/template $\rightarrow$ certificate PDFs.
+\item Report: uploaded datasets + template(optional) $\rightarrow$ Markdown + DOCX/TEX + PDF.
+\item ReelMaker: Drive media + reel prompt $\rightarrow$ narrated MP4 (with optional overlays).
+\end{itemize}
+
+\subsection{Deployment Diagram Spec}
+\textbf{Diagram 5 specification (Local services):}
+\begin{itemize}[leftmargin=*]
+\item Next.js web application and API routes.
+\item PostgreSQL backend for core entities.
+\item FastAPI services per AI module (ports configured per service run profile).
+\item Model/runtime tools: Ollama local inference, ComfyUI image workflow engine.
+\end{itemize}
+
+\textbf{Diagram 6 specification:} Detailed pipeline nodes for ReelMaker and Image Curator.\\
+\textbf{Diagram 7 specification:} Detailed pipeline nodes for Report and Certificate generation.
+
+\section{Pseudocode Blocks}
+\subsection{Algorithm 1: Agentic Candidate Discovery}
+\begin{small}\begin{verbatim}
+Input: event_details
+roles <- infer_roles(event_details)
+for role in roles:
+    queries <- generate_queries(event_details, role)
+    for q in top_queries(queries):
+        search_results <- web_search(q)
+        urls <- confidence_rank(extract_urls(search_results))
+        for u in top_urls(urls):
+            html <- fetch_page(u)
+            if not relevant(html, event_details):
+                continue
+            candidates <- llm_extract(html, role)
+            store(candidates)
+return deduplicate(all_candidates)
+\end{verbatim}\end{small}
+
+\subsection{Algorithm 2: URL Confidence and Relevance Filtering}
+\begin{small}\begin{verbatim}
+Input: search_text, event_details
+urls <- regex_extract(search_text)
+for u in urls:
+    C[u] <- base_confidence
+    C[u] += domain_boost(u) + path_boost(u)
+    C[u] -= low_value_domain_penalty(u)
+    C[u] -= suspicious_url_penalty(u)
+urls <- filter(C[u] >= threshold)
+for u in urls:
+    html <- fetch(u)
+    if token_overlap(event_name, html) < 0.6:
+        reject(u)
+    if title_year_mismatch(event_name, html_title):
+        reject(u)
+return accepted_urls
+\end{verbatim}\end{small}
+
+\subsection{Algorithm 3: Genetic Team Assignment}
+\begin{small}\begin{verbatim}
+Input: role_requirements, participants
+P <- initialize_population(size=100)
+evaluate(P)
+for gen in 1..50:
+    elites <- top_k(P, 5)
+    offspring <- []
+    while |offspring| < 95:
+        p1 <- tournament_select(P)
+        p2 <- tournament_select(P)
+        c1,c2 <- crossover(p1,p2)
+        if rand() < 0.15: c1 <- mutate(c1)
+        if rand() < 0.15: c2 <- mutate(c2)
+        repair_duplicates(c1,c2)
+        offspring += {c1,c2}
+    P <- evaluate(elites + offspring)
+return best(P)
+\end{verbatim}\end{small}
+
+\subsection{Algorithm 4: Media Ingestion and Deduplication}
+\begin{small}\begin{verbatim}
+Input: drive_folder_url
+media <- download_images_and_videos(url)
+frames <- extract_keyframes(videos, mse_threshold=50, max=3)
+assets <- images + frames
+assets <- quality_filter(assets,
+    blur, exposure, brightness, contrast, noise, size, ratio)
+unique_assets <- []
+for a in assets:
+    h <- phash(a)
+    if no existing hash within distance <= 12:
+        unique_assets.append(a)
+return unique_assets
+\end{verbatim}\end{small}
+
+\subsection{Algorithm 5: Multi-Factor Image Ranking}
+\begin{small}\begin{verbatim}
+Input: media_assets, models
+for item in media_assets:
+    S_tech <- technical_score(item)
+    S_sem <- semantic_score(item, yolo, clip)
+    S_eng <- nima_expectation(item)
+    if mode == "reel":
+        S <- 0.50*S_tech + 0.25*S_sem + 0.25*S_eng
+    else if mode == "curator":
+        S <- 0.40*S_tech + 0.60*S_eng
+rank by S descending
+return top_N
+\end{verbatim}\end{small}
+
+\subsection{Algorithm 6: Reel Assembly and Synchronization}
+\begin{small}\begin{verbatim}
+Input: ranked_assets, script, narration_audio
+N <- number_of_assets
+T <- transition_duration (0.5s)
+clip_duration <- (audio_duration + (N-1)*T)/N
+clips <- build_ken_burns_clips(assets, clip_duration)
+video <- compose_with_crossfades(clips, T)
+if bot_overlays_enabled:
+    plan <- llm_plan_overlays(scene_objects)
+    video <- overlay_green_screen_bots(video, plan)
+video <- attach_audio(video, narration_audio, music)
+verify_duration(video, expected=audio_duration)
+return video
+\end{verbatim}\end{small}
+
+\subsection{Algorithm 7: AI Poster Design Loop}
+\begin{small}\begin{verbatim}
+Input: prompt, dimensions, content, intent
+bg <- comfyui_generate(prompt, dimensions)
+fonts <- fetch_available_fonts()
+layout_json <- llm_design(content, intent, fonts, canvas_size)
+poster <- render_layers(bg, layout_json)
+return poster, layout_json
+\end{verbatim}\end{small}
+
+\subsection{Algorithm 8: Agentic Certificate Pipeline}
+\begin{small}\begin{verbatim}
+Input: config, participants_csv, assets
+participants <- load_data(participants_csv)
+template <- select_template(config.style, config.prompt)
+design <- generate_design(config.ai_theme_prompt)
+resolved_assets <- resolve_paths(assets)
+layout <- build_layout(config, design)
+for participant in participants:
+    qr <- create_qr(participant)
+    context <- build_context(participant, design, layout, assets, qr)
+    context <- quality_control_audit(context)
+    html <- render_html(template, context)
+    pdf <- html_to_pdf(html)
+return all_pdfs
+\end{verbatim}\end{small}
+
+\subsection{Algorithm 9: Report Generation Pipeline}
+\begin{small}\begin{verbatim}
+Input: attendees.csv, feedback.csv, optional_jsons, optional_template
+data <- ingest_data()
+stats <- quantitative_analysis(data)
+themes <- llm_feedback_analysis(data.comments)
+social <- llm_social_analysis(data.social)
+recommendations <- llm_recommend(stats, themes)
+if template provided:
+    if docx: fill_docx_template(template, context, assets)
+    if tex: filled_tex <- llm_fill_tex(template, context)
+report <- compose_markdown(stats, themes, recommendations)
+export PDF from markdown when requested
+return report artifacts
+\end{verbatim}\end{small}
+
+\section{Evaluation Protocol (Methodology Only)}
+This section defines experiments and metrics only. No numerical claims are reported.
+
+\subsection{Datasets and Inputs}
+\begin{itemize}[leftmargin=*]
+\item Multi-event media folders (images + videos) for curation/reel modules.
+\item Role requirement JSON and participant CSVs for team formation.
+\item Real event descriptions for scraping workflows.
+\item Certificate and report templates with controlled variability.
+\end{itemize}
+
+\subsection{Baselines}
+\begin{itemize}[leftmargin=*]
+\item Scraper: naive keyword search without relevance filtering.
+\item Team formation: random assignment and greedy skill matching.
+\item Curator/Reel: chronological-only and technical-only ranking.
+\item Poster/Certificate/Report: template-only static generation without AI assist.
+\end{itemize}
+
+\subsection{Metrics}
+\textbf{Scraper:} precision@k on relevant candidates, contactability rate.\\
+\textbf{Team GA:} role fulfillment rate, final fitness, duplicate assignment rate.\\
+\textbf{Curator/Reel:} aesthetic score, semantic relevance, diversity, coherence ratings.\\
+\textbf{Poster/Certificate/Report:} structural validity, user preference, generation latency.
+
+\subsection{Ablation Design}
+\begin{itemize}[leftmargin=*]
+\item Remove CLIP and/or YOLO from semantic scoring.
+\item Remove NIMA from engagement scoring.
+\item Modify GA operators (no mutation, no crossover variants).
+\item Disable certificate QC agent.
+\item Disable report LLM recommendation stage.
+\end{itemize}
+
+\subsection{Human Evaluation Protocol}
+Use blinded pairwise preference studies with Likert-scale rubrics for coherence, quality, trustworthiness, and usability. Report inter-rater agreement and confidence intervals in future empirical work.
+
+\subsection{Result Reporting Policy}
+\textbf{Explicit policy:} results are omitted in this manuscript version pending controlled experiments and reproducible benchmark runs.
+
+\section{Implementation Traceability and Validation Scenarios}
+\subsection{Traceability Checks}
+\begin{itemize}[leftmargin=*]
+\item Team fitness terms: \texttt{team\_formation/src/utils.py}.
+\item GA operators: \texttt{team\_formation/src/team\_optimizer\_ga.py}.
+\item Technical/semantic/engagement scores: \texttt{image\_curator/src/image\_scorer.py}, \texttt{planify\_reelmaker/src/image\_scorer.py}.
+\item Keyframe extraction and thresholds: \texttt{*/src/intelligent\_ingestor.py}.
+\item Reel synchronization: \texttt{planify\_reelmaker/src/main.py}.
+\item Certificate QC/luminance safeguards: \texttt{certificate\_generator/src/agents.py}.
+\item Report metrics and buckets: \texttt{report\_generator/src/quantitative\_analyzer.py}.
+\end{itemize}
+
+\subsection{Validation Scenarios}
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Interface check:} verify API endpoints and ports match runtime services.
+\item \textbf{Terminology check:} enforce consistent entity names across modules.
+\item \textbf{No-hallucination check:} reject unsupported benchmark claims.
+\item \textbf{Reproducibility check:} verify dependencies, models, and runtime assumptions.
+\item \textbf{Ethics check:} map consent/privacy risks to each module pipeline.
+\end{enumerate}
+
+\section{Limitations, Ethics, and Privacy}
+\textbf{Limitations:}
+\begin{itemize}[leftmargin=*]
+\item Service dependencies are heterogeneous and include local model/runtime prerequisites.
+\item Output quality depends on upstream model behavior and prompt robustness.
+\item Some modules use heuristic thresholds that require domain calibration.
+\end{itemize}
+
+\textbf{Ethics and privacy:}
+\begin{itemize}[leftmargin=*]
+\item Media pipelines process identifiable person data and require informed consent.
+\item Automated ranking can introduce representation bias and omission bias.
+\item Scraping and outreach should follow legal and platform policy constraints.
+\item Report and certificate generation should avoid fabricating facts from sparse inputs.
+\end{itemize}
+
+\section{Conclusion and Future Work}
+Planify demonstrates a full-project architecture where operational event management and agentic AI workflows coexist in a single platform. The key contribution is not a single model, but an implementation-grounded integration strategy with explicit scoring functions, optimization objectives, and artifact-level orchestration.
+
+Future work includes controlled benchmarking, online A/B evaluations, stronger policy guards for scraping/outreach, uncertainty-aware ranking, and production-grade service orchestration for concurrent multi-module execution.
+
+\section*{Reproducibility Checklist}
+\begin{itemize}[leftmargin=*]
+\item Core stack: Next.js + PostgreSQL + Python FastAPI services.
+\item Key model/tool dependencies: CLIP, YOLOv8, NIMA/EfficientNet, Ollama, MoviePy, WeasyPrint, ComfyUI.
+\item Data inputs: event JSON/CSV, feedback CSV/JSON, Google Drive media folders, template files.
+\item Artifacts: optimized teams JSON, curated images, posters, certificate PDFs, report files, reel MP4.
+\item Randomness: GA operations, LLM-based generation, and some media effects include stochastic behavior.
+\item Evaluation policy: methodology only; no fabricated numerical performance claims.
+\end{itemize}
+
+\bibliographystyle{spmpsci}
+\bibliography{references}
+
+\end{document}

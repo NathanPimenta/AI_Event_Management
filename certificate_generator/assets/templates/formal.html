@@ -1,131 +1,388 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Certificate of Achievement</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Sidebar Certificate</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
+
     <style>
-        /* Define a custom font for WeasyPrint */
-        @font-face {
-            font-family: 'Merriweather';
-            src: url('file:///{{ font_path }}'); /* Absolute path to the font file */
-        }
-        
         :root {
-        --bg-color: {{ colors.background | default('#fdfdf6') }};
-        --text-color: {{ colors.text | default('#4a4a4a') }};
-        --accent-color: {{ colors.accent | default('#a28a5a') }};
-        --header-color: {{ colors.header | default('#363636') }};
-    }
+
+            /* --- COLOR PALETTE (Navy & Platinum) --- */
+            --primary-color: {
+                    {
+                    colors.primary | default('#1e3c72')
+                }
+            }
+
+            ;
+
+            --secondary-color: {
+                    {
+                    colors.secondary | default('#2a5298')
+                }
+            }
+
+            ;
+
+            --text-color: {
+                    {
+                    colors.text | default('#2c3e50')
+                }
+            }
+
+            ;
+
+            --accent-color: {
+                    {
+                    colors.accent | default('#b3a168')
+                }
+            }
+
+            ;
+            --bg-color: #ffffff;
+
+            /* --- FONTS --- */
+            --title-font: {
+                    {
+                    fonts.title | default("'Playfair Display', serif")
+                }
+            }
+
+            ;
+
+            --body-font: {
+                    {
+                    fonts.body | default("'Lato', sans-serif")
+                }
+            }
+
+            ;
+            --sign-font: 'Dancing Script',
+            cursive;
+        }
+
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
 
         body {
-            font-family: 'Merriweather', serif;
-            color: var(--text-color);
-            background-color: var(--bg-color);
             margin: 0;
             padding: 0;
-            width: 297mm;
-            height: 210mm;
-            box-sizing: border-box;
+            font-family: var(--body-font, 'Lato', sans-serif);
+            background: #e0e0e0;
+            /* Web preview background */
             display: flex;
             justify-content: center;
             align-items: center;
+            height: 100vh;
         }
 
         .certificate-container {
-            width: 277mm;
-            height: 190mm;
-            border: 1px solid #c0c0c0;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            padding: 40px;
-            box-sizing: border-box;
-            text-align: center;
+            width: 297mm;
+            height: 210mm;
+            background: var(--bg-color, #ffffff);
             position: relative;
-            background: white;
-            border-left: 10px solid var(--accent-color);
-            border-right: 10px solid var(--accent-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: flex;
+            /* Flex layout for Side-by-Side */
+            overflow: hidden;
         }
 
-        .logo {
+        /* --- LEFT SIDEBAR SECTION --- */
+        .sidebar {
+            width: 30%;
+            /* Left 30% of page */
+            background: linear-gradient(135deg, var(--primary-color, #1e3c72) 0%, var(--secondary-color, #2a5298) 100%);
+            color: white;
+            padding: 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            -webkit-print-color-adjust: exact;
+            /* Forces background color print */
+        }
+
+        /* Geometric Decoration */
+        .sidebar::after {
+            content: '';
             position: absolute;
-            top: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            max-width: 120px;
+            bottom: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 0 100px 100px;
+            border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+        }
+
+        .sidebar-logo img {
+            max-width: 140px;
+            filter: brightness(0) invert(1);
+            /* Forces logos to white */
+        }
+
+        .sidebar-details {
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            margin-bottom: 25px;
+        }
+
+        .detail-label {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: var(--title-font, 'Playfair Display', serif);
+        }
+
+        /* --- RIGHT CONTENT SECTION --- */
+        .main-content {
+            width: 70%;
+            padding: 50px 60px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Subtle background pattern */
+        .main-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            bottom: 20px;
+            left: 0;
+            border: 2px solid #f0f0f0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .header-section {
+            z-index: 1;
+        }
+
+        .sub-title {
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--primary-color, #1e3c72);
+            font-weight: 700;
+            font-size: 0.9rem;
         }
 
         h1 {
-            font-size: 48px;
-            font-weight: 700;
-            color: var(--header-color);
-            margin-top: 120px;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
+            font-family: var(--title-font, 'Playfair Display', serif);
+            font-size: 3.2rem;
+            color: var(--text-color, #2c3e50);
+            margin: 10px 0 30px 0;
+            line-height: 1;
         }
 
-        .subtitle {
-            font-size: 20px;
-            margin-bottom: 50px;
+        .recipient-section {
+            margin: 20px 0;
+            z-index: 1;
         }
 
         .presented-to {
-            font-size: 16px;
-            margin-bottom: 10px;
+            font-style: italic;
+            color: #7f8c8d;
+            font-size: 1.1rem;
         }
 
-        .participant-name {
-            font-size: 40px;
-            color: var(--accent-color);
-            margin-bottom: 40px;
+        .recipient-name {
+            font-family: var(--title-font, 'Playfair Display', serif);
+            font-size: 3.8rem;
+            color: var(--primary-color, #1e3c72);
+            margin: 15px 0;
+            border-bottom: 2px solid var(--accent-color, #b3a168);
+            display: inline-block;
+            padding-bottom: 5px;
         }
 
         .achievement-text {
-            font-size: 18px;
-            line-height: 1.6;
-            margin: 0 auto 60px auto;
-            max-width: 75%;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #555;
+            max-width: 90%;
+            margin-bottom: 40px;
+            z-index: 1;
         }
 
+        /* Footer / Signatures */
         .footer {
-            position: absolute;
-            bottom: 50px;
-            width: 100%;
-            left: 0;
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: auto;
+            z-index: 1;
         }
 
-        .signature-block {
-            width: 300px;
+        .signature-box {
+            min-width: 180px;
         }
 
-        .signature-image {
-            max-height: 50px;
-            margin-bottom: 10px;
+        .sign-img {
+            height: 50px;
+            display: block;
+            margin-bottom: 5px;
         }
 
-        .signature-line {
-            border-top: 1px solid #999;
-            padding-top: 8px;
-            font-size: 14px;
+        .sign-placeholder {
+            font-family: var(--sign-font);
+            font-size: 2rem;
+            color: var(--primary-color, #1e3c72);
+            margin-bottom: 5px;
+        }
+
+        .sign-line {
+            height: 1px;
+            background: #ccc;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .sign-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-color, #2c3e50);
+        }
+
+        .sign-title {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .qr-badge {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+        }
+
+        .qr-badge img {
+            width: 70px;
+            opacity: 0.9;
+        }
+
+        @media print {
+            body {
+                background: none;
+            }
+
+            .certificate-container {
+                box-shadow: none;
+            }
         }
     </style>
 </head>
+
 <body>
+
     <div class="certificate-container">
-        <img src="file://{{ logo_path }}" alt="Event Logo" class="logo">
-        <h1>CERTIFICATE</h1>
-        <p class="subtitle">OF {{ achievement_type | upper }}</p>
-        <p class="presented-to">This certificate is proudly presented to</p>
-        <h2 class="participant-name">{{ name }}</h2>
-        <p class="achievement-text">
-            in recognition of their valuable contribution to the <strong>{{ event_name }}</strong>, hosted by {{ institution_name }} on {{ event_date }}.
-        </p>
-        <div class="footer">
-            <div class="signature-block">
-                <img src="file://{{ signature_path }}" alt="Signature" class="signature-image">
-                <p class="signature-line">{{ signature_name }}</p>
+
+        <div class="sidebar">
+            <div class="sidebar-logo">
+                {% if college_logo_path %}
+                <img src="file://{{ college_logo_path }}" alt="Logo">
+                {% else %}
+                <div style="font-size: 1.5rem; font-family: var(--title-font);">{{ institution_name }}</div>
+                {% endif %}
+            </div>
+
+            <div class="sidebar-details">
+                <div class="detail-item">
+                    <div class="detail-label">Issued Date</div>
+                    <div class="detail-value">{{ event_date }}</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Certificate ID</div>
+                    <div class="detail-value">
+                        {{ certificate_id | default('CID-' ~ range(1000, 9999) | random) }}
+                    </div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Type</div>
+                    <div class="detail-value">{{ achievement_type }}</div>
+                </div>
             </div>
         </div>
+
+        <div class="main-content">
+
+            {% if qr_code_path %}
+            <div class="qr-badge">
+                <img src="file://{{ qr_code_path }}" alt="Verify">
+            </div>
+            {% endif %}
+
+            <div class="header-section">
+                <div class="sub-title">Certificate of Achievement</div>
+                <h1>{{ event_name }}</h1>
+            </div>
+
+            <div class="recipient-section">
+                <div class="presented-to">This certificate is awarded to</div>
+                <div class="recipient-name">{{ name }}</div>
+            </div>
+
+            <div class="achievement-text">
+                {% if rank and rank != 'Participant' %}
+                For demonstrating exceptional skill and securing <strong>{{ rank }} Place</strong>.
+                Your strategic thinking and technical execution stood out among all participants.
+                {% else %}
+                For your active participation and dedication.
+                We recognize your commitment to learning and your contribution to the success of this event.
+                {% endif %}
+            </div>
+
+            <div class="footer">
+                <div class="signature-box">
+                    {% if signature_path %}
+                    <img src="file://{{ signature_path }}" class="sign-img" alt="Sign">
+                    {% else %}
+                    <div class="sign-placeholder">{{ signature_name }}</div>
+                    {% endif %}
+
+                    <div class="sign-line"></div>
+                    <div class="sign-name">{{ signature_name }}</div>
+                    <div class="sign-title">Event Organizer</div>
+                </div>
+
+                {% if second_signature_name %}
+                <div class="signature-box">
+                    <div class="sign-placeholder">Dean's Sig</div>
+                    <div class="sign-line"></div>
+                    <div class="sign-name">{{ second_signature_name }}</div>
+                    <div class="sign-title">Dean of Dept.</div>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
     </div>
+
 </body>
+
 </html>

@@ -5,7 +5,7 @@ import imagehash
 import shutil
 import numpy as np
 from PIL import Image
-from moviepy import VideoFileClip
+# Use moviepy.editor when needed; VideoFileClip isn't required in this module
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload

@@ -5,94 +5,273 @@
     <meta charset="UTF-8" />
     <title>Certificate of Achievement</title>
     <style>
+        /* Define Dynamic Variables from Agents */
+        :root {
+
+            /* Colors */
+            --bg-color: {
+                    {
+                    colors.background | default('#ffffff')
+                }
+            }
+
+            ;
+
+            --text-color: {
+                    {
+                    colors.text | default('#374151')
+                }
+            }
+
+            ;
+
+            --accent-color: {
+                    {
+                    colors.accent | default('#1e3a8a')
+                }
+            }
+
+            ;
+
+            --header-color: {
+                    {
+                    colors.header | default('#1e3a8a')
+                }
+            }
+
+            ;
+
+            --border-color: {
+                    {
+                    colors.border | default('#1e3a8a')
+                }
+            }
+
+            ;
+
+            --secondary-border: {
+                    {
+                    colors.secondary_border | default('#c7a008')
+                }
+            }
+
+            ;
+            /* Gold default */
+
+            /* Fonts */
+            --header-font: {
+                    {
+                    fonts.header_family | default('Georgia, serif')
+                }
+            }
+
+            ;
+
+            --body-font: {
+                    {
+                    fonts.body_family | default('Georgia, serif')
+                }
+            }
+
+            ;
+
+            /* Styles */
+            --border-width: {
+                    {
+                    styles.border_width | default('12px')
+                }
+            }
+
+            ;
+
+            /* Thicker default for c1 */
+            --border-style: {
+                    {
+                    styles.border_style | default('solid')
+                }
+            }
+
+            ;
+
+            --box-shadow: {
+                    {
+                    styles.shadow | default('0 10px 30px rgba(0,0,0,0.08)')
+                }
+            }
+
+            ;
+
+            /* Layout */
+            --content-top: {
+                    {
+                    layout.content_top | default('80px')
+                }
+            }
+
+            ;
+
+            --inner-pad: {
+                    {
+                    layout.inner_pad | default('36px')
+                }
+            }
+
+            ;
+
+            --logo-width: {
+                    {
+                    layout.logo_width | default('110px')
+                }
+            }
+
+            ;
+
+            --title-size: {
+                    {
+                    layout.title_font_size | default('46px')
+                }
+            }
+
+            ;
+
+            --body-size: {
+                    {
+                    layout.body_font_size | default('20px')
+                }
+            }
+
+            ;
+
+            --watermark-opacity: {
+                    {
+                    layout.watermark_opacity | default('0.06')
+                }
+            }
+
+            ;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            font-family: "Georgia", serif;
-            background: #f4f4f4;
+            font-family: var(--body-font, serif);
+            background: linear-gradient(135deg, #f4f4f4 0%, #ffffff 100%);
+            width: 297mm;
+            height: 210mm;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            color: var(--text-color, #374151);
         }
 
         .certificate-container {
-            width: 1000px;
-            height: 700px;
-            margin: 40px auto;
-            padding: 40px;
-            background: #ffffff;
-            border: 12px solid #1e3a8a;
+            width: 277mm;
+            height: 190mm;
+            padding: var(--inner-pad, 36px);
+            background: var(--bg-color, #ffffff);
+            border: var(--border-width, 12px) var(--border-style, solid) var(--border-color, #1e3a8a);
+            box-shadow: var(--box-shadow, 0 10px 30px rgba(0, 0, 0, 0.08));
             box-sizing: border-box;
             position: relative;
+            border-radius: 12px;
         }
 
         .certificate-inner {
-            border: 4px solid #c7a008;
+            border: 3px solid var(--secondary-border, #c7a008);
             height: 100%;
-            padding: 40px;
+            padding: 40px 40px 40px 40px;
             box-sizing: border-box;
             display: flex;
-            flex-direction: row;
-            gap: 30px;
-        }
-
-        /* LEFT LOGO SECTION */
-        .logo-section {
-            width: 180px;
-            display: flex;
-            align-items: flex-start;
+            flex-direction: column;
             justify-content: center;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .logo-section img {
-            max-width: 160px;
-            max-height: 160px;
+        .fixed-logo {
+            position: fixed;
+            top: 24px;
+            width: var(--logo-width, 110px);
+            height: auto;
+            z-index: 999;
             object-fit: contain;
+        }
+
+        .fixed-logo--college {
+            left: 24px;
+        }
+
+        .fixed-logo--club {
+            right: 24px;
+        }
+
+        .watermark {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            letter-spacing: 6px;
+            font-weight: 700;
+            color: var(--header-color, #1e3a8a);
+            opacity: var(--watermark-opacity, 0.06);
+            transform: rotate(-8deg);
+            pointer-events: none;
+            text-transform: uppercase;
         }
 
         /* RIGHT CONTENT SECTION */
         .content-section {
-            flex: 1;
             text-align: center;
             position: relative;
         }
 
         .title {
-            font-size: 48px;
+            font-family: var(--header-font, serif);
+            font-size: var(--title-size, 46px);
             font-weight: bold;
-            color: #1e3a8a;
+            color: var(--header-color, #1e3a8a);
             margin-bottom: 10px;
+            letter-spacing: 2px;
         }
 
         .subtitle {
-            font-size: 22px;
+            font-size: calc(var(--body-size, 20px) * 1.1);
             margin-bottom: 40px;
-            color: #444;
+            color: var(--text-color, #374151);
+            opacity: 0.8;
         }
 
         .name {
-            font-size: 42px;
+            font-family: var(--header-font, serif);
+            font-size: calc(var(--title-size, 46px) * 0.9);
             font-weight: bold;
             margin: 20px 0;
-            color: #111827;
-            border-bottom: 2px solid #000;
+            color: var(--accent-color, #1e3a8a);
+            border-bottom: 2px solid var(--text-color, #374151);
             display: inline-block;
             padding: 0 20px;
         }
 
         .description {
-            font-size: 20px;
+            font-size: var(--body-size, 20px);
             margin: 30px auto;
-            max-width: 700px;
-            line-height: 1.6;
-            color: #374151;
+            max-width: 720px;
+            line-height: 1.7;
+            color: var(--text-color, #374151);
         }
 
         .event-name {
             font-weight: bold;
-            color: #1e40af;
+            color: var(--accent-color, #1e3a8a);
         }
 
         .date {
             margin-top: 10px;
-            font-size: 16px;
+            font-size: calc(var(--body-size, 20px) * 0.8);
         }
 
         .footer {
@@ -102,8 +281,8 @@
             right: 0;
             display: flex;
             justify-content: space-around;
-            font-size: 16px;
-            color: #374151;
+            font-size: calc(var(--body-size, 20px) * 0.8);
+            color: var(--text-color, #374151);
         }
 
         .signature {
@@ -112,7 +291,7 @@
 
         .signature-line {
             margin-top: 50px;
-            border-top: 2px solid #000;
+            border-top: 2px solid var(--text-color, #374151);
             width: 200px;
             margin-left: auto;
             margin-right: auto;
@@ -121,13 +300,14 @@
 </head>
 
 <body>
+    <div data-fixed-logos="true">
+        <img src="file://{{ college_logo_path }}" alt="College Logo" class="fixed-logo fixed-logo--college">
+        <img src="file://{{ club_logo_path }}" alt="Club Logo" class="fixed-logo fixed-logo--club">
+    </div>
+
     <div class="certificate-container">
         <div class="certificate-inner">
-
-            <!-- LEFT LOGO -->
-            <div class="logo-section">
-                <img src="{{ logo_url }}" alt="Institution Logo" />
-            </div>
+            <div class="watermark">{{ institution_name }}</div>
 
             <!-- RIGHT CONTENT -->
             <div class="content-section">

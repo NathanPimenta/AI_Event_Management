@@ -1,0 +1,313 @@
+\documentclass[12pt]{article}
+
+% ── Page geometry ─────────────────────────────────────────────────────────────
+\usepackage[
+  a4paper,
+  top=3.8cm,
+  bottom=1.2cm,
+  left=2.0cm, right=2.0cm,
+  includeheadfoot=false
+]{geometry}
+
+% ── Font ──────────────────────────────────────────────────────────────────────
+\usepackage{fontspec}
+% Linux: Liberation Serif  |  Windows/Mac: Times New Roman
+\setmainfont{Liberation Serif}
+
+% ── Spacing ───────────────────────────────────────────────────────────────────
+\usepackage{setspace}
+\setstretch{1.15}
+\usepackage{ragged2e}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+
+% ── Graphics & packages ───────────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{eso-pic}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, urlcolor=blue, linkcolor=black}
+
+% ── No fancyhdr — header is absolutely positioned ─────────────────────────────
+\pagestyle{empty}
+
+% ── Page border ───────────────────────────────────────────────────────────────
+\AddToShipoutPictureBG{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \draw[black, line width=1.2pt]
+      ([xshift=10pt,  yshift=-10pt] current page.north west)
+      rectangle
+      ([xshift=-10pt, yshift=10pt]  current page.south east);
+  \end{tikzpicture}%
+}
+
+% ── Header — absolutely positioned, always inside border on every page ────────
+\AddToShipoutPictureFG{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[
+      anchor=north,
+      inner sep=0pt,
+      yshift=-0.65cm
+    ] at (current page.north) {%
+      \begin{minipage}{\dimexpr\paperwidth-1.4cm\relax}
+        \setlength{\tabcolsep}{0pt}%
+        \begin{tabular}{@{}m{2.0cm}@{}m{\dimexpr\paperwidth-5.4cm\relax}@{}m{2.0cm}@{}}
+          % ── LEFT: college logo ──────────────────────────────────────────────
+          \centering
+          \includegraphics[width=1.8cm,height=1.8cm,keepaspectratio]{VAR_COLLEGE_LOGO}%
+          &
+          % ── CENTRE: institute name ──────────────────────────────────────────
+          \centering
+          \begin{minipage}[c]{\linewidth}
+            \centering
+            {\fontsize{11}{13}\selectfont\textbf{The Bombay Salesian Society's}}\\[2pt]
+            {\fontsize{14}{16}\selectfont\textbf{DON BOSCO INSTITUTE OF TECHNOLOGY}}\\[2pt]
+            {\fontsize{10}{12}\selectfont\textbf{Premier Automobiles Road, Kurla West, Mumbai - 400070}}
+          \end{minipage}%
+          &
+          % ── RIGHT: club logo ────────────────────────────────────────────────
+          \centering
+          \includegraphics[width=1.8cm,height=1.8cm,keepaspectratio]{VAR_CLUB_LOGO}%
+        \end{tabular}
+        \vspace{4pt}%
+        \noindent\rule{\linewidth}{0.6pt}%
+      \end{minipage}%
+    };
+  \end{tikzpicture}%
+}
+
+% ── Diamond bullet list ───────────────────────────────────────────────────────
+\newenvironment{diamondlist}{%
+  \begin{list}{❖}{%
+    \setlength{\leftmargin}{1.5em}%
+    \setlength{\itemsep}{3pt}%
+    \setlength{\parsep}{0pt}%
+    \setlength{\topsep}{4pt}%
+  }%
+}{%
+  \end{list}%
+}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Department & Report Title ─────────────────────────────────────────────────
+\begin{center}
+  {\fontsize{15}{17}\selectfont\textbf{VAR_DEPARTMENT_NAME}}\\[5pt]
+  {\fontsize{14}{16}\selectfont\textbf{Report on - VAR_EVENT_TYPE}}
+\end{center}
+
+\vspace{0.5cm}
+
+% ── Event Details ─────────────────────────────────────────────────────────────
+{\fontsize{13}{15}\selectfont
+
+\textbf{Title:} VAR_TITLE
+
+\textbf{Date:} VAR_DATE
+
+\textbf{Time:} VAR_TIME
+
+\textbf{Venue:} VAR_VENUE
+
+\vspace{0.45cm}
+
+\textbf{Target Audience:} VAR_TARGET_AUDIENCE
+
+\vspace{0.2cm}
+
+\textbf{No. of Participants Present:} VAR_TOTAL_PARTICIPANTS
+
+\vspace{0.2cm}
+
+\textbf{No. of Girl Participants Present:} VAR_GIRL_PARTICIPANTS
+
+\vspace{0.2cm}
+
+\textbf{No. of Boy Participants Present:} VAR_BOY_PARTICIPANTS
+
+\vspace{0.45cm}
+
+\textbf{Resource Person:} VAR_RESOURCE_PERSON
+
+\textbf{Organization of Resource Person:} VAR_RESOURCE_ORGANIZATION
+
+\textbf{Organizing Department / Committee / Authority:} VAR_ORGANIZING_BODY
+
+\textbf{Faculty Coordinator:} VAR_FACULTY_COORDINATOR
+
+}
+
+\vspace{0.6cm}
+
+% ── Objectives ────────────────────────────────────────────────────────────────
+{\fontsize{12}{14}\selectfont
+\textbf{Objectives:}
+\begin{diamondlist}
+VAR_OBJECTIVES
+\end{diamondlist}
+}
+
+\vspace{0.5cm}
+
+% ── Outcomes ──────────────────────────────────────────────────────────────────
+{\fontsize{12}{14}\selectfont
+\textbf{Outcomes:}
+\begin{diamondlist}
+VAR_OUTCOMES
+\end{diamondlist}
+}
+
+\vspace{0.5cm}
+
+% ── Detailed Report ───────────────────────────────────────────────────────────
+{\fontsize{12}{14}\selectfont
+\textbf{Detailed Report:}
+
+\vspace{0.3cm}
+
+\begin{justify}
+VAR_DETAILED_REPORT
+\end{justify}
+}
+
+\vspace{0.6cm}
+
+% ── Snapshot of the Event ─────────────────────────────────────────────────────
+{\fontsize{12}{14}\selectfont
+\textbf{Snapshot of the Event:}
+
+\vspace{0.3cm}
+
+\begin{justify}
+VAR_SNAPSHOT_DESCRIPTION
+\end{justify}
+
+\vspace{0.4cm}
+
+VAR_EVENT_PHOTOS
+}
+
+\vspace{0.6cm}
+
+% ── Feedback Analysis ─────────────────────────────────────────────────────────
+{\fontsize{12}{14}\selectfont
+\textbf{Feedback Analysis:}
+
+\vspace{0.3cm}
+
+\begin{justify}
+VAR_FEEDBACK_TEXT
+\end{justify}
+
+\vspace{0.4cm}
+
+VAR_FEEDBACK_IMAGE
+}
+
+\vspace{0.6cm}
+
+% ── Event Poster ──────────────────────────────────────────────────────────────
+{\fontsize{12}{14}\selectfont
+\textbf{Event Poster:}
+
+\vspace{0.4cm}
+
+VAR_POSTER_IMAGE
+}
+
+\vspace{0.6cm}
+
+% ── Social Media Links ────────────────────────────────────────────────────────
+{\fontsize{12}{14}\selectfont
+\textbf{Social Media Links:}
+
+\vspace{0.3cm}
+
+VAR_SOCIAL_MEDIA
+}
+
+\vspace{0.6cm}
+
+% ── Registration Details ──────────────────────────────────────────────────────
+{\fontsize{12}{14}\selectfont
+\textbf{Registration Details:}
+
+\vspace{0.3cm}
+
+No. of DBIT Students: VAR_DBIT_STUDENTS\\
+No. of non-DBIT students: VAR_NON_DBIT_STUDENTS
+}
+
+\vspace{0.5cm}
+
+% ── Attendance Table ──────────────────────────────────────────────────────────
+\begin{center}
+  {\fontsize{12}{14}\selectfont\textbf{List of Students Who Attended the Event}}
+\end{center}
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{longtable}{|>{\centering\arraybackslash}p{1.5cm}|>{\raggedright\arraybackslash}p{7.5cm}|>{\centering\arraybackslash}p{3.5cm}|}
+\hline
+\textbf{S. No.} & \textbf{Name} & \textbf{Branch} \\
+\hline
+\endfirsthead
+\hline
+\textbf{S. No.} & \textbf{Name} & \textbf{Branch} \\
+\hline
+\endhead
+VAR_STUDENT_TABLE_ROWS
+\end{longtable}
+\end{center}
+
+\vspace{0.6cm}
+
+% ── Signature Boxes ───────────────────────────────────────────────────────────
+\begin{minipage}[t]{0.47\textwidth}
+  \setlength{\fboxsep}{8pt}%
+  \fbox{\begin{minipage}{\linewidth}
+    {\fontsize{12}{14}\selectfont
+    \textbf{Report Prepared By:}
+
+    \vspace{0.45cm}
+
+    \textbf{Name of the Student:} VAR_PREPARED_NAME
+
+    \vspace{0.25cm}
+
+    \textbf{Post of the Student:} VAR_PREPARED_POST
+
+    \vspace{0.25cm}
+
+    {\small In the Student Council / Student Club /\\Chapter / Professional Body}
+    }
+  \end{minipage}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47\textwidth}
+  \setlength{\fboxsep}{8pt}%
+  \fbox{\begin{minipage}{\linewidth}
+    {\fontsize{12}{14}\selectfont
+    \textbf{Report Approved By:}
+
+    \vspace{0.45cm}
+
+    \textbf{Name of the Faculty:} VAR_APPROVED_NAME
+
+    \vspace{0.25cm}
+
+    \textbf{Post of the Faculty:} VAR_APPROVED_POST
+
+    \vspace{0.25cm}
+
+    {\small In Institute / Department / Student Club /\\Chapter / Professional Body}
+    }
+  \end{minipage}}
+\end{minipage}
+
+\end{document}

@@ -261,6 +261,41 @@ Recommendations for Future Events:"""
         
         return recommendations
 
+    def generate_detailed_report(self, hints: str, event_name: str) -> str:
+        """Generate a single cohesive paragraph for the detailed report section."""
+        if not hints or not hints.strip():
+            return f"The {event_name} was conducted successfully with enthusiastic participation."
+            
+        prompt = f"""You are writing a formal academic report for an event named "{event_name}".
+Based on the following pointers provided by the organizer, write exactly ONE cohesive, formal paragraph summarizing the event details.
+Do NOT include any greetings, bullet points, or extra commentary. Just the paragraph.
+
+Pointers:
+{hints}
+
+Detailed Report Paragraph:"""
+        return self._call_llm(prompt, "detailed report")
+
+    def generate_feedback_summary_text(self, comments: List[str], event_name: str) -> str:
+        """Generate a concise textual summary of feedback for the template."""
+        if not comments:
+            return "No feedback comments provided by participants."
+            
+        valid_comments = [c.strip() for c in comments if c and c.strip()]
+        if not valid_comments:
+            return "No valid feedback comments provided by participants."
+            
+        formatted_comments = self._format_comments(valid_comments)
+        prompt = f"""You are summarizing feedback for a formal academic event report for "{event_name}".
+Based on the following participant comments, write a short, cohesive summary (1-2 paragraphs max) highlighting the general sentiment, key positive takeaways, and any notable constructive criticism.
+Do NOT use bullet points or markdown formatting. Keep it formal and academic.
+
+Participant Feedback:
+{formatted_comments}
+
+Feedback Summary:"""
+        return self._call_llm(prompt, "feedback summary")
+
     def fill_docx_template(self, template_path: 'Path', context_data: Dict[str, any]) -> Dict[str, str]:
         """
         Instruct the LLM to strictly fill a .docx template.

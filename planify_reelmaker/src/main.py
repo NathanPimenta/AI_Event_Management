@@ -7,12 +7,14 @@ import torch
 from torchvision import transforms
 from PIL import Image, ImageOps
 import traceback
+from moviepy.editor import VideoFileClip
 
 # --- Import your custom project modules ---
 from . import intelligent_ingestor
 from . import video_generator
 from . import image_scorer
 from . import exif_utils
+from . import agentic_reelmaker
 
 # --- Import your PyTorch model definition ---
 try:
@@ -48,8 +50,8 @@ except ImportError:
     print("!!! WARNING: ultralytics not available for YOLO.")
 
 # --- CONFIGURATION ---
-#DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1neAVyq2-TQkkNW5R_5WVjrr1WOjBy3UN?usp=sharing"
-DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1lU-F433mn_9iGjm2TkBVTngynWlSDTrq?usp=sharing"
+DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1neAVyq2-TQkkNW5R_5WVjrr1WOjBy3UN?usp=sharing"
+#DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1lU-F433mn_9iGjm2TkBVTngynWlSDTrq?usp=sharing"
 TEMP_MEDIA_DIR = "temp_images/"
 OUTPUT_VIDEO_PATH = "output/final_reel.mp4"
 MUSIC_FILE_PATH = "assets/background_music.mp3"
@@ -59,9 +61,7 @@ IMAGES_FOR_REEL = 15
 APPLY_EXIF_TIMESTAMP_ORDERING = True
 
 # User input for reel type
-REEL_TYPE = input("What kind of reel do you want to create? (e.g., 'birthday party', 'wedding ceremony', 'corporate event', 'sports game'): ").strip()
-if not REEL_TYPE:
-    REEL_TYPE = "event"  # Default fallback
+REEL_TYPE = os.environ.get("REEL_TYPE", "event")
 
 # Target video dimensions (vertical 9:16 reel)
 TARGET_W = 1080
@@ -250,12 +250,17 @@ except Exception as e:
 # =========================
 # Run pipeline
 # =========================
-def run_pipeline():
+def run_pipeline(drive_folder_url=None, clip_text=None):
+    if drive_folder_url is None:
+        drive_folder_url = DRIVE_FOLDER_URL
+    if clip_text is None:
+        clip_text = "An amazing tech event with students learning and collaborating."
+
     if MODELS is None:
         print("!!! Aborting pipeline because AI models failed to initialize.")
         return
 
-    if DRIVE_FOLDER_URL == "YOUR_GOOGLE_DRIVE_FOLDER_URL_HERE":
+    if drive_folder_url == "YOUR_GOOGLE_DRIVE_FOLDER_URL_HERE":
         print("!!! ERROR: Please update the DRIVE_FOLDER_URL in main.py before running.")
         return
 
@@ -263,7 +268,7 @@ def run_pipeline():
 
     # MODULE 1: Ingestion
     clean_media_objects = intelligent_ingestor.run_ingestion_pipeline(
-        drive_folder_url=DRIVE_FOLDER_URL,
+        drive_folder_url=drive_folder_url,
         max_files=MAX_FILES_TO_PROCESS
     )
 
@@ -296,6 +301,19 @@ def run_pipeline():
         media_with_scores['scores'] = scores
         media_with_scores['final_score'] = final_score
         media_with_scores['detected_objects'] = scores.get('detected_objects', [])
+        
+        # Extract Vibe Context using CLIP
+        if MODELS.get("clip") and MODELS.get("clip_processor"):
+            vibe = agentic_reelmaker.get_clip_context(
+                media['array'], 
+                MODELS['clip'], 
+                MODELS['clip_processor'], 
+                MODELS['device']
+            )
+            media_with_scores['vibe'] = vibe
+            print(f"     - Vibe: {vibe}")
+        else:
+            media_with_scores['vibe'] = "general event"
 
         scored_media_data.append(media_with_scores)
         print(f"   - Scored {media['name']}: Tech({scores.get('technical_score',0):.2f}), "
@@ -316,7 +334,7 @@ def run_pipeline():
 
     # Define logical ordering patterns based on reel type
     ordering_patterns = {
-        "birthday party": ["cake", "person", "balloon", "gift", "candle", "food", "drink"],
+        "hday party": ["cake", "person", "balloon", "gift", "candle", "food", "drink"],
         "wedding ceremony": ["person", "dress", "suit", "ring", "flower", "cake", "church", "dance"],
         "corporate event": ["person", "microphone", "laptop", "presentation", "handshake", "group", "food"],
         "sports game": ["person", "ball", "sports ball", "crowd", "field", "goal", "trophy", "team"],
@@ -459,16 +477,98 @@ def run_pipeline():
             print(f"   - Warning: Exception while padding {p}: {e_pad}")
             padded_image_paths.append(p)
 
-    # MODULE 4: Create reel video
+    # MODULE 4: Agentic Preparation (Script & Audio First)
+    print("\n-> Running Agentic Reelmaker Preparation...")
+    
+    # 1. Generate Script
+    estimated_total_duration = 60.0
+    
+    full_script = agentic_reelmaker.generate_script_from_text(clip_text, estimated_total_duration)
+    
+    # 2. Generate Audio
+    narration_path = os.path.join('output', 'narration.mp3')
+    tts_path = agentic_reelmaker.tts_narration_natural(full_script, narration_path)
+    
+    # 3. Determine Clip Duration from Audio
+    final_clip_duration = 3.0
+    if tts_path and os.path.exists(tts_path):
+        try:
+            audio_clip = AudioFileClip(tts_path)
+            total_audio_duration = audio_clip.duration
+            # Account for transitions in video generation
+            # Video Duration = N * C - (N-1) * T
+            # C = (Video Duration + (N-1) * T) / N
+            num_images = max(len(top_media_objects), 1)
+            transition_duration = 0.5 # default in video_generator
+            
+            final_clip_duration = (total_audio_duration + (num_images - 1) * transition_duration) / num_images
+            
+            print(f"   - Audio Duration: {total_audio_duration:.2f}s. Adjusted clip duration to: {final_clip_duration:.2f}s (compensating for {transition_duration}s transitions)")
+            audio_clip.close()
+        except Exception as e:
+            print(f"   - Error reading audio duration: {e}. Using default 3.0s")
+    else:
+        total_audio_duration = 60.0
+        transition_duration = 0.5
+        num_images = max(len(top_media_objects), 1)
+        final_clip_duration = (total_audio_duration + (num_images - 1) * transition_duration) / num_images
+        print("   - Audio generation failed or skipped. Using default 60.0s total duration.")
+
+    # MODULE 5: Create Base Video (with synchronized duration)
+    # Generate AI Background Music if possible
+    generated_sfx_path = os.path.join('output', 'bg_music.mp3')
+    ai_music_path = agentic_reelmaker.generate_background_sfx(clip_text, generated_sfx_path)
+    final_music_path = ai_music_path if ai_music_path else MUSIC_FILE_PATH
+    
+    final_output_path = OUTPUT_VIDEO_PATH
     try:
         video_generator.create_reel_from_images(
             image_paths=padded_image_paths,
-            music_path=MUSIC_FILE_PATH,
-            output_path=OUTPUT_VIDEO_PATH
+            music_path=final_music_path,
+            output_path=final_output_path,
+            clip_duration=final_clip_duration
         )
     except Exception as e_vid:
         print(f"!!! ERROR while generating video: {e_vid}")
         traceback.print_exc()
+        final_output_path = None
+
+    # MODULE 6: Agentic Overlay (Bot Avatars)
+    if final_output_path and os.path.exists(final_output_path):
+        try:
+            print("\n-> Running Bot Director Agent...")
+            
+            # Select bot videos by action/emotion matching via LLM
+            package_root = os.path.dirname(os.path.dirname(__file__))
+            bot_dir = os.path.join(package_root, 'video')
+            
+            bot_plan = agentic_reelmaker.plan_bot_overlays(top_media_objects, bot_dir)
+            print(f"   - Generated Bot Plan for {len(bot_plan)} scenes.")
+
+            # Overlay bots on reel with narration
+            composite_output = os.path.splitext(final_output_path)[0] + '_with_bots.mp4'
+            
+            # If we have narration, we pass it here to be mixed in final (or it might have been added in video_generator? 
+            # No, video_generator adds music. We need to add narration here or mix them.
+            # overlay_bots_on_video handles adding the narration audio track.
+            
+            agentic_reelmaker.overlay_bots_on_video(final_output_path, bot_plan, tts_path, composite_output)
+            final_output_path = composite_output
+            print(f"-> Agentic AI Reel produced at: {composite_output}")
+            
+            # Final Verification
+            print("\n-> Verifying Final Output...")
+            # Expected duration is roughly final_clip_duration * N - overlaps? 
+            # OR better: just check against audio duration if available
+            target_dur = 30.0 # default fallback
+            if 'total_audio_duration' in locals():
+                target_dur = total_audio_duration
+            
+            agentic_reelmaker.verify_output_video(final_output_path, target_dur, tolerance=5.0)
+
+        except Exception as e_agent:
+            print(f"-> Warning: agentic overlay step failed: {e_agent}")
+            traceback.print_exc()
 
     # CLEANUP temporary files
     if os.path.exists(TEMP_MEDIA_DIR):
@@ -487,7 +587,8 @@ def run_pipeline():
         except Exception as e_rm:
             print(f"\n-> Warning: Could not remove temporary downloads directory {temp_download_dir}. Error: {e_rm}")
 
-    print(f"\n--- Pipeline Finished Successfully. AI-curated reel saved at: {OUTPUT_VIDEO_PATH} ---")
+    print(f"\n--- Pipeline Finished Successfully. AI-curated reel saved at: {final_output_path} ---")
+    return final_output_path
 
 if __name__ == "__main__":
     run_pipeline()

@@ -11,13 +11,42 @@ import { FileText, Upload, Loader2, CheckCircle, Download, ChevronDown, Wand2, F
 
 export default function ReportGeneratorPage() {
     const [loading, setLoading] = useState(false)
-    const [result, setResult] = useState<{ content: string; filename: string } | null>(null)
+    const [result, setResult] = useState<{ content: string; filename: string; pdf_url?: string } | null>(null)
     const [error, setError] = useState<string | null>(null)
 
     // Step 1: Event Details
     const [eventName, setEventName] = useState("")
     const [eventType, setEventType] = useState("")
     const [institutionName, setInstitutionName] = useState("")
+
+    const [eventDate, setEventDate] = useState("")
+    const [eventTime, setEventTime] = useState("")
+    const [eventVenue, setEventVenue] = useState("")
+    const [targetAudience, setTargetAudience] = useState("")
+    const [dbitStudentsCount, setDbitStudentsCount] = useState("")
+    const [nonDbitStudentsCount, setNonDbitStudentsCount] = useState("")
+    const [resourcePersonName, setResourcePersonName] = useState("")
+    const [resourcePersonOrg, setResourcePersonOrg] = useState("")
+    const [organizingBody, setOrganizingBody] = useState("")
+    const [facultyCoordinator, setFacultyCoordinator] = useState("")
+    const [facebookLink, setFacebookLink] = useState("")
+    const [instagramLink, setInstagramLink] = useState("")
+    const [linkedinLink, setLinkedinLink] = useState("")
+    const [approver1Name, setApprover1Name] = useState("")
+    const [approver1Post, setApprover1Post] = useState("")
+    const [approver2Name, setApprover2Name] = useState("")
+    const [approver2Post, setApprover2Post] = useState("")
+    const [preparer1Name, setPreparer1Name] = useState("")
+    const [preparer1Post, setPreparer1Post] = useState("")
+    const [preparer2Name, setPreparer2Name] = useState("")
+    const [preparer2Post, setPreparer2Post] = useState("")
+    const [objective1, setObjective1] = useState("")
+    const [objective2, setObjective2] = useState("")
+    const [objective3, setObjective3] = useState("")
+    const [outcome1, setOutcome1] = useState("")
+    const [outcome2, setOutcome2] = useState("")
+    const [outcome3, setOutcome3] = useState("")
+    const [detailedDescription, setDetailedDescription] = useState("")
 
     // File states
     const [attendeesFileName, setAttendeesFileName] = useState("")
@@ -26,20 +55,14 @@ export default function ReportGeneratorPage() {
     const [socialFileName, setSocialFileName] = useState("")
     const [posterFileName, setPosterFileName] = useState("")
     const [snapshotFileName, setSnapshotFileName] = useState("")
-    const [templateFileName, setTemplateFileName] = useState("")
     const [logoFileName, setLogoFileName] = useState("")
 
-    // Custom template toggle
-    const [useCustomTemplate, setUseCustomTemplate] = useState(false)
 
     // Image configuration (front-end): user can specify number of images to include beforehand
     const [includeImages, setIncludeImages] = useState(false)
     const [numImages, setNumImages] = useState<number>(0)
     const [imageFiles, setImageFiles] = useState<Array<File | null>>([])
     const [imagePurposes, setImagePurposes] = useState<Array<string>>([]) // 'auto' | 'poster' | 'snapshot' | 'logo' | 'other'
-
-    // Backend may respond with missing template assets; capture them to prompt user for uploads
-    const [missingAssets, setMissingAssets] = useState<Array<any>>([])
 
     // File refs
     const attendeesRef = useRef<HTMLInputElement>(null)
@@ -48,7 +71,6 @@ export default function ReportGeneratorPage() {
     const socialRef = useRef<HTMLInputElement>(null)
     const posterRef = useRef<HTMLInputElement>(null)
     const snapshotRef = useRef<HTMLInputElement>(null)
-    const templateRef = useRef<HTMLInputElement>(null)
     const imageRefs = useRef<Array<HTMLInputElement | null>>([])
     const logoRef = useRef<HTMLInputElement>(null)
 
@@ -80,7 +102,6 @@ export default function ReportGeneratorPage() {
         const feedbackFile = feedbackRef.current?.files?.[0]
         const crowdFile = crowdRef.current?.files?.[0]
         const socialFile = socialRef.current?.files?.[0]
-        const templateFile = templateRef.current?.files?.[0]
 
         if (!attendeesFile || !feedbackFile) {
             setError("Please upload required files (Attendees CSV and Feedback CSV)")
@@ -147,20 +168,7 @@ export default function ReportGeneratorPage() {
                 })
             }
 
-            // Upload optional Overleaf template
-            if (useCustomTemplate && templateFile) {
-                const templateFormData = new FormData()
-                templateFormData.append("file", templateFile)
-                // Determine literal filename for upload based on extension
-                const endpoint = templateFile.name.endsWith(".docx")
-                    ? "http://127.0.0.1:8003/upload/custom_template.docx"
-                    : "http://127.0.0.1:8003/upload/custom_template.tex"
 
-                await fetch(endpoint, {
-                    method: "POST",
-                    body: templateFormData,
-                })
-            }
 
             // Upload optional logo
             const logoFile = logoRef.current?.files?.[0]
@@ -190,35 +198,93 @@ export default function ReportGeneratorPage() {
             }
 
 
+            // Format date to human-readable string (e.g. "24th Oct 2024")
+            const formatDate = (dateStr: string) => {
+                if (!dateStr) return ""
+                const d = new Date(dateStr + "T00:00:00")
+                const day = d.getDate()
+                const suffix = ["th", "st", "nd", "rd"][(day % 100 > 10 && day % 100 < 14) ? 0 : (day % 10 < 4 ? day % 10 : 0)]
+                const month = d.toLocaleString("en-US", { month: "short" })
+                const year = d.getFullYear()
+                return `${day}${suffix} ${month} ${year}`
+            }
+
+            // Format time to 12-hour format (e.g. "10:00 AM")
+            const formatTime = (timeStr: string) => {
+                if (!timeStr) return ""
+                const [h, m] = timeStr.split(":")
+                const hour = parseInt(h)
+                const ampm = hour >= 12 ? "PM" : "AM"
+                const h12 = hour % 12 || 12
+                return `${h12}:${m} ${ampm}`
+            }
+
             // Generate report
+            // Hierarchical payload required by the generator
+            const getList = (...items: string[]) => items.map(l => l.trim()).filter(l => l);
+
+            const payload = {
+                event_meta: {
+                    department_name: institutionName,
+                    event_type: eventType,
+                    title: eventName,
+                    date: formatDate(eventDate),
+                    time: formatTime(eventTime),
+                    venue: eventVenue
+                },
+                participants: {
+                    target_audience: targetAudience,
+                    total_participants: parseInt(dbitStudentsCount || "0") + parseInt(nonDbitStudentsCount || "0"),
+                    girl_participants: 0,
+                    boy_participants: 0
+                },
+                organizers: {
+                    resource_person: resourcePersonName,
+                    resource_org: resourcePersonOrg,
+                    organizing_body: organizingBody,
+                    faculty_coordinator: facultyCoordinator
+                },
+                content: {
+                    objectives: getList(objective1, objective2, objective3),
+                    outcomes: getList(outcome1, outcome2, outcome3),
+                    detailed_report: detailedDescription,
+                    snapshot_description: ""
+                },
+                feedback: {
+                    feedback_text: ""
+                },
+                social_media: {
+                    facebook: facebookLink,
+                    instagram: instagramLink,
+                    linkedin: linkedinLink
+                },
+                registration: {
+                    dbit_students: parseInt(dbitStudentsCount || "0"),
+                    non_dbit_students: parseInt(nonDbitStudentsCount || "0")
+                },
+                signatories: {
+                    prepared_name: preparer1Name || preparer2Name,
+                    prepared_post: preparer1Post || preparer2Post,
+                    approved_name: approver1Name || approver2Name,
+                    approved_post: approver1Post || approver2Post
+                }
+            };
             const response = await fetch("http://127.0.0.1:8003/generate-report", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    event_name: eventName,
-                    event_type: eventType,
-                    institution_name: institutionName,
-                    use_custom_template: useCustomTemplate && !!templateFile,
-                }),
+                body: JSON.stringify(payload),
             })
 
             if (!response.ok) {
                 const errorData = await response.json()
-
-                // New behavior: if backend returns structured missing_assets info, surface upload UI
-                if (errorData && errorData.detail && errorData.detail.error === 'missing_template_assets') {
-                    setMissingAssets(errorData.detail.missing_assets || [])
-                    setLoading(false)
-                    return
-                }
-
                 throw new Error(typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail) || "Failed to generate report")
             }
 
             const data = await response.json()
             setResult({
-                content: data.content,
-                filename: data.report_filename || "event_report.md",
+                content: data.content || "PDF Generated successfully",
+                filename: data.report_filename || "event_report.pdf",
+                pdf_url: data.pdf_url
             })
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "An error occurred")
@@ -227,9 +293,9 @@ export default function ReportGeneratorPage() {
         }
     }
 
-    const downloadMarkdown = () => {
+    const downloadText = () => {
         if (!result) return
-        const blob = new Blob([result.content], { type: "text/markdown" })
+        const blob = new Blob([result.content], { type: "text/plain" })
         const url = URL.createObjectURL(blob)
         const a = document.createElement("a")
         a.href = url
@@ -242,88 +308,68 @@ export default function ReportGeneratorPage() {
 
     const downloadPDF = () => {
         if (!result) return
-        window.open(
-            `http://127.0.0.1:8003/download-report/pdf?filename=${encodeURIComponent(result.filename)}`,
-            "_blank"
-        )
-    }
-
-    // Mapping for markers -> default upload filename used by the backend
-    const _mapMarkerToFilename = (marker: string, idx: number) => {
-        if (/logo/i.test(marker)) return `logo.png`
-        if (/poster/i.test(marker)) return `poster.png`
-        if (/snapshot/i.test(marker)) return `snapshot.png`
-        if (/feedback/i.test(marker) || /ratings/i.test(marker)) return `ratings_chart.png`
-        // fallback
-        return `report_image_${idx + 1}.png`
-    }
-
-    // Store files provided by user specifically for missing assets
-    const [missingAssetFiles, setMissingAssetFiles] = useState<Record<number, File | null>>({})
-
-    const uploadMissingAssetsAndRetry = async () => {
-        if (!missingAssets || missingAssets.length === 0) return
-        setLoading(true)
-        setError(null)
-
-        try {
-            // Upload each provided file to backend under a sensible name
-            for (let i = 0; i < missingAssets.length; i++) {
-                const asset = missingAssets[i]
-                const file = missingAssetFiles[i]
-                if (!file) {
-                    throw new Error(`Missing file for asset: ${asset.marker}`)
-                }
-                const filename = _mapMarkerToFilename(asset.marker, i)
-                const fd = new FormData()
-                fd.append("file", file)
-                const resp = await fetch(`http://127.0.0.1:8003/upload/${filename}`, {
-                    method: "POST",
-                    body: fd,
-                })
-                if (!resp.ok) {
-                    const data = await resp.json().catch(() => ({}))
-                    throw new Error(data.detail || `Failed to upload ${filename}`)
-                }
-            }
-
-            // After uploading all assets, try to generate the report again
-            const response = await fetch("http://127.0.0.1:8003/generate-report", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    event_name: eventName,
-                    event_type: eventType,
-                    institution_name: institutionName,
-                    use_custom_template: useCustomTemplate && !!templateRef.current?.files?.[0],
-                }),
-            })
-
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail) || "Failed to generate report")
-            }
-
-            const data = await response.json()
-            setMissingAssets([])
-            setResult({ content: data.content, filename: data.report_filename || "event_report.md" })
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "An error occurred while uploading assets")
-        } finally {
-            setLoading(false)
+        if ((result as any).pdf_url) {
+            window.open(`http://127.0.0.1:8003${(result as any).pdf_url}`, "_blank")
+        } else {
+            window.open(
+                `http://127.0.0.1:8003/download-report/pdf?filename=${encodeURIComponent(result.filename)}`,
+                "_blank"
+            )
         }
     }
 
-    // Simple markdown to HTML converter
-    const renderMarkdown = (content: string) => {
-        let html = content
-            .replace(/# (.*)/g, "<h1>$1</h1>")
-            .replace(/## (.*)/g, "<h2>$1</h2>")
-            .replace(/### (.*)/g, "<h3>$1</h3>")
-            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-            .replace(/- (.*)/g, "<li>$1</li>")
-            .replace(/\n/g, "<br>")
-        return html
+    // Render the strict plain-text report as clean HTML
+    const renderReport = (content: string) => {
+        // Escape HTML entities
+        let escaped = content
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+
+        // Style section dividers
+        escaped = escaped.replace(/^-{4,}$/gm, '<hr style="border: none; border-top: 2px solid #6366f1; margin: 1.5em 0;" />')
+
+        // Style [USER_UPLOAD_REQUIRED: ...] as badges
+        escaped = escaped.replace(
+            /\[USER_UPLOAD_REQUIRED:\s*([^\]]+)\]/g,
+            '<span style="display:inline-block;background:#f0f0f0;border:2px dashed #aaa;border-radius:8px;padding:12px 20px;color:#888;font-style:italic;margin:8px 0;">📷 Image placeholder: $1</span>'
+        )
+
+        // Style the header (DON BOSCO line)
+        escaped = escaped.replace(
+            /^(\s*DON BOSCO INSTITUTE OF TECHNOLOGY.*)$/gm,
+            '<div style="text-align:center;font-weight:bold;font-size:1.2em;color:#1e293b;">$1</div>'
+        )
+        escaped = escaped.replace(
+            /^(\s*Premier Automobiles.*)$/gm,
+            '<div style="text-align:center;font-size:0.9em;color:#64748b;">$1</div>'
+        )
+
+        // Style section headings (lines ending with ':')
+        escaped = escaped.replace(
+            /^(Objectives:|Outcomes:|Detailed Report:|Snapshot of the Event:|Feedback Analysis:|Event Poster:|Social Media Links:|Registration Details:|List of Students Who Attended the Event:|Report Approved By:|Report Prepared By:)$/gm,
+            '<strong style="font-size:1.1em;color:#1e293b;">$1</strong>'
+        )
+
+        // Style table rows
+        escaped = escaped.replace(
+            /^\|(.+)\|$/gm,
+            (match) => {
+                const cells = match.split('|').filter(c => c.trim() !== '')
+                const row = cells.map(c => `<td style="border:1px solid #e2e8f0;padding:6px 12px;">${c.trim()}</td>`).join('')
+                return `<tr>${row}</tr>`
+            }
+        )
+        // Wrap consecutive <tr> rows in a table
+        escaped = escaped.replace(
+            /(<tr>[\s\S]*?<\/tr>\n?)+/g,
+            (match) => `<table style="border-collapse:collapse;width:100%;margin:8px 0;">${match}</table>`
+        )
+
+        // Convert remaining newlines to <br>
+        escaped = escaped.replace(/\n/g, '<br>')
+
+        return escaped
     }
 
     if (loading) {
@@ -358,9 +404,9 @@ export default function ReportGeneratorPage() {
                             <div className="flex justify-between items-center">
                                 <CardTitle>Generated Report</CardTitle>
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={downloadMarkdown}>
+                                    <Button variant="outline" size="sm" onClick={downloadText}>
                                         <FileCode className="mr-2 h-4 w-4" />
-                                        Download .md
+                                        Download .txt
                                     </Button>
                                     <Button size="sm" onClick={downloadPDF}>
                                         <Download className="mr-2 h-4 w-4" />
@@ -371,8 +417,8 @@ export default function ReportGeneratorPage() {
                         </CardHeader>
                         <CardContent>
                             <div
-                                className="prose dark:prose-invert max-w-none max-h-[500px] overflow-y-auto p-4 bg-muted rounded-lg"
-                                dangerouslySetInnerHTML={{ __html: renderMarkdown(result.content) }}
+                                className="max-w-none max-h-[600px] overflow-y-auto p-6 bg-white dark:bg-zinc-900 rounded-lg border font-mono text-sm leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: renderReport(result.content) }}
                             />
                         </CardContent>
                     </Card>
@@ -438,6 +484,128 @@ export default function ReportGeneratorPage() {
                                     placeholder="e.g., Department of Computer Science"
                                     required
                                 />
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="eventDate">Event Date</Label>
+                                    <Input id="eventDate" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="eventTime">Event Time</Label>
+                                    <Input id="eventTime" type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="eventVenue">Event Venue</Label>
+                                    <Input id="eventVenue" value={eventVenue} onChange={(e) => setEventVenue(e.target.value)} placeholder="e.g. Main Auditorium" />
+                                </div>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2 mt-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="targetAudience">Target Audience</Label>
+                                    <Input id="targetAudience" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} placeholder="e.g. TE IT & Comps" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="organizingBody">Organizing Body</Label>
+                                    <Input id="organizingBody" value={organizingBody} onChange={(e) => setOrganizingBody(e.target.value)} placeholder="e.g. ACM Student Chapter" />
+                                </div>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2 mt-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="dbitStudentsCount">DBIT Students Count</Label>
+                                    <Input id="dbitStudentsCount" value={dbitStudentsCount} onChange={(e) => setDbitStudentsCount(e.target.value)} placeholder="e.g. 50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="nonDbitStudentsCount">Non-DBIT Students Count</Label>
+                                    <Input id="nonDbitStudentsCount" value={nonDbitStudentsCount} onChange={(e) => setNonDbitStudentsCount(e.target.value)} placeholder="e.g. 10" />
+                                </div>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="resourcePersonName">Resource Person Name</Label>
+                                    <Input id="resourcePersonName" value={resourcePersonName} onChange={(e) => setResourcePersonName(e.target.value)} placeholder="e.g. Mr. John Doe" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="resourcePersonOrg">Resource Person Org</Label>
+                                    <Input id="resourcePersonOrg" value={resourcePersonOrg} onChange={(e) => setResourcePersonOrg(e.target.value)} placeholder="e.g. Google" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
+                                    <Input id="facultyCoordinator" value={facultyCoordinator} onChange={(e) => setFacultyCoordinator(e.target.value)} placeholder="e.g. Prof. Smith" />
+                                </div>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="objective1">Objective 1</Label>
+                                    <Input id="objective1" value={objective1} onChange={(e) => setObjective1(e.target.value)} placeholder="" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="objective2">Objective 2</Label>
+                                    <Input id="objective2" value={objective2} onChange={(e) => setObjective2(e.target.value)} placeholder="" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="objective3">Objective 3</Label>
+                                    <Input id="objective3" value={objective3} onChange={(e) => setObjective3(e.target.value)} placeholder="" />
+                                </div>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="outcome1">Outcome 1</Label>
+                                    <Input id="outcome1" value={outcome1} onChange={(e) => setOutcome1(e.target.value)} placeholder="" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="outcome2">Outcome 2</Label>
+                                    <Input id="outcome2" value={outcome2} onChange={(e) => setOutcome2(e.target.value)} placeholder="" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="outcome3">Outcome 3</Label>
+                                    <Input id="outcome3" value={outcome3} onChange={(e) => setOutcome3(e.target.value)} placeholder="" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 mt-4">
+                                <Label htmlFor="detailedDescription">Detailed Description Pointers</Label>
+                                <Input id="detailedDescription" value={detailedDescription} onChange={(e) => setDetailedDescription(e.target.value)} placeholder="Provide pointers. The AI will write the paragraph." />
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="facebookLink">Facebook Link</Label>
+                                    <Input id="facebookLink" value={facebookLink} onChange={(e) => setFacebookLink(e.target.value)} placeholder="Link or N/A" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="instagramLink">Instagram Link</Label>
+                                    <Input id="instagramLink" value={instagramLink} onChange={(e) => setInstagramLink(e.target.value)} placeholder="Link or N/A" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="linkedinLink">LinkedIn Link</Label>
+                                    <Input id="linkedinLink" value={linkedinLink} onChange={(e) => setLinkedinLink(e.target.value)} placeholder="Link or N/A" />
+                                </div>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2 mt-4">
+                                <div className="space-y-2">
+                                    <Label>Approver 1 Detail</Label>
+                                    <Input className="mb-2" value={approver1Name} onChange={(e) => setApprover1Name(e.target.value)} placeholder="Name (e.g. Dr. Phadke)" />
+                                    <Input value={approver1Post} onChange={(e) => setApprover1Post(e.target.value)} placeholder="Post (e.g. Principal)" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Approver 2 Detail</Label>
+                                    <Input className="mb-2" value={approver2Name} onChange={(e) => setApprover2Name(e.target.value)} placeholder="Name" />
+                                    <Input value={approver2Post} onChange={(e) => setApprover2Post(e.target.value)} placeholder="Post" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Preparer 1 Detail</Label>
+                                    <Input className="mb-2" value={preparer1Name} onChange={(e) => setPreparer1Name(e.target.value)} placeholder="Name" />
+                                    <Input value={preparer1Post} onChange={(e) => setPreparer1Post(e.target.value)} placeholder="Post" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Preparer 2 Detail</Label>
+                                    <Input className="mb-2" value={preparer2Name} onChange={(e) => setPreparer2Name(e.target.value)} placeholder="Name" />
+                                    <Input value={preparer2Post} onChange={(e) => setPreparer2Post(e.target.value)} placeholder="Post" />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -597,147 +765,119 @@ export default function ReportGeneratorPage() {
                                 </div>
                             </div>
 
-                            {/* Custom Overleaf Template (Optional) */}
-                            <Collapsible open={useCustomTemplate} onOpenChange={setUseCustomTemplate}>
-                                <CollapsibleTrigger asChild>
-                                    <Button variant="outline" type="button" className="w-full justify-between">
-                                        <span className="flex items-center gap-2">
-                                            <FileCode className="h-4 w-4" />
-                                            Custom Template (Optional)
-                                        </span>
-                                        <ChevronDown className={`h-4 w-4 transition-transform ${useCustomTemplate ? "rotate-180" : ""}`} />
-                                    </Button>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent className="mt-4">
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">
-                                            Upload a custom Overleaf/LaTeX template (.tex) or Word Document (.docx) to customize the report format.
-                                            The template should include placeholders (e.g., {"{{event_name}}"}) that will be filled by the AI.
-                                        </p>
+                            {/* Additional Images Options */}
+
+
+
+                            <div>
+                                <div className="space-y-2">
+
+
+                                    {/* Optional: Logo upload */}
+                                    <div className="mt-4">
+                                        <Label>Logo (Optional)</Label>
+                                        <p className="text-xs text-muted-foreground">Upload an organization/logo image to be inserted where the template has a logo placeholder.</p>
                                         <div
-                                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${templateFileName ? "border-green-500" : "border-muted"
+                                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${logoFileName ? "border-green-500" : "border-muted"
                                                 }`}
-                                            onClick={() => templateRef.current?.click()}
+                                            onClick={() => logoRef.current?.click()}
                                         >
                                             <input
                                                 type="file"
-                                                ref={templateRef}
+                                                ref={logoRef}
                                                 className="hidden"
-                                                accept=".tex,.docx"
-                                                onChange={(e) => handleFileChange(e, setTemplateFileName)}
+                                                accept=".png,.jpg,.jpeg,.gif"
+                                                onChange={(e) => handleFileChange(e, setLogoFileName)}
                                             />
-                                            <FileCode className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                            <span className="text-sm">
-                                                {templateFileName || "Click to upload .tex or .docx template"}
-                                            </span>
+                                            <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                                            <span className="text-sm">{logoFileName || "Click to upload a logo (optional)"}</span>
                                         </div>
-
-                                        {/* Optional: Logo upload */}
-                                        <div className="mt-4">
-                                            <Label>Logo (Optional)</Label>
-                                            <p className="text-xs text-muted-foreground">Upload an organization/logo image to be inserted where the template has a logo placeholder.</p>
-                                            <div
-                                                className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${logoFileName ? "border-green-500" : "border-muted"
-                                                    }`}
-                                                onClick={() => logoRef.current?.click()}
-                                            >
-                                                <input
-                                                    type="file"
-                                                    ref={logoRef}
-                                                    className="hidden"
-                                                    accept=".png,.jpg,.jpeg,.gif"
-                                                    onChange={(e) => handleFileChange(e, setLogoFileName)}
-                                                />
-                                                <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                                <span className="text-sm">{logoFileName || "Click to upload a logo (optional)"}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Optional: ask user if they'd like to include images and how many up front */}
-                                        <div className="mt-4">
-                                            <Label>Include images in report?</Label>
-                                            <div className="flex items-center gap-4 mt-2">
-                                                <label className="flex items-center gap-2">
-                                                    <input
-                                                        type="radio"
-                                                        name="includeImages"
-                                                        checked={!includeImages}
-                                                        onChange={() => setIncludeImages(false)}
-                                                    />
-                                                    No
-                                                </label>
-                                                <label className="flex items-center gap-2">
-                                                    <input
-                                                        type="radio"
-                                                        name="includeImages"
-                                                        checked={includeImages}
-                                                        onChange={() => setIncludeImages(true)}
-                                                    />
-                                                    Yes
-                                                </label>
-                                            </div>
-
-                                            {includeImages && (
-                                                <div className="mt-3 space-y-2">
-                                                    <Label>How many images would you like to include?</Label>
-                                                    <Input
-                                                        type="number"
-                                                        min={1}
-                                                        value={numImages}
-                                                        onChange={(e) => {
-                                                            const v = parseInt(e.target.value || "0", 10)
-                                                            setNumImages(v)
-                                                            setImageFiles(Array.from({ length: Math.max(0, v) }, (_, i) => imageFiles[i] || null))
-                                                            setImagePurposes(Array.from({ length: Math.max(0, v) }, (_, i) => imagePurposes[i] || 'auto'))
-                                                        }}
-                                                    />
-
-                                                    {Array.from({ length: numImages }).map((_, i) => (
-                                                        <div key={i} className="mt-2">
-                                                            <Label>Image #{i + 1}</Label>
-                                                            <div className="flex gap-2 items-center">
-                                                                <input
-                                                                    type="file"
-                                                                    accept=".png,.jpg,.jpeg,.gif"
-                                                                    className="block"
-                                                                    onChange={(e) => {
-                                                                        const f = e.target.files?.[0] || null
-                                                                        setImageFiles((prev) => {
-                                                                            const copy = prev.slice()
-                                                                            copy[i] = f
-                                                                            return copy
-                                                                        })
-                                                                    }}
-                                                                />
-
-                                                                <select
-                                                                    value={imagePurposes[i] || 'auto'}
-                                                                    onChange={(e) => {
-                                                                        const v = e.target.value
-                                                                        setImagePurposes((prev) => {
-                                                                            const copy = prev.slice()
-                                                                            copy[i] = v
-                                                                            return copy
-                                                                        })
-                                                                    }}
-                                                                    className="border rounded px-2 py-1 text-sm"
-                                                                >
-                                                                    <option value="auto">Auto</option>
-                                                                    <option value="poster">Poster</option>
-                                                                    <option value="snapshot">Snapshot</option>
-                                                                    <option value="logo">Logo</option>
-                                                                    <option value="other">Other</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-
                                     </div>
-                                </CollapsibleContent>
-                            </Collapsible>
+
+                                    {/* Optional: ask user if they'd like to include images and how many up front */}
+                                    <div className="mt-4">
+                                        <Label>Include images in report?</Label>
+                                        <div className="flex items-center gap-4 mt-2">
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="radio"
+                                                    name="includeImages"
+                                                    checked={!includeImages}
+                                                    onChange={() => setIncludeImages(false)}
+                                                />
+                                                No
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="radio"
+                                                    name="includeImages"
+                                                    checked={includeImages}
+                                                    onChange={() => setIncludeImages(true)}
+                                                />
+                                                Yes
+                                            </label>
+                                        </div>
+
+                                        {includeImages && (
+                                            <div className="mt-3 space-y-2">
+                                                <Label>How many images would you like to include?</Label>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    value={numImages}
+                                                    onChange={(e) => {
+                                                        const v = parseInt(e.target.value || "0", 10)
+                                                        setNumImages(v)
+                                                        setImageFiles(Array.from({ length: Math.max(0, v) }, (_, i) => imageFiles[i] || null))
+                                                        setImagePurposes(Array.from({ length: Math.max(0, v) }, (_, i) => imagePurposes[i] || 'auto'))
+                                                    }}
+                                                />
+
+                                                {Array.from({ length: numImages }).map((_, i) => (
+                                                    <div key={i} className="mt-2">
+                                                        <Label>Image #{i + 1}</Label>
+                                                        <div className="flex gap-2 items-center">
+                                                            <input
+                                                                type="file"
+                                                                accept=".png,.jpg,.jpeg,.gif"
+                                                                className="block"
+                                                                onChange={(e) => {
+                                                                    const f = e.target.files?.[0] || null
+                                                                    setImageFiles((prev) => {
+                                                                        const copy = prev.slice()
+                                                                        copy[i] = f
+                                                                        return copy
+                                                                    })
+                                                                }}
+                                                            />
+
+                                                            <select
+                                                                value={imagePurposes[i] || 'auto'}
+                                                                onChange={(e) => {
+                                                                    const v = e.target.value
+                                                                    setImagePurposes((prev) => {
+                                                                        const copy = prev.slice()
+                                                                        copy[i] = v
+                                                                        return copy
+                                                                    })
+                                                                }}
+                                                                className="border rounded px-2 py-1 text-sm"
+                                                            >
+                                                                <option value="auto">Auto</option>
+                                                                <option value="poster">Poster</option>
+                                                                <option value="snapshot">Snapshot</option>
+                                                                <option value="logo">Logo</option>
+                                                                <option value="other">Other</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -746,45 +886,6 @@ export default function ReportGeneratorPage() {
                         <Alert variant="destructive" className="mb-6">
                             <AlertDescription>{error}</AlertDescription>
                         </Alert>
-                    )}
-
-                    {/* If server indicates missing template assets, prompt for uploads */}
-                    {missingAssets && missingAssets.length > 0 && (
-                        <Card className="mb-6">
-                            <CardHeader>
-                                <CardTitle>Template requires images</CardTitle>
-                                <CardDescription>
-                                    The uploaded template requires image files for the following markers. Please upload images for each marker and click "Upload & Retry".
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {missingAssets.map((asset: any, idx: number) => (
-                                    <div key={idx} className="mb-4">
-                                        <Label className="font-semibold">{asset.marker}</Label>
-                                        {asset.directives && Object.keys(asset.directives).length > 0 && (
-                                            <p className="text-xs text-muted-foreground">Suggested: {Object.entries(asset.directives).map(([k, v]) => `${k}=${v}`).join('; ')}</p>
-                                        )}
-                                        <input
-                                            type="file"
-                                            accept=".png,.jpg,.jpeg,.gif"
-                                            className="mt-2"
-                                            onChange={(e) => {
-                                                const f = e.target.files?.[0] || null
-                                                setMissingAssetFiles((prev) => ({ ...prev, [idx]: f }))
-                                            }}
-                                        />
-                                    </div>
-                                ))}
-                                <div className="flex gap-2">
-                                    <Button onClick={uploadMissingAssetsAndRetry}>
-                                        Upload & Retry
-                                    </Button>
-                                    <Button variant="outline" onClick={() => setMissingAssets([])}>
-                                        Cancel
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
                     )}
 
                     {/* Submit Button */}

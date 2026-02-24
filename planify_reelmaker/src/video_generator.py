@@ -1,6 +1,4 @@
-from moviepy import ImageClip
-from moviepy import concatenate_videoclips
-from moviepy import AudioFileClip
+from moviepy.editor import ImageClip, concatenate_videoclips, AudioFileClip, CompositeVideoClip
 import os
 import numpy as np
 from PIL import Image
@@ -21,15 +19,9 @@ def enhance_image_quality(image_array):
 
 
 import random
-from moviepy import (
-    ImageClip,
-    concatenate_videoclips,
-    CompositeVideoClip,
-    AudioFileClip
-)
 # Direct imports for MoviePy v2 compatibility
-from moviepy.video.fx import FadeIn, FadeOut, CrossFadeIn
-from moviepy.audio.fx import AudioFadeOut
+from moviepy.video.fx.all import fadein, fadeout
+from moviepy.audio.fx.all import audio_fadeout
 import math
 
 def create_ken_burns_clip(image_path, clip_duration=3.0, resolution=(1080, 1920)):
@@ -64,7 +56,7 @@ def create_ken_burns_clip(image_path, clip_duration=3.0, resolution=(1080, 1920)
             progress = t / clip_duration
             return start_scale + (end_scale - start_scale) * progress
             
-        clip = img_clip.resized(resize_func).with_position('center')
+        clip = img_clip.resize(resize_func).set_position('center')
         
     elif effect_type == 'zoom_out':
         start_scale = base_scale * 1.3
@@ -74,7 +66,7 @@ def create_ken_burns_clip(image_path, clip_duration=3.0, resolution=(1080, 1920)
             progress = t / clip_duration
             return start_scale - (start_scale - end_scale) * progress
             
-        clip = img_clip.resized(resize_func).with_position('center')
+        clip = img_clip.resize(resize_func).set_position('center')
         
     elif effect_type == 'pan_horizontal':
         # Pan: Resize to height, width > screen usually
@@ -87,7 +79,7 @@ def create_ken_burns_clip(image_path, clip_duration=3.0, resolution=(1080, 1920)
         if (img_w * scale) < w * 1.2: # Ensure at least 20% play
              scale = (w * 1.2) / img_w
         
-        clip = img_clip.resized(scale)
+        clip = img_clip.resize(scale)
         clip_w = int(img_w * scale) # Updated actual width
         
         direction = random.choice(['left_to_right', 'right_to_left'])
@@ -120,7 +112,7 @@ def create_ken_burns_clip(image_path, clip_duration=3.0, resolution=(1080, 1920)
                 p = t / clip_duration
                 return (int(min_x * (1-p)), 'center')
         
-        clip = clip.with_position(pos_func)
+        clip = clip.set_position(pos_func)
 
     else: # pan_vertical
         # Scale to match width, verify height
@@ -128,7 +120,7 @@ def create_ken_burns_clip(image_path, clip_duration=3.0, resolution=(1080, 1920)
         if (img_h * scale) < h * 1.2:
              scale = (h * 1.2) / img_h
              
-        clip = img_clip.resized(scale)
+        clip = img_clip.resize(scale)
         clip_h = int(img_h * scale)
         
         direction = random.choice(['top_to_bottom', 'bottom_to_top'])
@@ -148,10 +140,10 @@ def create_ken_burns_clip(image_path, clip_duration=3.0, resolution=(1080, 1920)
                 p = t / clip_duration
                 return ('center', int(min_y * (1-p)))
                 
-        clip = clip.with_position(pos_func)
+        clip = clip.set_position(pos_func)
 
     # Set duration and compositing
-    clip = clip.with_duration(clip_duration)
+    clip = clip.set_duration(clip_duration)
     
     # Return a Composite Clip which crops everything outside 'size'
     return CompositeVideoClip([clip], size=resolution)
@@ -223,26 +215,23 @@ def create_reel_from_images(image_paths, music_path=None, output_path="output/re
     for i, clip in enumerate(clips):
         if i == 0:
             # First clip: fade in from black
-            clip = clip.with_effects([FadeIn(transition_duration)])
-            composite_clips.append(clip.with_start(current_time))
+            clip = clip.fx(fadein, transition_duration)
+            composite_clips.append(clip.set_start(current_time))
             current_time += clip.duration - transition_duration
         elif i == len(clips) - 1:
-            # Last clip: crossfade in, fade out to black
-            clip = clip.with_effects([
-                CrossFadeIn(transition_duration),
-                FadeOut(transition_duration)
-            ])
-            composite_clips.append(clip.with_start(current_time))
+            # Last clip: fade in and fade out to black
+            clip = clip.fx(fadein, transition_duration).fx(fadeout, transition_duration)
+            composite_clips.append(clip.set_start(current_time))
             current_time += clip.duration
         else:
-            # Middle clips: crossfade in
-            clip = clip.with_effects([CrossFadeIn(transition_duration)])
-            composite_clips.append(clip.with_start(current_time))
+            # Middle clips: fade in
+            clip = clip.fx(fadein, transition_duration)
+            composite_clips.append(clip.set_start(current_time))
             current_time += clip.duration - transition_duration
     
     # Composite all clips
     final_clip = CompositeVideoClip(composite_clips, size=(1080, 1920))
-    final_clip = final_clip.with_duration(current_time)
+    final_clip = final_clip.set_duration(current_time)
 
     # Add audio
     if music_path and os.path.exists(music_path):
@@ -250,13 +239,14 @@ def create_reel_from_images(image_paths, music_path=None, output_path="output/re
             audioclip = AudioFileClip(music_path)
             
             if audioclip.duration < final_clip.duration:
-                audioclip = audioclip.looped(duration=final_clip.duration)
+                from moviepy.audio.fx.all import audio_loop
+                audioclip = audio_loop(audioclip, duration=final_clip.duration)
             else:
                 audioclip = audioclip.subclipped(0, final_clip.duration)
             
             # Fade out audio at the end
-            audioclip = audioclip.with_effects([AudioFadeOut(2)])
-            final_clip = final_clip.with_audio(audioclip)
+            audioclip = audioclip.fx(audio_fadeout, 2)
+            final_clip = final_clip.set_audio(audioclip)
             print("🎵 Background music added.")
         except Exception as e:
             print(f"⚠️ Audio error: {e}")

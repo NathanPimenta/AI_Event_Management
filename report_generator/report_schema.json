@@ -1,0 +1,293 @@
+{
+    "_comment": "DBIT Event Report Schema — collect these fields from the user. Images are file paths.",
+    "_image_fields": [
+        "college_logo",
+        "club_logo",
+        "event_photos",
+        "feedback_image",
+        "poster_image"
+    ],
+    "_list_fields": [
+        "objectives",
+        "outcomes",
+        "students"
+    ],
+    "_multiline_fields": [
+        "detailed_report",
+        "snapshot_description",
+        "feedback_text"
+    ],
+    "institute": {
+        "college_logo": {
+            "type": "image",
+            "required": true,
+            "label": "College Logo (PNG/JPG, ~1.96cm x 1.96cm)",
+            "var": "VAR_COLLEGE_LOGO"
+        },
+        "club_logo": {
+            "type": "image",
+            "required": false,
+            "label": "Student Club Logo (PNG/JPG). Leave blank if none.",
+            "var": "VAR_CLUB_LOGO"
+        }
+    },
+    "event_meta": {
+        "department_name": {
+            "type": "string",
+            "required": true,
+            "label": "Department Name",
+            "var": "VAR_DEPARTMENT_NAME",
+            "example": "Department of Computer Engineering"
+        },
+        "event_type": {
+            "type": "string",
+            "required": true,
+            "label": "Event Category / Type",
+            "var": "VAR_EVENT_TYPE",
+            "example": "National Level Technical Workshop"
+        },
+        "title": {
+            "type": "string",
+            "required": true,
+            "label": "Full Title of Event",
+            "var": "VAR_TITLE",
+            "example": "Advanced Artificial Intelligence Workshop"
+        },
+        "date": {
+            "type": "string",
+            "required": true,
+            "label": "Date (DD Month YYYY)",
+            "var": "VAR_DATE",
+            "example": "15 January 2026"
+        },
+        "time": {
+            "type": "string",
+            "required": true,
+            "label": "Time (start to end)",
+            "var": "VAR_TIME",
+            "example": "10:00 AM to 4:00 PM"
+        },
+        "venue": {
+            "type": "string",
+            "required": true,
+            "label": "Venue",
+            "var": "VAR_VENUE",
+            "example": "Seminar Hall 1"
+        }
+    },
+    "participants": {
+        "target_audience": {
+            "type": "string",
+            "required": true,
+            "label": "Target Audience (branches/years)",
+            "var": "VAR_TARGET_AUDIENCE",
+            "example": "FE/COMP/IT"
+        },
+        "total_participants": {
+            "type": "integer",
+            "required": true,
+            "label": "Total No. of Participants",
+            "var": "VAR_TOTAL_PARTICIPANTS",
+            "example": 120
+        },
+        "girl_participants": {
+            "type": "integer",
+            "required": true,
+            "label": "No. of Girl Participants",
+            "var": "VAR_GIRL_PARTICIPANTS",
+            "example": 45
+        },
+        "boy_participants": {
+            "type": "integer",
+            "required": true,
+            "label": "No. of Boy Participants",
+            "var": "VAR_BOY_PARTICIPANTS",
+            "example": 75
+        }
+    },
+    "organizers": {
+        "resource_person": {
+            "type": "string",
+            "required": true,
+            "label": "Resource Person Name & Title",
+            "var": "VAR_RESOURCE_PERSON",
+            "example": "Dr. John Smith"
+        },
+        "resource_org": {
+            "type": "string",
+            "required": true,
+            "label": "Organization of Resource Person",
+            "var": "VAR_RESOURCE_ORGANIZATION",
+            "example": "IIT Bombay"
+        },
+        "organizing_body": {
+            "type": "string",
+            "required": true,
+            "label": "Organizing Dept / Committee / Authority",
+            "var": "VAR_ORGANIZING_BODY",
+            "example": "CSI Student Chapter"
+        },
+        "faculty_coordinator": {
+            "type": "string",
+            "required": true,
+            "label": "Faculty Coordinator Name & Title",
+            "var": "VAR_FACULTY_COORDINATOR",
+            "example": "Prof. Jane Doe"
+        }
+    },
+    "content": {
+        "objectives": {
+            "type": "list",
+            "required": true,
+            "label": "Objectives (list, 3–5 points)",
+            "var": "VAR_OBJECTIVES",
+            "example": [
+                "To provide foundational knowledge in emerging AI technologies.",
+                "To introduce students to industry-driven practical implementations.",
+                "To encourage research-oriented thinking and innovation."
+            ]
+        },
+        "outcomes": {
+            "type": "list",
+            "required": true,
+            "label": "Outcomes (list, 3–5 points)",
+            "var": "VAR_OUTCOMES",
+            "example": [
+                "Participants gained clarity on advanced AI concepts.",
+                "Students understood real-world implementation strategies.",
+                "Increased motivation towards research and project development."
+            ]
+        },
+        "detailed_report": {
+            "type": "text",
+            "required": true,
+            "label": "Detailed Report (2–4 paragraphs describing the event)",
+            "var": "VAR_DETAILED_REPORT",
+            "example": "The workshop commenced at 10:00 AM with an inaugural address by..."
+        },
+        "snapshot_description": {
+            "type": "text",
+            "required": true,
+            "label": "Snapshot caption / description for photos",
+            "var": "VAR_SNAPSHOT_DESCRIPTION",
+            "example": "Photographs captured candid interactions between students and the resource person."
+        }
+    },
+    "images": {
+        "event_photos": {
+            "type": "image_list",
+            "required": true,
+            "min": 2,
+            "label": "Event Photos (minimum 2, geotagged preferred)",
+            "var": "VAR_EVENT_PHOTOS",
+            "note": "Provide file paths; each will be rendered at 70% text width"
+        },
+        "feedback_image": {
+            "type": "image",
+            "required": false,
+            "label": "Feedback Chart / Graph (bar or pie from Google Forms)",
+            "var": "VAR_FEEDBACK_IMAGE"
+        },
+        "poster_image": {
+            "type": "image",
+            "required": false,
+            "label": "Event Poster Image",
+            "var": "VAR_POSTER_IMAGE"
+        }
+    },
+    "feedback": {
+        "feedback_text": {
+            "type": "text",
+            "required": true,
+            "label": "Feedback Analysis summary paragraph",
+            "var": "VAR_FEEDBACK_TEXT",
+            "example": "Feedback was collected through Google Forms. The overall response indicated high satisfaction levels among participants."
+        }
+    },
+    "social_media": {
+        "facebook": {
+            "type": "url",
+            "required": false,
+            "label": "Facebook URL",
+            "var": "part of VAR_SOCIAL_MEDIA"
+        },
+        "instagram": {
+            "type": "url",
+            "required": false,
+            "label": "Instagram URL",
+            "var": "part of VAR_SOCIAL_MEDIA"
+        },
+        "linkedin": {
+            "type": "url",
+            "required": false,
+            "label": "LinkedIn URL",
+            "var": "part of VAR_SOCIAL_MEDIA"
+        }
+    },
+    "registration": {
+        "dbit_students": {
+            "type": "integer",
+            "required": true,
+            "label": "No. of DBIT Students",
+            "var": "VAR_DBIT_STUDENTS",
+            "example": 110
+        },
+        "non_dbit_students": {
+            "type": "integer",
+            "required": true,
+            "label": "No. of non-DBIT Students",
+            "var": "VAR_NON_DBIT_STUDENTS",
+            "example": 10
+        },
+        "students": {
+            "type": "table",
+            "required": true,
+            "label": "List of students who attended",
+            "var": "VAR_STUDENT_TABLE_ROWS",
+            "columns": [
+                "name",
+                "branch"
+            ],
+            "example": [
+                {
+                    "name": "Rahul Sharma",
+                    "branch": "COMP"
+                },
+                {
+                    "name": "Priya Mehta",
+                    "branch": "IT"
+                }
+            ]
+        }
+    },
+    "signatories": {
+        "prepared_name": {
+            "type": "string",
+            "required": true,
+            "label": "Report Prepared By — Student Name",
+            "var": "VAR_PREPARED_NAME",
+            "example": "Nathan Pimenta"
+        },
+        "prepared_post": {
+            "type": "string",
+            "required": true,
+            "label": "Report Prepared By — Student Post",
+            "var": "VAR_PREPARED_POST",
+            "example": "Technical Head"
+        },
+        "approved_name": {
+            "type": "string",
+            "required": true,
+            "label": "Report Approved By — Faculty Name",
+            "var": "VAR_APPROVED_NAME",
+            "example": "Dr. Alice Brown"
+        },
+        "approved_post": {
+            "type": "string",
+            "required": true,
+            "label": "Report Approved By — Faculty Post",
+            "var": "VAR_APPROVED_POST",
+            "example": "Head of Department"
+        }
+    }
+}

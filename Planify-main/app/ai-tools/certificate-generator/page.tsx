@@ -9,7 +9,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Award, Upload, Loader2, CheckCircle, Star, Download, ChevronDown, Wand2, FileCode } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import { Award, Upload, Loader2, CheckCircle, Star, ChevronDown, Wand2, FileCode, Calendar as CalendarIcon, Download } from "lucide-react"
+import { format } from "date-fns"
 
 export default function CertificateGeneratorPage() {
   const [loading, setLoading] = useState(false)
@@ -19,6 +23,7 @@ export default function CertificateGeneratorPage() {
   // Step 1: Event Details
   const [eventName, setEventName] = useState("")
   const [eventDate, setEventDate] = useState("")
+  const [eventDateValue, setEventDateValue] = useState<Date | undefined>(undefined)
   const [institutionName, setInstitutionName] = useState("")
   const [signatureName, setSignatureName] = useState("")
 
@@ -61,6 +66,25 @@ export default function CertificateGeneratorPage() {
     URL.revokeObjectURL(url)
   }
 
+
+  const downloadCertificateTemplate = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8002/templates/download/certificate.html")
+      if (!response.ok) throw new Error("Failed to fetch template")
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "certificate.html"
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error("Download failed:", error)
+      alert("Failed to download template. Please check if the backend is running on port 8002.")
+    }
+  }
   const isFormValid = () => {
     return (
       eventName.trim() !== "" &&
@@ -215,13 +239,31 @@ export default function CertificateGeneratorPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="eventDate">Event Date *</Label>
-                  <Input
-                    id="eventDate"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    placeholder="e.g., December 4, 2025"
-                    required
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !eventDateValue && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {eventDateValue ? format(eventDateValue, "MMMM d, yyyy") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={eventDateValue}
+                        onSelect={(date) => {
+                          setEventDateValue(date)
+                          setEventDate(date ? format(date, "MMMM d, yyyy") : "")
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -364,6 +406,12 @@ export default function CertificateGeneratorPage() {
                       <code className="bg-muted px-1 rounded">{"{{ event_date }}"}</code>,
                       <code className="bg-muted px-1 rounded">{"{{ achievement_type }}"}</code>
                     </p>
+
+                    <div className="flex gap-2 mb-4">
+                      <Button variant="outline" size="sm" type="button" onClick={downloadCertificateTemplate}>
+                        <Download className="mr-2 h-4 w-4" /> Download Reference Template
+                      </Button>
+                    </div>
                     <div
                       className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${templateFileName ? "border-green-500" : "border-muted"
                         }`}

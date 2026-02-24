@@ -1,0 +1,84 @@
+{
+    "institute": {
+        "college_logo": "college_logo.png",
+        "club_logo": "club_logo.png"
+    },
+    "event_meta": {
+        "department_name": "Department of Computer Engineering",
+        "event_type": "National Level Technical Workshop",
+        "title": "Advanced Artificial Intelligence Workshop",
+        "date": "15 January 2026",
+        "time": "10:00 AM to 4:00 PM",
+        "venue": "Seminar Hall 1"
+    },
+    "participants": {
+        "target_audience": "FE/COMP/IT",
+        "total_participants": 120,
+        "girl_participants": 45,
+        "boy_participants": 75
+    },
+    "organizers": {
+        "resource_person": "Dr. Lorem Ipsum",
+        "resource_org": "Ipsum Technologies Pvt. Ltd.",
+        "organizing_body": "CSI Student Chapter",
+        "faculty_coordinator": "Prof. John Doe"
+    },
+    "content": {
+        "objectives": [
+            "To provide foundational knowledge in emerging AI technologies.",
+            "To introduce students to industry-driven practical implementations.",
+            "To encourage research-oriented thinking and innovation."
+        ],
+        "outcomes": [
+            "Participants gained clarity on advanced AI concepts.",
+            "Students understood real-world implementation strategies.",
+            "Increased motivation towards research and project development."
+        ],
+        "detailed_report": "The workshop commenced at 10:00 AM with an inaugural address by the Head of Department, followed by a brief introduction of the resource person, Dr. Lorem Ipsum, by the Faculty Coordinator Prof. John Doe.\n\nThe first half of the session focused on foundational concepts of Artificial Intelligence, including machine learning pipelines, neural network architectures, and natural language processing. Dr. Ipsum illustrated each concept with real-world case studies from industry deployments.\n\nAfter a short lunch break, the session transitioned into hands-on demonstrations. Students were guided through a live coding exercise building a basic image classification model. The final hour was reserved for an open Q&A, where participants engaged actively with the speaker on topics ranging from AI ethics to career pathways in data science.",
+        "snapshot_description": "Photographs captured candid interactions between students and the resource person. The session included live demonstrations and interactive Q&A discussions."
+    },
+    "images": {
+        "event_photos": [
+            "photo1.png",
+            "photo2.png"
+        ],
+        "feedback_image": "feedback_chart.png",
+        "poster_image": "event_poster.png"
+    },
+    "feedback": {
+        "feedback_text": "Feedback was collected through Google Forms immediately after the workshop. Of 120 participants, 115 responded. 92% rated the workshop as Excellent or Very Good. Students highlighted the practical demonstrations and interactive Q&A as the most valuable components. A few suggestions were received regarding extending the hands-on session duration."
+    },
+    "social_media": {
+        "facebook": "https://facebook.com/dbitcsi",
+        "instagram": "https://instagram.com/dbit_csi",
+        "linkedin": "https://linkedin.com/company/dbit-csi"
+    },
+    "registration": {
+        "dbit_students": 110,
+        "non_dbit_students": 10,
+        "students": [
+            {
+                "name": "Rahul Sharma",
+                "branch": "COMP"
+            },
+            {
+                "name": "Priya Mehta",
+                "branch": "IT"
+            },
+            {
+                "name": "Aman Verma",
+                "branch": "EXTC"
+            },
+            {
+                "name": "Sneha Patil",
+                "branch": "MECH"
+            }
+        ]
+    },
+    "signatories": {
+        "prepared_name": "Nathan Pimenta",
+        "prepared_post": "Technical Head",
+        "approved_name": "Dr. Alice Brown",
+        "approved_post": "Head of Department"
+    }
+}

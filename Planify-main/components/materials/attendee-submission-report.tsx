@@ -54,6 +54,14 @@ export function AttendeeSubmissionReport({
         `/api/events/${eventId}/materials/submissions/summary`
       )
       if (!response.ok) {
+        if (response.status === 401) {
+          toast({
+            title: 'Unauthorized',
+            description: 'Please log in to view submission reports',
+            variant: 'destructive',
+          })
+          return
+        }
         if (response.status === 403) {
           toast({
             title: 'Access Denied',
@@ -62,7 +70,8 @@ export function AttendeeSubmissionReport({
           })
           return
         }
-        throw new Error('Failed to fetch submission summary')
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || `Failed to fetch submission summary (${response.status})`)
       }
       const data = await response.json()
       setAttendees(data)
@@ -192,11 +201,10 @@ export function AttendeeSubmissionReport({
                         </p>
                         <div className="w-32 h-2 bg-slate-700 rounded-full mt-1 overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition ${
-                              mandatoryPercentage === 100
+                            className={`h-full rounded-full transition ${mandatoryPercentage === 100
                                 ? 'bg-green-500'
                                 : 'bg-red-500'
-                            }`}
+                              }`}
                             style={{ width: `${mandatoryPercentage}%` }}
                           />
                         </div>
@@ -206,11 +214,10 @@ export function AttendeeSubmissionReport({
                       </div>
                     )}
                     <svg
-                      className={`w-5 h-5 transition transform ${
-                        expandedAttendee === attendee.attendee_id
+                      className={`w-5 h-5 transition transform ${expandedAttendee === attendee.attendee_id
                           ? 'rotate-180'
                           : ''
-                      }`}
+                        }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -231,11 +238,10 @@ export function AttendeeSubmissionReport({
                       {attendee.submissions.map((submission, idx) => (
                         <div
                           key={idx}
-                          className={`p-3 rounded border flex items-start justify-between ${
-                            submission.submitted
+                          className={`p-3 rounded border flex items-start justify-between ${submission.submitted
                               ? 'bg-green-900/20 border-green-700/50'
                               : 'bg-slate-700/30 border-slate-600/50'
-                          }`}
+                            }`}
                         >
                           <div className="flex-1">
                             <p className="font-medium text-sm">

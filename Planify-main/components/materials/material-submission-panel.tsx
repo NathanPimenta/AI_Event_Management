@@ -47,10 +47,14 @@ export function MaterialSubmissionPanel({ eventId }: MaterialSubmissionPanelProp
       setLoading(true)
       const response = await fetch(`/api/events/${eventId}/materials/my-submissions`)
       if (!response.ok) {
-        if (response.status === 403) {
-          return // User not registered for event
+        if (response.status === 401) {
+          return // Not logged in — silently skip
         }
-        throw new Error('Failed to fetch submissions')
+        if (response.status === 403) {
+          return // User not registered for event — silently skip
+        }
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || `Failed to fetch submissions (${response.status})`)
       }
       const data = await response.json()
       setSubmissions(data)
@@ -233,9 +237,8 @@ export function MaterialSubmissionPanel({ eventId }: MaterialSubmissionPanelProp
               </div>
               <div className="ml-4">
                 <svg
-                  className={`w-5 h-5 transition transform ${
-                    expandedId === submission.request_id ? 'rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition transform ${expandedId === submission.request_id ? 'rotate-180' : ''
+                    }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

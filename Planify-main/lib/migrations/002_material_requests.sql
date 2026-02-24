@@ -54,9 +54,11 @@ CREATE INDEX IF NOT EXISTS idx_material_submissions_attendee ON material_submiss
 CREATE INDEX IF NOT EXISTS idx_material_submissions_uploaded_at ON material_submissions(uploaded_at);
 
 -- Trigger to auto-update updated_at for material_requests
+DROP TRIGGER IF EXISTS update_material_requests_updated_at ON material_requests;
 CREATE TRIGGER update_material_requests_updated_at BEFORE UPDATE ON material_requests
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger to auto-update updated_at for material_submissions
+DROP TRIGGER IF EXISTS update_material_submissions_updated_at ON material_submissions;
 CREATE TRIGGER update_material_submissions_updated_at BEFORE UPDATE ON material_submissions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

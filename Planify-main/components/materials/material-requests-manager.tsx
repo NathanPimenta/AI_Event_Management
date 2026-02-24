@@ -73,7 +73,7 @@ export function MaterialRequestsManager({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       const response = await fetch(`/api/events/${eventId}/materials`, {
         method: 'POST',
@@ -307,7 +307,10 @@ function SubmissionsViewer({
       const response = await fetch(
         `/api/events/${eventId}/materials/${requestId}/submissions`
       )
-      if (!response.ok) throw new Error('Failed to fetch submissions')
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || `Failed to fetch submissions (${response.status})`)
+      }
       const data = await response.json()
       setSubmissions(data)
     } catch (error) {

@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -19,6 +20,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("")
   const { signUp, loading } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +33,8 @@ export default function RegisterPage() {
 
     try {
       await signUp(name, email, password)
+      // Store flag to show toast on dashboard
+      localStorage.setItem("showRegistrationToast", "true")
       router.push("/dashboard")
     } catch (err: any) {
       setError(err.message || "Failed to create account")

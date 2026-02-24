@@ -1,6 +1,30 @@
-import { useToast as useToastOriginal } from "@/components/ui/use-toast"
+"use client"
 
-// Re-export the toast hook to avoid circular dependencies
-export const useToast = useToastOriginal
-export { toast } from "@/components/ui/use-toast"
+import { toast as sonnerToast } from "sonner"
+
+type ToastProps = {
+  title?: string
+  description?: string
+  variant?: "default" | "destructive"
+}
+
+const toast = (props: ToastProps) => {
+  const { title = '', description = '', variant = 'default' } = props
+  
+  if (variant === "destructive") {
+    sonnerToast.error(title, {
+      description: description,
+    })
+  } else {
+    sonnerToast.success(title, {
+      description: description,
+    })
+  }
+}
+
+export function useToast() {
+  return { toast }
+}
+
+export { toast }
 

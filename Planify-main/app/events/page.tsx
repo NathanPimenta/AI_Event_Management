@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Calendar, MapPin, Users, Clock, Search, Filter } from "lucide-react"
+import { Calendar, MapPin, Users, Clock, Search, Filter, Settings } from "lucide-react"
 import Link from "next/link"
 import { toast } from "@/hooks/use-toast"
+import { useAuth } from "@/hooks/use-auth"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function EventsPage() {
@@ -15,6 +16,7 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState("all")
+  const { user } = useAuth()
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -150,17 +152,25 @@ export default function EventsPage() {
                     <div className="flex items-center gap-2 text-sm">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span>
-                        {event.attendees?.length || 0} / {event.maxAttendees} registered
+                        {event.attendeeCount || 0} / {event.maxAttendees} registered
                       </span>
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter>
-                  <Link href={`/events/${event.id}`} className="w-full">
+                <CardFooter className="flex gap-2">
+                  <Link href={`/events/${event.id}`} className="flex-1">
                     <Button variant="outline" className="w-full">
                       View Details
                     </Button>
                   </Link>
+                  {user?.role === 'community_admin' && event.isOrganizer && (
+                    <Link href={`/events/${event.id}/manage`} className="flex-1">
+                      <Button className="w-full gap-2">
+                        <Settings className="h-4 w-4" />
+                        Manage
+                      </Button>
+                    </Link>
+                  )}
                 </CardFooter>
               </Card>
             )

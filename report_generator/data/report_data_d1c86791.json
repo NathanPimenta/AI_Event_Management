@@ -1,0 +1,97 @@
+{
+  "event_meta": {
+    "department_name": "Department of Computer Engineering",
+    "event_type": "Game Development",
+    "title": "Teknack 2026",
+    "date": "26th Feb 2026",
+    "time": "8:00 AM",
+    "venue": "Main Auditorium"
+  },
+  "participants": {
+    "target_audience": "FE SE",
+    "total_participants": 69,
+    "girl_participants": 0,
+    "boy_participants": 0
+  },
+  "organizers": {
+    "resource_person": "Mr. Suraj Naik",
+    "resource_org": "Hansa Equity",
+    "organizing_body": "ACM",
+    "faculty_coordinator": "Dr Seema Nehete"
+  },
+  "content": {
+    "objectives": [
+      "Teach Git",
+      "Git actions",
+      "Game Development"
+    ],
+    "outcomes": [
+      "Game assets",
+      "Git actions",
+      "Game creation"
+    ],
+    "detailed_report": "Taught how to generate game assets and create game and version control therough git",
+    "snapshot_description": ""
+  },
+  "feedback": {
+    "feedback_text": ""
+  },
+  "social_media": {
+    "facebook": "dfghj",
+    "instagram": "ghgjk",
+    "linkedin": "vb nm"
+  },
+  "registration": {
+    "dbit_students": 47,
+    "non_dbit_students": 22,
+    "students": [
+      {
+        "name": "John Doe",
+        "branch": "John Doe"
+      },
+      {
+        "name": "Jane Smith",
+        "branch": "Jane Smith"
+      },
+      {
+        "name": "Alice Johnson",
+        "branch": "Alice Johnson"
+      },
+      {
+        "name": "Bob Brown",
+        "branch": "Bob Brown"
+      },
+      {
+        "name": "Charlie Davis",
+        "branch": "Charlie Davis"
+      },
+      {
+        "name": "Diana Evans",
+        "branch": "Diana Evans"
+      },
+      {
+        "name": "Evan Foster",
+        "branch": "Evan Foster"
+      },
+      {
+        "name": "Fiona Green",
+        "branch": "Fiona Green"
+      }
+    ]
+  },
+  "signatories": {
+    "prepared_name": "cvbn",
+    "prepared_post": "fcgv",
+    "approved_name": "dfghb",
+    "approved_post": "gvhb"
+  },
+  "institute": {
+    "college_logo": "",
+    "club_logo": ""
+  },
+  "images": {
+    "event_photos": [],
+    "feedback_image": "",
+    "poster_image": ""
+  }
+}

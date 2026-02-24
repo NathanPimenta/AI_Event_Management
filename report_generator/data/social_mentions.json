@@ -1,0 +1,30 @@
+[
+    {
+        "platform": "Twitter",
+        "username": "@tech_guru",
+        "content": "Having a blast at #TechFest2025! The AI keynote was amazing.",
+        "timestamp": "2025-03-15T10:30:00",
+        "sentiment_score": 0.9
+    },
+    {
+        "platform": "LinkedIn",
+        "username": "Jane Doe",
+        "content": "Great networking opportunities at the event today. Met some brilliant minds.",
+        "timestamp": "2025-03-15T13:45:00",
+        "sentiment_score": 0.85
+    },
+    {
+        "platform": "Twitter",
+        "username": "@dev_student",
+        "content": "Wish the workshop wifi was better, but learned a lot nonetheless. #TechFest2025",
+        "timestamp": "2025-03-15T14:20:00",
+        "sentiment_score": 0.2
+    },
+    {
+        "platform": "Instagram",
+        "username": "event_lover",
+        "content": "Best swag bag ever! 🎁",
+        "timestamp": "2025-03-15T09:00:00",
+        "sentiment_score": 0.95
+    }
+]

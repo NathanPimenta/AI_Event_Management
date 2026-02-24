@@ -6,7 +6,7 @@ export async function POST(request: Request) {
         const body = await request.json()
 
         // Assuming the Python service is running on port 8005
-        const res = await fetch("http://localhost:8005/curate", {
+        const res = await fetch("https://affinitive-unicuspid-cinthia.ngrok-free.dev/curate", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     }
 
     try {
-        const res = await fetch(`http://localhost:8005/status/${requestId}`)
+        const res = await fetch(`https://affinitive-unicuspid-cinthia.ngrok-free.dev/status/${requestId}`)
         const data = await res.json().catch(() => ({}))
 
         if (!res.ok) {

@@ -86,7 +86,7 @@ async def generate_event_report(payload: dict):
             return ""
 
         inst = payload.setdefault("institute", {})
-        inst["college_logo"] = resolve_img("college_logo.png")
+        inst["college_logo"] = resolve_img("logo.png")
         inst["club_logo"] = resolve_img("club_logo.png")
 
         images = payload.setdefault("images", {})
@@ -106,8 +106,8 @@ async def generate_event_report(payload: dict):
                     resolved_photos.append(str(DATA_DIR / p))
                 
         images["event_photos"] = resolved_photos
-        images["feedback_image"] = resolve_img("feedback_image.png")
-        images["poster_image"] = resolve_img("poster_image.png")
+        images["feedback_image"] = resolve_img("snapshot.png")
+        images["poster_image"] = resolve_img("poster.png")
 
         # Save payload to json
         unique_id = str(uuid.uuid4())[:8]

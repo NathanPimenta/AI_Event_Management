@@ -72,7 +72,7 @@ export default function ImageCuratorPage() {
                         setStatusMessage(null)
 
                         const infoWithFullUrls = statusData.result.curated_images.map((url: string) =>
-                            url.startsWith("http") ? url : `http://localhost:8005${url}`
+                            url.startsWith("http") ? url : `https://affinitive-unicuspid-cinthia.ngrok-free.dev/${url.startsWith('/') ? url.slice(1) : url}`
                         )
 
                         setCuratedImages(infoWithFullUrls)

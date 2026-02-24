@@ -10,7 +10,7 @@ import os
 from typing import Dict, List, Optional, Any
 
 # Path configuration
-DATA_DIR = os.path.join("team_formation", "data")
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
 def load_event_requirements(filepath: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """

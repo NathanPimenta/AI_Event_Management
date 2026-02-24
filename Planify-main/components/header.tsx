@@ -12,15 +12,31 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
-import { Menu, User, LogOut, Home, Calendar, Users } from "lucide-react"
+import {
+  Menu, User, LogOut, Home, Calendar, Users,
+  Bot, ChevronDown, Award, Image, Film, Megaphone, FileText, Globe,
+} from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ModeToggle } from "./mode-toggle"
 import Notifications from "./notifications"
 
+const AI_TOOLS = [
+  { href: "/ai-tools/certificate-generator", label: "Certificate Generator", icon: Award },
+  { href: "/ai-tools/image-curator", label: "Image Curator", icon: Image },
+  { href: "/ai-tools/planify-reelmaker", label: "Reel Maker", icon: Film },
+  { href: "/ai-tools/poster-generator", label: "Poster Generator", icon: Megaphone },
+  { href: "/ai-tools/report-generator", label: "Report Generator", icon: FileText },
+  { href: "/ai-tools/scraper", label: "Web Scraper", icon: Globe },
+]
+
 export default function Header() {
   const { user, signOut } = useAuth()
   const [open, setOpen] = useState(false)
+  const [aiToolsOpen, setAiToolsOpen] = useState(false)
+
+  // Only community_member and community_admin can see AI tools (not audience/participants)
+  const canSeeAiTools = user && user.role !== "audience"
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -65,12 +81,46 @@ export default function Header() {
                     Dashboard
                   </Link>
                 )}
+
+                {/* AI Tools accordion — mobile only, non-participant roles */}
+                {canSeeAiTools && (
+                  <div>
+                    <button
+                      onClick={() => setAiToolsOpen(!aiToolsOpen)}
+                      className="flex items-center gap-2 text-lg font-semibold w-full"
+                    >
+                      <Bot className="h-5 w-5" />
+                      AI Tools
+                      <ChevronDown
+                        className={`h-4 w-4 ml-auto transition-transform duration-200 ${aiToolsOpen ? "rotate-180" : ""
+                          }`}
+                      />
+                    </button>
+                    {aiToolsOpen && (
+                      <div className="ml-7 mt-2 flex flex-col gap-3 border-l border-border pl-3">
+                        {AI_TOOLS.map((tool) => (
+                          <Link
+                            key={tool.href}
+                            href={tool.href}
+                            onClick={() => { setOpen(false); setAiToolsOpen(false) }}
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <tool.icon className="h-4 w-4" />
+                            {tool.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
+
           <Link href="/" className="flex items-center gap-2">
             <span className="text-xl font-bold">CommunityHub</span>
           </Link>
+
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <Link href="/events" className="font-medium transition-colors hover:text-primary">
               Events
@@ -78,9 +128,32 @@ export default function Header() {
             <Link href="/communities" className="font-medium transition-colors hover:text-primary">
               Communities
             </Link>
-            <Link href="/ai-tools/team-formation" className="font-medium transition-colors hover:text-primary">
-              AI Tools
-            </Link>
+
+            {/* AI Tools dropdown — desktop, non-participant roles only */}
+            {canSeeAiTools && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1 font-medium transition-colors hover:text-primary focus:outline-none">
+                    <Bot className="h-4 w-4" />
+                    AI Tools
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-52">
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">AI Tools</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {AI_TOOLS.map((tool) => (
+                    <DropdownMenuItem key={tool.href} asChild>
+                      <Link href={tool.href} className="flex items-center gap-2 cursor-pointer">
+                        <tool.icon className="h-4 w-4" />
+                        {tool.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             {user && (
               <Link href="/dashboard" className="font-medium transition-colors hover:text-primary">
                 Dashboard
@@ -88,6 +161,7 @@ export default function Header() {
             )}
           </nav>
         </div>
+
         <div className="flex items-center gap-2">
           <ModeToggle />
           {user ? (
@@ -142,4 +216,3 @@ export default function Header() {
     </header>
   )
 }
-

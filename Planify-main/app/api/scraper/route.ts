@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
 
-// Proxy to the Python scraper_module FastAPI service running on port 8002
+// Proxy to the Python scraper_module FastAPI service running on port 8001
 export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    const res = await fetch("http://localhost:8002/scrape/", {
+    const res = await fetch("http://localhost:8001/scrape/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

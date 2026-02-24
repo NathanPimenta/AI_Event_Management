@@ -113,7 +113,7 @@ export default function ReportGeneratorPage() {
             // Upload attendees file
             const attendeesFormData = new FormData()
             attendeesFormData.append("file", attendeesFile)
-            await fetch("http://127.0.0.1:8003/upload/attendees.csv", {
+            await fetch("http://127.0.0.1:8004/upload/attendees.csv", {
                 method: "POST",
                 body: attendeesFormData,
             })
@@ -121,7 +121,7 @@ export default function ReportGeneratorPage() {
             // Upload feedback file
             const feedbackFormData = new FormData()
             feedbackFormData.append("file", feedbackFile)
-            await fetch("http://127.0.0.1:8003/upload/feedback.csv", {
+            await fetch("http://127.0.0.1:8004/upload/feedback.csv", {
                 method: "POST",
                 body: feedbackFormData,
             })
@@ -130,7 +130,7 @@ export default function ReportGeneratorPage() {
             if (crowdFile) {
                 const crowdFormData = new FormData()
                 crowdFormData.append("file", crowdFile)
-                await fetch("http://127.0.0.1:8003/upload/crowd_analytics.json", {
+                await fetch("http://127.0.0.1:8004/upload/crowd_analytics.json", {
                     method: "POST",
                     body: crowdFormData,
                 })
@@ -140,7 +140,7 @@ export default function ReportGeneratorPage() {
             if (socialFile) {
                 const socialFormData = new FormData()
                 socialFormData.append("file", socialFile)
-                await fetch("http://127.0.0.1:8003/upload/social_mentions.json", {
+                await fetch("http://127.0.0.1:8004/upload/social_mentions.json", {
                     method: "POST",
                     body: socialFormData,
                 })
@@ -151,7 +151,7 @@ export default function ReportGeneratorPage() {
             if (posterFile) {
                 const posterFormData = new FormData()
                 posterFormData.append("file", posterFile)
-                await fetch(`http://127.0.0.1:8003/upload/poster.png`, {
+                await fetch(`http://127.0.0.1:8004/upload/poster.png`, {
                     method: "POST",
                     body: posterFormData,
                 })
@@ -162,7 +162,7 @@ export default function ReportGeneratorPage() {
             if (snapshotFile) {
                 const snapshotFormData = new FormData()
                 snapshotFormData.append("file", snapshotFile)
-                await fetch(`http://127.0.0.1:8003/upload/snapshot.png`, {
+                await fetch(`http://127.0.0.1:8004/upload/snapshot.png`, {
                     method: "POST",
                     body: snapshotFormData,
                 })
@@ -175,7 +175,7 @@ export default function ReportGeneratorPage() {
             if (logoFile) {
                 const logoFd = new FormData()
                 logoFd.append('file', logoFile)
-                await fetch(`http://127.0.0.1:8003/upload/logo.png`, {
+                await fetch(`http://127.0.0.1:8004/upload/logo.png`, {
                     method: 'POST',
                     body: logoFd,
                 })
@@ -269,7 +269,7 @@ export default function ReportGeneratorPage() {
                     approved_post: approver1Post || approver2Post
                 }
             };
-            const response = await fetch("http://127.0.0.1:8003/generate-report", {
+            const response = await fetch("http://127.0.0.1:8004/generate-report", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -309,10 +309,10 @@ export default function ReportGeneratorPage() {
     const downloadPDF = () => {
         if (!result) return
         if ((result as any).pdf_url) {
-            window.open(`http://127.0.0.1:8003${(result as any).pdf_url}`, "_blank")
+            window.open(`http://127.0.0.1:8004${(result as any).pdf_url}`, "_blank")
         } else {
             window.open(
-                `http://127.0.0.1:8003/download-report/pdf?filename=${encodeURIComponent(result.filename)}`,
+                `http://127.0.0.1:8004/download-report/pdf?filename=${encodeURIComponent(result.filename)}`,
                 "_blank"
             )
         }

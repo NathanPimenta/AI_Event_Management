@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     forward.append('requirements_file', requirementsFile as File, (requirementsFile as any).name || 'requirements.json')
     forward.append('participants_file', participantsFile as File, (participantsFile as any).name || 'participants.csv')
 
-    const optimizerUrl = process.env.TEAM_OPTIMIZER_URL || 'http://127.0.0.1:8001/form-teams/'
+    const optimizerUrl = process.env.TEAM_OPTIMIZER_URL || 'http://127.0.0.1:8000/form-teams/'
 
     const res = await fetch(optimizerUrl, { method: 'POST', body: forward })
 

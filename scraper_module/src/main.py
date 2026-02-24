@@ -267,4 +267,4 @@ async def run_targeted_scraper_endpoint(event_details: EventDetails):
 if __name__ == "__main__":
     import uvicorn
     # To run, use: python -m scraper_module.src.main
-    uvicorn.run("scraper_module.src.main:app", host="0.0.0.0", port=8002, reload=True)
+    uvicorn.run("scraper_module.src.main:app", host="0.0.0.0", port=8001, reload=True)

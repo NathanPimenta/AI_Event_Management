@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
 
-// Proxy to the Python Image Curator API running on port 8004
+// Proxy to the Python Image Curator API running on port 8005
 export async function POST(request: Request) {
     try {
         const body = await request.json()
 
-        // Assuming the Python service is running on port 8004
-        const res = await fetch("http://localhost:8004/curate", {
+        // Assuming the Python service is running on port 8005
+        const res = await fetch("http://localhost:8005/curate", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     }
 
     try {
-        const res = await fetch(`http://localhost:8004/status/${requestId}`)
+        const res = await fetch(`http://localhost:8005/status/${requestId}`)
         const data = await res.json().catch(() => ({}))
 
         if (!res.ok) {

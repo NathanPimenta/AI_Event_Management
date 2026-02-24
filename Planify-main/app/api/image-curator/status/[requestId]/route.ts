@@ -15,7 +15,7 @@ export async function GET(
     }
 
     try {
-        const res = await fetch(`http://localhost:8004/status/${requestId}`)
+        const res = await fetch(`http://localhost:8005/status/${requestId}`)
         const data = await res.json().catch(() => ({}))
 
         if (!res.ok) {

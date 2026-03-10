@@ -8,17 +8,10 @@ sys.path.append(str(src_path))
 from src.main import EventReportGenerator, EventReportConfig
 
 def run_test():
-    # Ensure template exists
-    template_path = Path('dummy_template.docx').resolve()
-    if not template_path.exists():
-        print("Template not found!")
-        return
-
     config = EventReportConfig(
         event_name="Test Event 2025",
         event_type="Workshop",
         institution_name="DBIT",
-        custom_template_path=template_path,
         output_dir=Path('output_test').resolve()
     )
     

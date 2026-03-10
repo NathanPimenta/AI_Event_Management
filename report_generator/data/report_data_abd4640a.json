@@ -2,48 +2,40 @@
   "event_meta": {
     "department_name": "Department of Computer Engineering",
     "event_type": "Game Development",
-    "title": "Teknack 2026",
-    "date": "26th Feb 2026",
-    "time": "8:57 AM",
-    "venue": "Main Auditorium"
+    "title": "Ideathon",
+    "date": "",
+    "time": "",
+    "venue": ""
   },
   "participants": {
-    "target_audience": "FE SE",
-    "total_participants": 69,
+    "target_audience": "",
+    "total_participants": 0,
     "girl_participants": 0,
     "boy_participants": 0
   },
   "organizers": {
-    "resource_person": "Mr. Suraj Naik",
-    "resource_org": "Hansa Equity",
-    "organizing_body": "ACM",
-    "faculty_coordinator": "Dr Seema Nehete"
+    "resource_person": "",
+    "resource_org": "",
+    "organizing_body": "",
+    "faculty_coordinator": ""
   },
   "content": {
-    "objectives": [
-      "Teach Git",
-      "Git actions",
-      "Game Development"
-    ],
-    "outcomes": [
-      "Game assets",
-      "Git actions",
-      "Game creation"
-    ],
-    "detailed_report": "Taught how to generate game assets and create game and version control therough git",
+    "objectives": [],
+    "outcomes": [],
+    "detailed_report": "",
     "snapshot_description": ""
   },
   "feedback": {
     "feedback_text": ""
   },
   "social_media": {
-    "facebook": "dfghj",
-    "instagram": "ghgjk",
-    "linkedin": "vb nm"
+    "facebook": "",
+    "instagram": "",
+    "linkedin": ""
   },
   "registration": {
-    "dbit_students": 47,
-    "non_dbit_students": 22,
+    "dbit_students": 0,
+    "non_dbit_students": 0,
     "students": [
       {
         "name": "John Doe",
@@ -80,10 +72,10 @@
     ]
   },
   "signatories": {
-    "prepared_name": "gvhbnj",
-    "prepared_post": "ccv",
-    "approved_name": "gfhj",
-    "approved_post": "cvbfg"
+    "prepared_name": "",
+    "prepared_post": "",
+    "approved_name": "",
+    "approved_post": ""
   },
   "institute": {
     "college_logo": "",

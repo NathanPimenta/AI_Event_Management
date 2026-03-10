@@ -204,24 +204,12 @@ class EventReportGenerator:
         analysis: Dict[str, str],
         recommendations: str
     ):
-        """Generate the final report based on the strict template."""
+        """Generate the final report based on the DOCX template."""
+        from docx_generator import DocxReportGenerator
+        
         print("\n" + "="*70)
-        print("📝 STEP 5: GENERATING STRICT FORMAT REPORT")
+        print("📝 STEP 5: GENERATING DOCX REPORT")
         print("="*70)
-
-        template_path = Path(__file__).parent / "strict_template.txt"
-        if not template_path.exists():
-            print("❌ ERROR: strict_template.txt not found!")
-            return
-
-        with open(template_path, "r", encoding="utf-8") as f:
-            template_content = f.read()
-
-        # Strip the IMPORTANT INSTRUCTIONS header (everything before the first divider)
-        divider = "------------------------------------------------------------"
-        first_divider_idx = template_content.find(divider)
-        if first_divider_idx != -1:
-            template_content = template_content[first_divider_idx:]
 
         # Get AI generated detailed report paragraph
         print("🔗 Asking LLM to generate qualitative sections...")
@@ -232,63 +220,47 @@ class EventReportGenerator:
             self.config.detailed_description, self.config.event_name
         )
 
-        # Format the student list table
-        student_table_rows = ""
-        students = stats.get('student_list_table', [])
-        for s in students:
-            student_table_rows += f"| {s.get('s_no', '')} | {s.get('name', 'N/A')} | {s.get('branch', 'N/A')} |\n"
-
-        if not student_table_rows:
-            student_table_rows = "| N/A | N/A | N/A |\n"
-
-        # Replace placeholders
-        replacements = {
-            "{{DEPARTMENT_NAME}}": self.config.department_name,
-            "{{EVENT_NAME}}": self.config.event_name,
-            "{{EVENT_TITLE}}": self.config.event_title or self.config.event_name,
-            "{{EVENT_DATE}}": self.config.event_date,
-            "{{EVENT_TIME}}": self.config.event_time,
-            "{{EVENT_VENUE}}": self.config.event_venue,
-            "{{TARGET_AUDIENCE}}": self.config.target_audience,
-            "{{TOTAL_PARTICIPANTS}}": str(stats.get('total_participants', 0)),
-            "{{GIRL_PARTICIPANTS}}": str(stats.get('female_count', 0)),
-            "{{BOY_PARTICIPANTS}}": str(stats.get('male_count', 0)),
-            "{{RESOURCE_PERSON_NAME}}": self.config.resource_person_name,
-            "{{RESOURCE_PERSON_ORGANIZATION}}": self.config.resource_person_org,
-            "{{ORGANIZING_BODY}}": self.config.organizing_body,
-            "{{FACULTY_COORDINATOR_NAME}}": self.config.faculty_coordinator,
-            "{{OBJECTIVE_1}}": self.config.objective_1,
-            "{{OBJECTIVE_2}}": self.config.objective_2,
-            "{{OBJECTIVE_3}}": self.config.objective_3,
-            "{{OUTCOME_1}}": self.config.outcome_1,
-            "{{OUTCOME_2}}": self.config.outcome_2,
-            "{{OUTCOME_3}}": self.config.outcome_3,
-            "{{DETAILED_REPORT_PARAGRAPH_GENERATED_FROM_USER_INPUT}}": detailed_report_paragraph,
-            "{{FEEDBACK_SUMMARY_TEXT}}": analysis.get('feedback_summary_text', ''),
-            "{{FACEBOOK_LINK}}": self.config.facebook_link or "N/A",
-            "{{INSTAGRAM_LINK}}": self.config.instagram_link or "N/A",
-            "{{LINKEDIN_LINK}}": self.config.linkedin_link or "N/A",
-            "{{DBIT_STUDENTS_COUNT}}": self.config.dbit_students_count,
-            "{{NON_DBIT_STUDENTS_COUNT}}": self.config.non_dbit_students_count,
-            "{{STUDENT_TABLE_ROWS_GENERATED_FROM_USER_DATA}}": student_table_rows.strip(),
-            "{{APPROVER_1_NAME}}": self.config.approver_1_name,
-            "{{APPROVER_1_POST}}": self.config.approver_1_post,
-            "{{APPROVER_2_NAME}}": self.config.approver_2_name,
-            "{{APPROVER_2_POST}}": self.config.approver_2_post,
-            "{{PREPARER_1_NAME}}": self.config.preparer_1_name,
-            "{{PREPARER_1_POST}}": self.config.preparer_1_post,
-            "{{PREPARER_2_NAME}}": self.config.preparer_2_name,
-            "{{PREPARER_2_POST}}": self.config.preparer_2_post,
+        generator = DocxReportGenerator()
+        
+        data = {
+            'event_name': self.config.event_name,
+            'date': self.config.event_date,
+            'time': self.config.event_time,
+            'venue': self.config.event_venue,
+            'target_audience': self.config.target_audience,
+            'total_participants': stats.get('total_participants', 0),
+            'female_count': stats.get('female_count', 0),
+            'male_count': stats.get('male_count', 0),
+            'resource_person': self.config.resource_person_name,
+            'rp_org': self.config.resource_person_org,
+            'department': self.config.department_name,
+            'coordinator': self.config.faculty_coordinator,
+            'institution_name': self.config.department_name,
+            'social_links': f"Facebook: {self.config.facebook_link or 'N/A'}, Instagram: {self.config.instagram_link or 'N/A'}, LinkedIn: {self.config.linkedin_link or 'N/A'}",
+            'objectives': [o for o in [self.config.objective_1, self.config.objective_2, self.config.objective_3] if o],
+            'outcomes': [o for o in [self.config.outcome_1, self.config.outcome_2, self.config.outcome_3] if o],
+            'detailed_report': detailed_report_paragraph,
+            'student_list_table': stats.get('student_list_table', [])
         }
 
-        final_report = template_content
-        for key, value in replacements.items():
-            final_report = final_report.replace(key, str(value))
+        # Need to collect charts and images if present
+        data_dir = self.config.output_dir.parent / "data"
+        charts = {
+            'logo': str(data_dir / 'logo.png') if (data_dir / 'logo.png').exists() else (str(data_dir / 'college_logo.png') if (data_dir / 'college_logo.png').exists() else None),
+            'ratings_chart': str(self.config.ratings_chart_path) if self.config.ratings_chart_path.exists() else None,
+            'demographics': str(self.config.demographics_chart_path) if self.config.demographics_chart_path.exists() else None,
+            'poster': str(data_dir / 'poster.png') if (data_dir / 'poster.png').exists() else None,
+            'snapshot': str(data_dir / 'snapshot.png') if (data_dir / 'snapshot.png').exists() else None
+        }
 
-        with open(self.config.report_path, "w", encoding="utf-8") as out_f:
-            out_f.write(final_report)
+        # For multiple photos handling (photo1.png etc)
+        # Not explicitly mapped in docx_generator, but handled via snapshot above. 
 
-        print(f"\n✅ Report saved to: {self.config.report_path}")
+        try:
+            generator.generate_report(data, self.config.report_path, charts)
+            print(f"\n✅ Report saved to: {self.config.report_path}")
+        except Exception as e:
+            print(f"\n❌ Error generating docx: {e}")
 
     def generate(self) -> bool:
         """

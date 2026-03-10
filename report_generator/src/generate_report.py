@@ -41,7 +41,19 @@ def escape_latex(text: str) -> str:
 # ─── Block builders ───────────────────────────────────────────────────────────
 
 def build_list_items(items: list) -> str:
-    return "\n".join(f"  \\item {escape_latex(str(i))}" for i in items)
+    """Build LaTeX list items with proper escaping and filtering."""
+    if not items:
+        return "  \\item No information provided"
+    
+    clean_items = []
+    for item in items:
+        if item and str(item).strip():
+            clean_items.append(escape_latex(str(item).strip()))
+    
+    if not clean_items:
+        return "  \\item No information provided"
+    
+    return "\n".join(f"  \\item {item}" for item in clean_items)
 
 
 def build_student_table(students: list) -> str:
@@ -55,26 +67,61 @@ def build_student_table(students: list) -> str:
 
 
 def build_paragraphs(text: str) -> str:
-    """Convert multi-line text into spaced LaTeX paragraphs."""
+    """Convert multi-line text into spaced LaTeX paragraphs with proper formatting."""
     if not text:
         return ""
-    paras = re.split(r'\n{2,}', str(text).strip())
-    escaped = [escape_latex(" ".join(p.strip().splitlines())) for p in paras]
-    return "\n\n\\vspace{5pt}\n\n".join(escaped)
+    text = str(text).strip()
+    # Split on double newlines first
+    paras = re.split(r'\n{2,}', text)
+    # For each paragraph, join lines and escape
+    escaped = []
+    for p in paras:
+        # Clean up the paragraph text
+        clean_p = " ".join(line.strip() for line in p.strip().splitlines() if line.strip())
+        if clean_p:
+            escaped.append(escape_latex(clean_p))
+    return "\n\n\\par\n\n".join(escaped) if escaped else ""
 
 
 def image_block(path: str, width: str = "0.70") -> str:
+    """Generate LaTeX includegraphics block with proper environment."""
+    if not path or not str(path).strip():
+        return ""
+    # Ensure path is clean and properly formatted for LaTeX
+    path = str(path).strip()
+    # Use center environment instead of centering command for better scoping
     return f"\\begin{{center}}\n\\includegraphics[width={width}\\textwidth]{{{path}}}\n\\end{{center}}"
 
 
 def build_photo_block(paths: list) -> str:
+    """Build photo block with proper spacing between images."""
     if not paths:
         return ""
-    return "\n\\vspace{0.5cm}\n".join(image_block(p) for p in paths)
+    # Filter out empty paths and create image blocks
+    blocks = []
+    for p in paths:
+        if p and str(p).strip():
+            block = image_block(p)
+            if block:
+                blocks.append(block)
+    
+    if not blocks:
+        return ""
+    
+    # Join blocks with vspace for better separation
+    return "\n\\vspace{0.5cm}\n".join(blocks)
 
 
 def optional_image(path: str) -> str:
-    return image_block(path) if path and path.strip() else ""
+    """Insert image only if path is valid and non-empty."""
+    if not path or not str(path).strip():
+        return ""
+    # Ensure path doesn't have problematic characters before passing to LaTeX
+    path = str(path).strip()
+    if not Path(path).exists():
+        print(f"  [WARNING] Image not found for inclusion: {path}")
+        return ""
+    return image_block(path)
 
 
 def build_social_media(social: dict) -> str:
@@ -82,8 +129,12 @@ def build_social_media(social: dict) -> str:
     for key, label in [("facebook","Facebook"),("instagram","Instagram"),("linkedin","LinkedIn")]:
         url = social.get(key, "").strip()
         if url:
-            lines.append(f"{label}: \\url{{{url}}}")
-    return "\\\\\n".join(lines)
+            # Escape problematic LaTeX chars but preserve URL
+            safe_url = url.replace("_", "\\_").replace("#", "\\#")
+            lines.append(f"{label}: \\url{{{safe_url}}}")
+    if not lines:
+        return "No social media links provided"
+    return " \\\\\n".join(lines)
 
 
 # ─── Image handling ───────────────────────────────────────────────────────────
@@ -92,14 +143,23 @@ def make_fallback_logo(dest: Path, label: str = "LOGO"):
     """Generate a white placeholder PNG when no real logo is provided."""
     try:
         from PIL import Image, ImageDraw
+        print(f"    ✨ Creating fallback logo with Pillow: {label}")
         img = Image.new("RGB", (200, 200), "white")
         d = ImageDraw.Draw(img)
         d.ellipse([10, 10, 190, 190], outline="navy", width=4)
         d.text((60, 85), label[:6], fill="navy")
         img.save(str(dest))
-    except ImportError:
+    except ImportError as e:
+        print(f"    ⚠️  Pillow not available ({e}), using base64 fallback")
         import base64
         # Minimal valid 1x1 white PNG
+        dest.write_bytes(base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg=="
+        ))
+    except Exception as e:
+        print(f"    ❌ Error creating fallback logo: {e}")
+        import base64
+        # Fallback fallback
         dest.write_bytes(base64.b64decode(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg=="
         ))
@@ -116,16 +176,23 @@ def copy_images_to_workdir(data: dict, workdir: Path) -> dict:
 
     def _resolve(src_str: str, local_name: str, label: str = "LOGO") -> str:
         dest = workdir / local_name
-        if not src_str or not src_str.strip():
+        if not src_str or not str(src_str).strip():
+            print(f"  [PLACEHOLDER] No source for {local_name}, creating fallback")
             make_fallback_logo(dest, label)
             return local_name
         src = Path(src_str)
         if not src.exists():
-            print(f"  [WARNING] Not found: {src_str} — placeholder used.")
+            print(f"  [WARNING] Not found: {src_str} — placeholder used for {local_name}")
             make_fallback_logo(dest, label)
             return local_name
-        shutil.copy2(src, dest)
-        return local_name
+        try:
+            shutil.copy2(src, dest)
+            print(f"  [OK] Copied {src_str} → {local_name}")
+            return local_name
+        except Exception as e:
+            print(f"  [ERROR] Failed to copy {src_str}: {e}. Using placeholder.")
+            make_fallback_logo(dest, label)
+            return local_name
 
     inst   = data.setdefault("institute", {})
     images = data.setdefault("images", {})
@@ -134,14 +201,23 @@ def copy_images_to_workdir(data: dict, workdir: Path) -> dict:
     inst["club_logo"]    = _resolve(inst.get("club_logo",""),    "club_logo.png",    "CLUB")
 
     photos = images.get("event_photos", [])
-    images["event_photos"] = [
-        _resolve(p, f"photo_{i}.png", f"Photo {i+1}") for i, p in enumerate(photos)
-    ]
+    resolved_photos = []
+    for i, p in enumerate(photos):
+        if p and str(p).strip():
+            resolved_photos.append(_resolve(p, f"photo_{i}.png", f"Photo {i+1}"))
+    
+    images["event_photos"] = resolved_photos
+    print(f"  [PHOTOS] Resolved {len(resolved_photos)} photos")
 
     if images.get("feedback_image"):
-        images["feedback_image"] = _resolve(images["feedback_image"], "feedback.png", "Chart")
+        images["feedback_image"] = _resolve(images["feedback_image"], "feedback.png", "Feedback")
+    else:
+        images["feedback_image"] = ""
+        
     if images.get("poster_image"):
         images["poster_image"]   = _resolve(images["poster_image"],   "poster.png",   "Poster")
+    else:
+        images["poster_image"] = ""
 
     return data
 
@@ -161,6 +237,14 @@ def fill_template(template_path: Path, data: dict) -> str:
     reg      = data.get("registration", {})
     sigs     = data.get("signatories",  {})
     e        = escape_latex
+
+    # Debug logging for image paths
+    photos_list = images.get("event_photos", [])
+    print(f"\n📊 [TEMPLATE] Event photos: {len(photos_list)} items")
+    for i, p in enumerate(photos_list):
+        print(f"   Photo {i}: {p}")
+    print(f"   Feedback image: {images.get('feedback_image', '(none)')}")
+    print(f"   Poster image: {images.get('poster_image', '(none)')}\n")
 
     subs = {
         "VAR_COLLEGE_LOGO":          inst.get("college_logo", "college_logo.png"),

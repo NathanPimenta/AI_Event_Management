@@ -1,296 +1,239 @@
 {
-  "event_name": "Tech Conference 2025",
-  "fitness_score": 4052.39,
-  "total_participants_assigned": 17,
+  "event_name": "InnovateTech AI Conference 2025",
+  "fitness_score": 2869.27,
+  "total_participants_assigned": 16,
   "roles": {
-    "REG_STAFF": {
-      "role_name": "Registration Staff",
+    "REG_DESK": {
+      "role_name": "Registration Desk",
       "quantity_needed": 4,
       "quantity_assigned": 4,
       "status": "\u2713 Met",
       "required_skills": [
         "Communication",
-        "Organization",
-        "Customer Service"
+        "Organization"
       ],
       "assigned_participants": [
         {
-          "id": "P108",
-          "name": "Heidi Taylor",
-          "year": 2,
-          "past_events": 1,
+          "id": "P01",
+          "name": "Alice Johnson",
+          "year": 3,
+          "past_events": 2,
           "skill_levels": {
-            "Communication": 2,
-            "Organization": 1,
-            "Customer Service": 2
+            "Communication": 3,
+            "Organization": 2
           }
         },
         {
-          "id": "P111",
+          "id": "P11",
           "name": "Kevin White",
-          "year": 2,
-          "past_events": 1,
-          "skill_levels": {
-            "Communication": 2,
-            "Organization": 3,
-            "Customer Service": 2
-          }
-        },
-        {
-          "id": "P110",
-          "name": "Judy Thomas",
-          "year": 4,
-          "past_events": 4,
-          "skill_levels": {
-            "Communication": 3,
-            "Organization": 2,
-            "Customer Service": 3
-          }
-        },
-        {
-          "id": "P123",
-          "name": "Wendy Baker",
-          "year": 2,
-          "past_events": 1,
-          "skill_levels": {
-            "Communication": 3,
-            "Organization": 2,
-            "Customer Service": 3
-          }
-        }
-      ]
-    },
-    "TECH_SUPPORT": {
-      "role_name": "AV & Tech Support",
-      "quantity_needed": 2,
-      "quantity_assigned": 2,
-      "status": "\u2713 Met",
-      "required_skills": [
-        "AV Setup",
-        "Troubleshooting",
-        "Networking Basics"
-      ],
-      "assigned_participants": [
-        {
-          "id": "P106",
-          "name": "Frank Brown",
-          "year": 2,
+          "year": 1,
           "past_events": 0,
           "skill_levels": {
-            "AV Setup": 3,
-            "Troubleshooting": 2,
-            "Networking Basics": 3
+            "Communication": 2,
+            "Organization": 2
           }
         },
         {
-          "id": "P105",
-          "name": "Eve Martinez",
+          "id": "P19",
+          "name": "Sam Evans",
           "year": 3,
-          "past_events": 1,
+          "past_events": 3,
           "skill_levels": {
-            "AV Setup": 3,
-            "Troubleshooting": 3,
-            "Networking Basics": 2
-          }
-        }
-      ]
-    },
-    "SOCIAL_MEDIA": {
-      "role_name": "Social Media Coordinator",
-      "quantity_needed": 1,
-      "quantity_assigned": 1,
-      "status": "\u2713 Met",
-      "required_skills": [
-        "Social Media Marketing",
-        "Content Creation",
-        "Communication"
-      ],
-      "assigned_participants": [
-        {
-          "id": "P117",
-          "name": "Quinn Hall",
-          "year": 4,
-          "past_events": 4,
-          "skill_levels": {
-            "Social Media Marketing": 3,
-            "Content Creation": 3,
-            "Communication": 3
-          }
-        }
-      ]
-    },
-    "STAGE_MANAGER": {
-      "role_name": "Stage Manager",
-      "quantity_needed": 2,
-      "quantity_assigned": 2,
-      "status": "\u2713 Met",
-      "required_skills": [
-        "Organization",
-        "Time Management",
-        "Communication",
-        "Problem Solving"
-      ],
-      "assigned_participants": [
-        {
-          "id": "P124",
-          "name": "Xavier Adams",
-          "year": 4,
-          "past_events": 4,
-          "skill_levels": {
-            "Organization": 3,
-            "Time Management": 3,
             "Communication": 3,
-            "Problem Solving": 3
+            "Organization": 3
           }
         },
         {
-          "id": "P113",
-          "name": "Mike Robinson",
-          "year": 4,
-          "past_events": 6,
+          "id": "P14",
+          "name": "Nora King",
+          "year": 3,
+          "past_events": 2,
           "skill_levels": {
-            "Organization": 3,
-            "Time Management": 3,
             "Communication": 3,
-            "Problem Solving": 3
+            "Organization": 2
           }
         }
       ]
     },
-    "CATERING_COORD": {
-      "role_name": "Catering Coordinator",
-      "quantity_needed": 2,
-      "quantity_assigned": 2,
-      "status": "\u2713 Met",
-      "required_skills": [
-        "Organization",
-        "Communication",
-        "Problem Solving"
-      ],
-      "assigned_participants": [
-        {
-          "id": "P103",
-          "name": "Charlie Davis",
-          "year": 4,
-          "past_events": 5,
-          "skill_levels": {
-            "Organization": 3,
-            "Communication": 3,
-            "Problem Solving": 3
-          }
-        },
-        {
-          "id": "P120",
-          "name": "Tina King",
-          "year": 4,
-          "past_events": 5,
-          "skill_levels": {
-            "Organization": 3,
-            "Communication": 3,
-            "Problem Solving": 3
-          }
-        }
-      ]
-    },
-    "WORKSHOP_FACILITATOR": {
-      "role_name": "Workshop Facilitator",
+    "AV_TECH": {
+      "role_name": "AV Tech Support",
       "quantity_needed": 3,
       "quantity_assigned": 3,
       "status": "\u2713 Met",
       "required_skills": [
-        "Communication",
-        "Time Management",
-        "Problem Solving"
+        "AV Setup",
+        "Troubleshooting"
       ],
       "assigned_participants": [
         {
-          "id": "P125",
-          "name": "Yolanda Nelson",
-          "year": 3,
-          "past_events": 2,
-          "skill_levels": {
-            "Communication": 2,
-            "Time Management": 2,
-            "Problem Solving": 3
-          }
-        },
-        {
-          "id": "P109",
-          "name": "Ivan Anderson",
-          "year": 3,
-          "past_events": 2,
-          "skill_levels": {
-            "Communication": 2,
-            "Time Management": 2,
-            "Problem Solving": 3
-          }
-        },
-        {
-          "id": "P112",
-          "name": "Laura Garcia",
+          "id": "P05",
+          "name": "Ethan Garcia",
           "year": 3,
           "past_events": 3,
           "skill_levels": {
-            "Communication": 3,
-            "Time Management": 2,
-            "Problem Solving": 3
+            "AV Setup": 3,
+            "Troubleshooting": 3
+          }
+        },
+        {
+          "id": "P07",
+          "name": "George Hall",
+          "year": 4,
+          "past_events": 6,
+          "skill_levels": {
+            "AV Setup": 3,
+            "Troubleshooting": 3
+          }
+        },
+        {
+          "id": "P09",
+          "name": "Ian Martinez",
+          "year": 2,
+          "past_events": 2,
+          "skill_levels": {
+            "AV Setup": 2,
+            "Troubleshooting": 2
           }
         }
       ]
     },
-    "LOGISTICS_COORD": {
-      "role_name": "Logistics Coordinator",
+    "SOC_MEDIA": {
+      "role_name": "Social Media Crew",
       "quantity_needed": 2,
       "quantity_assigned": 2,
       "status": "\u2713 Met",
       "required_skills": [
-        "Organization",
-        "Problem Solving",
-        "Time Management"
+        "Content Creation",
+        "Social Media"
       ],
       "assigned_participants": [
         {
-          "id": "P102",
-          "name": "Bob Smith",
+          "id": "P12",
+          "name": "Laura Green",
           "year": 2,
           "past_events": 1,
           "skill_levels": {
-            "Organization": 3,
-            "Problem Solving": 2,
-            "Time Management": 3
+            "Content Creation": 3,
+            "Social Media": 3
           }
         },
         {
-          "id": "P122",
-          "name": "Victor Green",
-          "year": 3,
-          "past_events": 3,
+          "id": "P16",
+          "name": "Penny Adams",
+          "year": 1,
+          "past_events": 1,
           "skill_levels": {
-            "Organization": 3,
-            "Problem Solving": 2,
-            "Time Management": 3
+            "Content Creation": 3,
+            "Social Media": 3
           }
         }
       ]
     },
-    "PHOTOGRAPHER": {
-      "role_name": "Event Photographer",
-      "quantity_needed": 1,
-      "quantity_assigned": 1,
+    "STAGE_HAND": {
+      "role_name": "Stage Management",
+      "quantity_needed": 3,
+      "quantity_assigned": 3,
       "status": "\u2713 Met",
       "required_skills": [
-        "Content Creation",
-        "Communication"
+        "Organization",
+        "Coordination"
       ],
       "assigned_participants": [
         {
-          "id": "P118",
-          "name": "Rachel Allen",
-          "year": 3,
-          "past_events": 2,
+          "id": "P02",
+          "name": "Bob Williams",
+          "year": 2,
+          "past_events": 1,
           "skill_levels": {
-            "Content Creation": 3,
-            "Communication": 2
+            "Organization": 3,
+            "Coordination": 3
+          }
+        },
+        {
+          "id": "P17",
+          "name": "Quinn Baker",
+          "year": 4,
+          "past_events": 5,
+          "skill_levels": {
+            "Organization": 3,
+            "Coordination": 3
+          }
+        },
+        {
+          "id": "P06",
+          "name": "Fiona Clark",
+          "year": 2,
+          "past_events": 1,
+          "skill_levels": {
+            "Organization": 3,
+            "Coordination": 3
+          }
+        }
+      ]
+    },
+    "INFO_BOOTH": {
+      "role_name": "Information Booth",
+      "quantity_needed": 2,
+      "quantity_assigned": 2,
+      "status": "\u2713 Met",
+      "required_skills": [
+        "Communication",
+        "Problem Solving"
+      ],
+      "assigned_participants": [
+        {
+          "id": "P08",
+          "name": "Hannah Lee",
+          "year": 1,
+          "past_events": 0,
+          "skill_levels": {
+            "Communication": 3,
+            "Problem Solving": 2
+          }
+        },
+        {
+          "id": "P10",
+          "name": "Jane Rodriguez",
+          "year": 3,
+          "past_events": 4,
+          "skill_levels": {
+            "Communication": 3,
+            "Problem Solving": 3
+          }
+        }
+      ]
+    },
+    "HACK_JUDGE": {
+      "role_name": "Hackathon Judge Helper",
+      "quantity_needed": 2,
+      "quantity_assigned": 2,
+      "status": "\u2713 Met",
+      "required_skills": [
+        "Python",
+        "Problem Solving",
+        "Organization"
+      ],
+      "assigned_participants": [
+        {
+          "id": "P03",
+          "name": "Charlie Brown",
+          "year": 4,
+          "past_events": 5,
+          "skill_levels": {
+            "Python": 3,
+            "Problem Solving": 3,
+            "Organization": 3
+          }
+        },
+        {
+          "id": "P13",
+          "name": "Mason Harris",
+          "year": 4,
+          "past_events": 7,
+          "skill_levels": {
+            "Python": 3,
+            "Problem Solving": 2,
+            "Organization": 3
           }
         }
       ]

@@ -22,6 +22,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # points 
 # Use the credentials.json from the sibling `planify_reelmaker` module if available
 REPO_ROOT = os.path.dirname(BASE_DIR)
 CREDENTIALS_FILE = os.path.join(REPO_ROOT, 'planify_reelmaker', 'credentials.json')
+if not os.path.exists(CREDENTIALS_FILE):
+    CREDENTIALS_FILE = os.path.join(BASE_DIR, 'credentials.json')
 
 # Temporary path to store raw downloaded files for EXIF extraction
 TEMP_DOWNLOAD_DIR = 'temp_downloads/'

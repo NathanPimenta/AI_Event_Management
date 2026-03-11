@@ -1,6 +1,6 @@
 {
   "event_name": "InnovateTech AI Conference 2025",
-  "fitness_score": 2869.27,
+  "fitness_score": 2866.36,
   "total_participants_assigned": 16,
   "roles": {
     "REG_DESK": {
@@ -14,6 +14,16 @@
       ],
       "assigned_participants": [
         {
+          "id": "P09",
+          "name": "Ian Martinez",
+          "year": 2,
+          "past_events": 2,
+          "skill_levels": {
+            "Communication": 2,
+            "Organization": 2
+          }
+        },
+        {
           "id": "P01",
           "name": "Alice Johnson",
           "year": 3,
@@ -24,33 +34,23 @@
           }
         },
         {
-          "id": "P11",
-          "name": "Kevin White",
-          "year": 1,
-          "past_events": 0,
+          "id": "P18",
+          "name": "Ruby Carter",
+          "year": 2,
+          "past_events": 1,
           "skill_levels": {
             "Communication": 2,
             "Organization": 2
           }
         },
         {
-          "id": "P19",
-          "name": "Sam Evans",
-          "year": 3,
-          "past_events": 3,
+          "id": "P06",
+          "name": "Fiona Clark",
+          "year": 2,
+          "past_events": 1,
           "skill_levels": {
             "Communication": 3,
             "Organization": 3
-          }
-        },
-        {
-          "id": "P14",
-          "name": "Nora King",
-          "year": 3,
-          "past_events": 2,
-          "skill_levels": {
-            "Communication": 3,
-            "Organization": 2
           }
         }
       ]
@@ -66,16 +66,6 @@
       ],
       "assigned_participants": [
         {
-          "id": "P05",
-          "name": "Ethan Garcia",
-          "year": 3,
-          "past_events": 3,
-          "skill_levels": {
-            "AV Setup": 3,
-            "Troubleshooting": 3
-          }
-        },
-        {
           "id": "P07",
           "name": "George Hall",
           "year": 4,
@@ -86,12 +76,22 @@
           }
         },
         {
-          "id": "P09",
-          "name": "Ian Martinez",
-          "year": 2,
-          "past_events": 2,
+          "id": "P05",
+          "name": "Ethan Garcia",
+          "year": 3,
+          "past_events": 3,
           "skill_levels": {
-            "AV Setup": 2,
+            "AV Setup": 3,
+            "Troubleshooting": 3
+          }
+        },
+        {
+          "id": "P13",
+          "name": "Mason Harris",
+          "year": 4,
+          "past_events": 7,
+          "skill_levels": {
+            "AV Setup": 3,
             "Troubleshooting": 2
           }
         }
@@ -108,9 +108,9 @@
       ],
       "assigned_participants": [
         {
-          "id": "P12",
-          "name": "Laura Green",
-          "year": 2,
+          "id": "P16",
+          "name": "Penny Adams",
+          "year": 1,
           "past_events": 1,
           "skill_levels": {
             "Content Creation": 3,
@@ -118,9 +118,9 @@
           }
         },
         {
-          "id": "P16",
-          "name": "Penny Adams",
-          "year": 1,
+          "id": "P12",
+          "name": "Laura Green",
+          "year": 2,
           "past_events": 1,
           "skill_levels": {
             "Content Creation": 3,
@@ -150,20 +150,20 @@
           }
         },
         {
-          "id": "P17",
-          "name": "Quinn Baker",
-          "year": 4,
-          "past_events": 5,
+          "id": "P10",
+          "name": "Jane Rodriguez",
+          "year": 3,
+          "past_events": 4,
           "skill_levels": {
             "Organization": 3,
             "Coordination": 3
           }
         },
         {
-          "id": "P06",
-          "name": "Fiona Clark",
-          "year": 2,
-          "past_events": 1,
+          "id": "P19",
+          "name": "Sam Evans",
+          "year": 3,
+          "past_events": 3,
           "skill_levels": {
             "Organization": 3,
             "Coordination": 3
@@ -192,13 +192,13 @@
           }
         },
         {
-          "id": "P10",
-          "name": "Jane Rodriguez",
+          "id": "P14",
+          "name": "Nora King",
           "year": 3,
-          "past_events": 4,
+          "past_events": 2,
           "skill_levels": {
             "Communication": 3,
-            "Problem Solving": 3
+            "Problem Solving": 2
           }
         }
       ]
@@ -226,13 +226,13 @@
           }
         },
         {
-          "id": "P13",
-          "name": "Mason Harris",
+          "id": "P17",
+          "name": "Quinn Baker",
           "year": 4,
-          "past_events": 7,
+          "past_events": 5,
           "skill_levels": {
             "Python": 3,
-            "Problem Solving": 2,
+            "Problem Solving": 3,
             "Organization": 3
           }
         }

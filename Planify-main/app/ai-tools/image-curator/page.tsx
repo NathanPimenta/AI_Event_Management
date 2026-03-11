@@ -71,9 +71,12 @@ export default function ImageCuratorPage() {
                         setRequestId(null)
                         setStatusMessage(null)
 
-                        const infoWithFullUrls = statusData.result.curated_images.map((url: string) =>
-                            url.startsWith("http") ? url : `https://affinitive-unicuspid-cinthia.ngrok-free.dev/${url.startsWith('/') ? url.slice(1) : url}`
-                        )
+                        console.log("Image Curator Result:", statusData.result)
+                        const imagesList = statusData.result.curated_images || []
+                        const infoWithFullUrls = imagesList.map((url: string) => {
+                            const baseUrl = process.env.NEXT_PUBLIC_IMAGE_CURATOR_URL || "http://localhost:8005"
+                            return url.startsWith("http") ? url : `${baseUrl}/${url.startsWith('/') ? url.slice(1) : url}`
+                        })
 
                         setCuratedImages(infoWithFullUrls)
                         setTotalProcessed(statusData.result.total_processed)

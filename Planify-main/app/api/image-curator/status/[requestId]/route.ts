@@ -15,7 +15,8 @@ export async function GET(
     }
 
     try {
-        const res = await fetch(`https://affinitive-unicuspid-cinthia.ngrok-free.dev/status/${requestId}`)
+        const curatorUrl = process.env.IMAGE_CURATOR_URL || "http://127.0.0.1:8005"
+        const res = await fetch(`${curatorUrl}/status/${requestId}`)
         const data = await res.json().catch(() => ({}))
 
         if (!res.ok) {

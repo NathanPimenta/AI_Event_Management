@@ -14,14 +14,14 @@ import { usePermissions } from "@/hooks/use-permissions"
 
 interface MaterialSubmission {
   id: string
-  attendee_name: string
-  attendee_email: string
-  original_filename: string
-  file_path: string
-  file_size_bytes: number
-  uploaded_at: string
+  participant_name: string
+  participant_email: string
+  submission_type: string
+  file_url: string
+  description: string
+  submitted_at: string
   request_title: string
-  material_type: string
+  scored: boolean
 }
 
 interface MaterialScore {
@@ -36,17 +36,13 @@ interface MaterialScore {
 
 interface MaterialScoringProps {
   eventId: string
-  requestId: string
-  submission: MaterialSubmission
-  existingScores: MaterialScore[]
-  onScoreSubmitted: (score: MaterialScore) => void
+  material: MaterialSubmission
+  onScoreSubmitted: () => void
 }
 
 export function MaterialScoring({ 
   eventId, 
-  requestId, 
-  submission, 
-  existingScores, 
+  material, 
   onScoreSubmitted 
 }: MaterialScoringProps) {
   const [score, setScore] = useState<number>(0)
@@ -54,6 +50,8 @@ export function MaterialScoring({
   const [feedback, setFeedback] = useState("")
   const [criteriaScores, setCriteriaScores] = useState<Record<string, number>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [existingScores, setExistingScores] = useState<MaterialScore[]>([])
+  const [loadingScores, setLoadingScores] = useState(true)
   const { toast } = useToast()
   const { canScore, isJudge } = usePermissions()
 
@@ -66,10 +64,30 @@ export function MaterialScoring({
     { key: "clarity", label: "Clarity & Organization", maxPoints: 10 }
   ]
 
+  // Fetch existing scores for this submission
+  useEffect(() => {
+    fetchExistingScores()
+  }, [material.id])
+
+  const fetchExistingScores = async () => {
+    try {
+      setLoadingScores(true)
+      const response = await fetch(`/api/events/${eventId}/materials/${material.id}/scores`)
+      if (response.ok) {
+        const scores = await response.json()
+        setExistingScores(scores)
+      }
+    } catch (error) {
+      console.error('Error fetching existing scores:', error)
+    } finally {
+      setLoadingScores(false)
+    }
+  }
+
   // Check if current user has already scored this submission
   const currentUserScore = existingScores.find(score => 
-    // Assuming we can identify current user scores - we'd need user info from session
-    true // For now, we'll show the form if user is a judge
+    // For now, we'll allow multiple scores - in a real app you'd check against current user ID
+    false
   )
 
   useEffect(() => {
@@ -129,7 +147,7 @@ export function MaterialScoring({
 
     try {
       const response = await fetch(
-        `/api/events/${eventId}/materials/${requestId}/submissions/${submission.id}/scores`,
+        `/api/events/${eventId}/materials/${material.id}/scores`,
         {
           method: "POST",
           headers: {
@@ -156,7 +174,7 @@ export function MaterialScoring({
         variant: "default",
       })
 
-      onScoreSubmitted(data)
+      onScoreSubmitted()
     } catch (error) {
       console.error("Error submitting score:", error)
       toast({
@@ -190,13 +208,13 @@ export function MaterialScoring({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-medium">Participant</Label>
-              <p className="text-sm">{submission.attendee_name}</p>
-              <p className="text-xs text-muted-foreground">{submission.attendee_email}</p>
+              <p className="text-sm">{material.participant_name}</p>
+              <p className="text-xs text-muted-foreground">{material.participant_email}</p>
             </div>
             <div>
               <Label className="text-sm font-medium">Submission Type</Label>
-              <p className="text-sm">{submission.request_title}</p>
-              <Badge variant="outline">{submission.material_type}</Badge>
+              <p className="text-sm">{material.request_title}</p>
+              <Badge variant="outline">{material.submission_type}</Badge>
             </div>
           </div>
           
@@ -205,14 +223,13 @@ export function MaterialScoring({
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm font-medium">File</Label>
-              <p className="text-sm">{submission.original_filename}</p>
+              <p className="text-sm">{material.description}</p>
               <p className="text-xs text-muted-foreground">
-                {formatFileSize(submission.file_size_bytes)} • 
-                Uploaded {new Date(submission.uploaded_at).toLocaleDateString()}
+                Uploaded {new Date(material.submitted_at).toLocaleDateString()}
               </p>
             </div>
             <Button variant="outline" size="sm" asChild>
-              <a href={submission.file_path} target="_blank" rel="noopener noreferrer">
+              <a href={material.file_url} target="_blank" rel="noopener noreferrer">
                 <DownloadIcon className="h-4 w-4 mr-2" />
                 View File
               </a>

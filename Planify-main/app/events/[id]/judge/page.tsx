@@ -26,6 +26,7 @@ interface MaterialSubmission {
   file_url: string
   description: string
   submitted_at: string
+  request_title: string
   scored: boolean
 }
 
@@ -45,13 +46,31 @@ export default function EventJudgePage({ params }: EventJudgePageProps) {
   const [event, setEvent] = useState<Event | null>(null)
   const [materials, setMaterials] = useState<MaterialSubmission[]>([])
   const [loadingMaterials, setLoadingMaterials] = useState(true)
+  const [isAssignedJudge, setIsAssignedJudge] = useState<boolean | null>(null)
 
   useEffect(() => {
     if (!loading && user) {
+      checkJudgeAssignment()
       fetchEvent()
       fetchMaterials()
     }
   }, [eventId, user, loading])
+
+  const checkJudgeAssignment = async () => {
+    if (!user?.id) return
+    
+    try {
+      const response = await fetch(`/api/events/${eventId}/judges`)
+      if (response.ok) {
+        const judges = await response.json()
+        const isAssigned = judges.some((judge: any) => judge.judge_id === user.id && judge.status === 'active')
+        setIsAssignedJudge(isAssigned)
+      }
+    } catch (error) {
+      console.error('Error checking judge assignment:', error)
+      setIsAssignedJudge(false)
+    }
+  }
 
   const fetchEvent = async () => {
     try {
@@ -68,10 +87,20 @@ export default function EventJudgePage({ params }: EventJudgePageProps) {
   const fetchMaterials = async () => {
     try {
       setLoadingMaterials(true)
+      console.log('Fetching materials for eventId:', eventId, 'userId:', user?.id)
+      
       const response = await fetch(`/api/events/${eventId}/materials?judgeView=true&judgeId=${user?.id}`)
+      console.log('Materials API response status:', response.status, response.statusText)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('Materials API response data:', data)
         setMaterials(data.materials || [])
+        console.log('Set materials to:', data.materials || [])
+      } else {
+        const errorData = await response.text()
+        console.error('Materials API error response:', errorData)
+        throw new Error(`API returned ${response.status}: ${errorData}`)
       }
     } catch (error) {
       console.error("Error fetching materials:", error)
@@ -108,6 +137,36 @@ export default function EventJudgePage({ params }: EventJudgePageProps) {
               Back to Dashboard
             </Button>
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if user is assigned as judge for this specific event
+  if (isAssignedJudge === false) {
+    return (
+      <div className="container py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-destructive mb-4">Not Assigned</h1>
+          <p className="text-muted-foreground mb-8">You are not assigned as a judge for this event.</p>
+          <Link href="/dashboard">
+            <Button variant="outline">
+              <ArrowLeftIcon className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Still checking assignment
+  if (isAssignedJudge === null) {
+    return (
+      <div className="container flex items-center justify-center min-h-[80vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg">Verifying permissions...</p>
         </div>
       </div>
     )

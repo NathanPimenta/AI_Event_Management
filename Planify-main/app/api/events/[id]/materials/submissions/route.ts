@@ -8,16 +8,35 @@ import { existsSync } from "fs"
 // POST: Upload material submission
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string; requestId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id, requestId } = await params
+    const { id } = await params
     const session = await verifyAuth(request)
 
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+
+    // Parse form data
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const requestId = formData.get('requestId') as string
+
+    if (!file) {
+      return NextResponse.json(
+        { error: 'No file provided' },
+        { status: 400 }
+      )
+    }
+
+    if (!requestId) {
+      return NextResponse.json(
+        { error: 'Request ID is required' },
+        { status: 400 }
       )
     }
 
@@ -53,17 +72,6 @@ export async function POST(
 
     const attendee = attendeeResult.rows[0]
 
-    // Parse form data
-    const formData = await request.formData()
-    const file = formData.get('file') as File
-
-    if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      )
-    }
-
     // Validate file size
     const fileSizeMB = file.size / (1024 * 1024)
     if (fileSizeMB > materialRequest.max_file_size_mb) {
@@ -75,7 +83,7 @@ export async function POST(
 
     // Validate file format if specified
     if (materialRequest.file_format_allowed) {
-      const allowedFormats = materialRequest.file_format_allowed.split(',').map(f => f.trim())
+      const allowedFormats = materialRequest.file_format_allowed.split(',').map((f: string) => f.trim())
       const fileExt = '.' + file.name.split('.').pop()
       if (!allowedFormats.includes(fileExt)) {
         return NextResponse.json(
@@ -157,19 +165,28 @@ export async function POST(
   }
 }
 
-// GET: Get submissions for a material request
+// GET: Get submissions for a material request (with requestId query parameter)
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string; requestId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id, requestId } = await params
+    const { id } = await params
+    const url = new URL(request.url)
+    const requestId = url.searchParams.get('requestId')
     const session = await verifyAuth(request)
 
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+
+    if (!requestId) {
+      return NextResponse.json(
+        { error: 'Request ID is required' },
+        { status: 400 }
       )
     }
 

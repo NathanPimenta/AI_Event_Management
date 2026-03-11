@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { query } from "@/lib/postgres"
 import { verifyAuth } from "@/lib/auth"
 
-// GET: Fetch material requests for an event
+// GET: Fetch material requests OR material submissions for an event
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -11,8 +11,73 @@ export async function GET(
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'active'
+    const judgeView = searchParams.get('judgeView')
+    const judgeId = searchParams.get('judgeId')
 
-    // Fetch material requests
+    console.log('Materials API called - eventId:', id, 'judgeView:', judgeView, 'judgeId:', judgeId)
+
+    // Add authentication for judge view
+    if (judgeView === 'true') {
+      const session = await verifyAuth(request)
+      if (!session) {
+        console.log('Authentication failed for judge view')
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      console.log('Authenticated user:', session.user.id, 'requested judgeId:', judgeId)
+    }
+
+    // If judge view is requested, fetch submissions instead of requests
+    if (judgeView === 'true' && judgeId) {
+      console.log('Judge view requested - fetching submissions for event:', id, 'judge:', judgeId)
+      
+      // First, let's check if material_submissions table exists and has data
+      const testSubmissionsResult = await query(
+        `SELECT id, event_id, attendee_name FROM material_submissions WHERE event_id = $1`,
+        [id]
+      )
+      console.log('All submissions for this event:', testSubmissionsResult.rows)
+      
+      const submissionsResult = await query(
+        `SELECT 
+          ms.id,
+          ms.attendee_name as participant_name,
+          ms.attendee_email as participant_email, 
+          ms.file_type as submission_type,
+          ms.file_path as file_url,
+          ms.original_filename as description,
+          ms.uploaded_at as submitted_at,
+          mr.title as request_title,
+          CASE 
+            WHEN msc.id IS NOT NULL THEN true 
+            ELSE false 
+          END as scored
+         FROM material_submissions ms
+         LEFT JOIN material_requests mr ON ms.request_id = mr.id
+         LEFT JOIN material_scores msc ON ms.id = msc.submission_id AND msc.judge_id = $2
+         WHERE ms.event_id = $1
+         ORDER BY ms.uploaded_at DESC`,
+        [id, judgeId]
+      )
+
+      console.log('Found submissions for judge (with joins):', submissionsResult.rows)
+      console.log('Raw query params - eventId:', id, 'judgeId:', judgeId)
+
+      const materials = submissionsResult.rows.map(row => ({
+        id: row.id,
+        participant_name: row.participant_name,
+        participant_email: row.participant_email,
+        submission_type: row.submission_type,
+        file_url: row.file_url,
+        description: row.description,
+        submitted_at: row.submitted_at,
+        request_title: row.request_title,
+        scored: row.scored
+      }))
+
+      return NextResponse.json({ materials })
+    }
+
+    // Default behavior - fetch material requests
     const result = await query(
       `SELECT 
         mr.id,
@@ -44,9 +109,9 @@ export async function GET(
 
     return NextResponse.json(result.rows)
   } catch (error) {
-    console.error('Error fetching material requests:', error)
+    console.error('Error fetching materials:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch material requests', details: error instanceof Error ? error.message : String(error) },
+      { error: 'Failed to fetch materials', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

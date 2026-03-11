@@ -58,7 +58,7 @@ const PERMISSIONS: Record<UserRole, Record<Resource, Action[]>> = {
     tasks: ['read'],
     queries: ['read'],
     members: ['read'],
-    materials: ['read'],
+    materials: ['read', 'score'],
     scores: ['create', 'read', 'update'],
   },
 }

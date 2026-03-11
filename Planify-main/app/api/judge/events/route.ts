@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/db'
+import { query } from '@/lib/postgres'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,73 +16,55 @@ export async function GET(request: NextRequest) {
     }
 
     // First, get judge assignments
-    const { data: judgeAssignments, error: assignmentsError } = await supabase
-      .from('judge_assignments')
-      .select('event_id')
-      .eq('user_id', userId)
+    const judgeAssignmentsResult = await query(
+      `SELECT event_id FROM judge_assignments 
+       WHERE judge_id = $1 AND status = 'active'`,
+      [userId]
+    )
 
-    console.log('Judge assignments query result:', { judgeAssignments, assignmentsError })
-
-    if (assignmentsError) {
-      console.error('Error fetching judge assignments:', assignmentsError)
-      return NextResponse.json(
-        { error: 'Failed to fetch judge assignments', details: assignmentsError.message },
-        { status: 500 }
-      )
-    }
+    console.log('Judge assignments query result:', judgeAssignmentsResult.rows)
 
     // If no assignments found, return empty array
-    if (!judgeAssignments || judgeAssignments.length === 0) {
+    if (!judgeAssignmentsResult.rows || judgeAssignmentsResult.rows.length === 0) {
       console.log('No judge assignments found for user')
       return NextResponse.json({ events: [] })
     }
 
     // Get event details for assigned events
-    const eventIds = judgeAssignments.map(a => a.event_id)
-    const { data: events, error: eventsError } = await supabase
-      .from('events')
-      .select('id, title, description, start_date, end_date')
-      .in('id', eventIds)
+    const eventIds = judgeAssignmentsResult.rows.map(a => a.event_id)
+    const placeholders = eventIds.map((_, index) => `$${index + 1}`).join(',')
+    
+    const eventsResult = await query(
+      `SELECT id, title, description, date, end_date 
+       FROM events 
+       WHERE id IN (${placeholders})`,
+      eventIds
+    )
 
-    if (eventsError) {
-      console.error('Error fetching events:', eventsError)
-      return NextResponse.json(
-        { error: 'Failed to fetch events', details: eventsError.message },
-        { status: 500 }
-      )
-    }
+    console.log('Events found:', eventsResult.rows.length)
 
     // Build response with basic data first
     const eventsWithCounts = await Promise.all(
-      (events || []).map(async (event) => {
+      eventsResult.rows.map(async (event) => {
         try {
           // Get submission count
-          const { count: submissionCount } = await supabase
-            .from('material_submissions')
-            .select('*', { count: 'exact', head: true })
-            .eq('event_id', event.id)
+          const submissionResult = await query(
+            `SELECT COUNT(*) as count FROM material_submissions WHERE event_id = $1`,
+            [event.id]
+          )
+          const submissionCount = parseInt(submissionResult.rows[0]?.count || '0')
 
-          // Get scored count (simplified approach)
+          // Get scored count for this judge
           let scoredCount = 0
           try {
-            // First get all submissions for this event 
-            const { data: submissions } = await supabase
-              .from('material_submissions')
-              .select('id')
-              .eq('event_id', event.id)
-
-            if (submissions && submissions.length > 0) {
-              const submissionIds = submissions.map(s => s.id)
-              
-              // Then count scores by this judge for these submissions
-              const { count } = await supabase
-                .from('material_scores')
-                .select('*', { count: 'exact', head: true })
-                .eq('judge_id', userId)
-                .in('submission_id', submissionIds)
-              
-              scoredCount = count || 0
-            }
+            const scoredResult = await query(
+              `SELECT COUNT(DISTINCT ms.submission_id) as count 
+               FROM material_scores ms
+               JOIN material_submissions sub ON ms.submission_id = sub.id
+               WHERE sub.event_id = $1 AND ms.judge_id = $2`,
+              [event.id, userId]
+            )
+            scoredCount = parseInt(scoredResult.rows[0]?.count || '0')
           } catch (error) {
             console.error('Error counting scored submissions:', error)
             scoredCount = 0
@@ -90,7 +72,7 @@ export async function GET(request: NextRequest) {
 
           // Determine event status based on dates
           const now = new Date()
-          const startDate = new Date(event.start_date)
+          const startDate = new Date(event.date)
           const endDate = new Date(event.end_date)
           
           let status: 'upcoming' | 'active' | 'completed'
@@ -106,10 +88,10 @@ export async function GET(request: NextRequest) {
             id: event.id,
             title: event.title,
             description: event.description,
-            start_date: event.start_date,
+            start_date: event.date,
             end_date: event.end_date,
             status,
-            submission_count: submissionCount || 0,
+            submission_count: submissionCount,
             scored_submissions: scoredCount
           }
         } catch (error) {
@@ -119,7 +101,7 @@ export async function GET(request: NextRequest) {
             id: event.id,
             title: event.title,
             description: event.description,
-            start_date: event.start_date,
+            start_date: event.date,
             end_date: event.end_date,
             status: 'active' as const,
             submission_count: 0,
@@ -129,13 +111,13 @@ export async function GET(request: NextRequest) {
       })
     )
 
-    console.log('Returning events:', eventsWithCounts)
+    console.log('Returning events:', eventsWithCounts.length)
     return NextResponse.json({ events: eventsWithCounts })
 
   } catch (error) {
     console.error('Error in judge events API:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

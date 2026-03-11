@@ -10,7 +10,7 @@ type User = {
   name: string
   email: string
   image?: string
-  role: "audience" | "community_admin" | "community_member"
+  role: "audience" | "community_admin" | "community_member" | "judge"
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

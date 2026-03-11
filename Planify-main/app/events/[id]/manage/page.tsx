@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { Users, Calendar, MessageSquare, Wand2, Download, FileText } from "lucide-react"
+import { Users, Calendar, MessageSquare, Wand2, Download, FileText, UserCheck } from "lucide-react"
 import { MaterialRequestsManager } from "@/components/materials/material-requests-manager"
 import { MaterialSubmissionPanel } from "@/components/materials/material-submission-panel"
 import { AttendeeSubmissionReport } from "@/components/materials/attendee-submission-report"
+import { JudgeManagement } from "@/components/materials/judge-management"
+import { ScoreLeaderboard } from "@/components/materials/score-leaderboard"
 
 // Fallback event shape for initial state
 const mockEvent = {
@@ -33,6 +35,7 @@ export default function ManageEventPage() {
   const { id } = useParams()
   const [event, setEvent] = useState<any>(mockEvent)
   const [attendees, setAttendees] = useState<any[]>([])
+  const [judges, setJudges] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [savingEvent, setSavingEvent] = useState(false)
   const [downloadingAttendees, setDownloadingAttendees] = useState(false)
@@ -58,6 +61,13 @@ export default function ManageEventPage() {
         if (attendeesRes.ok) {
           const attendeesData = await attendeesRes.json()
           setAttendees(attendeesData)
+        }
+
+        // Fetch judges
+        const judgesRes = await fetch(`/api/events/${id}/judges`)
+        if (judgesRes.ok) {
+          const judgesData = await judgesRes.json()
+          setJudges(judgesData)
         }
       } catch (error) {
         console.error("Failed to fetch event/attendees:", error)
@@ -175,6 +185,14 @@ export default function ManageEventPage() {
     }
   }
 
+  const handleJudgeAdded = (judge: any) => {
+    setJudges(prev => [...prev, judge])
+  }
+
+  const handleJudgeRemoved = (judgeId: string) => {
+    setJudges(prev => prev.filter(j => j.judge_id !== judgeId))
+  }
+
   if (loading) {
     return (
       <div className="container flex items-center justify-center min-h-[80vh]">
@@ -199,7 +217,7 @@ export default function ManageEventPage() {
       </div>
 
       <Tabs defaultValue="details" className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <TabsList className="grid grid-cols-3 md:grid-cols-6 gap-2">
           <TabsTrigger value="details" className="gap-2">
             <Calendar className="h-4 w-4" />
             Details
@@ -211,6 +229,10 @@ export default function ManageEventPage() {
           <TabsTrigger value="materials" className="gap-2">
             <FileText className="h-4 w-4" />
             Materials
+          </TabsTrigger>
+          <TabsTrigger value="judges" className="gap-2">
+            <UserCheck className="h-4 w-4" />
+            Judges
           </TabsTrigger>
           <TabsTrigger value="queries" className="gap-2">
             <MessageSquare className="h-4 w-4" />
@@ -384,6 +406,25 @@ export default function ManageEventPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="judges">
+          <div className="space-y-6">
+            {/* Judge Management */}
+            <JudgeManagement
+              eventId={id as string}
+              eventTitle={event.title}
+              judges={judges}
+              onJudgeAdded={handleJudgeAdded}
+              onJudgeRemoved={handleJudgeRemoved}
+            />
+
+            {/* Score Leaderboard */}
+            <ScoreLeaderboard 
+              eventId={id as string}
+              eventTitle={event.title}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="queries">

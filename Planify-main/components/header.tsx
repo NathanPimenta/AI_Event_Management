@@ -28,6 +28,7 @@ const AI_TOOLS = [
   { href: "/ai-tools/poster-generator", label: "Poster Generator", icon: Megaphone },
   { href: "/ai-tools/report-generator", label: "Report Generator", icon: FileText },
   { href: "/ai-tools/scraper", label: "Web Scraper", icon: Globe },
+  { href: "/ai-tools/team-formation", label: "Team Formation", icon: Users }
 ]
 
 export default function Header() {

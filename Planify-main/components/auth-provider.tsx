@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(user)
       localStorage.setItem("user", JSON.stringify(user))
-      router.push("/dashboard")
+      // Don't redirect here - let the login page handle the redirect based on return_to parameter
       return user
     } catch (error) {
       console.error("Failed to sign in:", error)
@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(user)
       localStorage.setItem("user", JSON.stringify(user))
-      router.push("/dashboard")
+      // Don't redirect here - let the page that calls signUp handle the redirect
       return user
     } catch (error) {
       console.error("Failed to sign up:", error)

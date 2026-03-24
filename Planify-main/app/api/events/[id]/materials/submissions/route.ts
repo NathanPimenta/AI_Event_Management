@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { query } from "@/lib/postgres"
-import { verifyAuth } from "@/lib/auth"
+import { verifyAuth, generateDirectLoginLink } from "@/lib/auth"
+import { sendJudgeMaterialSubmissionNotification } from "@/lib/email"
 import { writeFile, mkdir } from "fs/promises"
 import { join } from "path"
 import { existsSync } from "fs"
@@ -154,6 +155,69 @@ export async function POST(
         file.name
       ]
     )
+
+    // Send notifications to assigned judges
+    try {
+      console.log(`📧 Fetching judges assigned to event ${id}`)
+      const judgesResult = await query(
+        `SELECT u.id, u.email, u.name FROM judge_assignments ja
+         JOIN users u ON ja.judge_id = u.id
+         WHERE ja.event_id = $1`,
+        [id]
+      )
+
+      if (judgesResult.rows.length > 0) {
+        console.log(`📧 Found ${judgesResult.rows.length} judges assigned to this event`)
+
+        // Get event details
+        const eventResult = await query(
+          `SELECT id, title FROM events WHERE id = $1`,
+          [id]
+        )
+        const event = eventResult.rows[0]
+
+        // Send email to each judge
+        for (const judge of judgesResult.rows) {
+          try {
+            console.log(`📧 Sending material submission notification to judge: ${judge.email}`)
+
+            // Generate direct login link for the judge
+            const directLoginLink = await generateDirectLoginLink(
+              judge.id,
+              judge.email,
+              judge.name,
+              'judge',
+              `/events/${id}/judge`
+            )
+
+            // Send notification email
+            await sendJudgeMaterialSubmissionNotification(
+              judge.email,
+              judge.name,
+              {
+                title: event.title,
+                id: event.id,
+              },
+              {
+                participantName: session.user.name,
+                participantEmail: session.user.email,
+                materialTitle: materialRequest.title,
+                submissionType: materialRequest.material_type,
+              },
+              directLoginLink
+            )
+          } catch (error) {
+            console.error(`❌ Failed to send email to judge ${judge.email}:`, error)
+            // Continue sending to other judges
+          }
+        }
+      } else {
+        console.log(`⚠️  No judges assigned to event ${id}`)
+      }
+    } catch (emailError) {
+      console.error('❌ Error notifying judges:', emailError)
+      // Don't fail the submission if notification fails
+    }
 
     return NextResponse.json(submissionResult.rows[0], { status: 201 })
   } catch (error) {

@@ -41,6 +41,18 @@ export default function JudgeScoring() {
       if (!response.ok) {
         const errorData = await response.text()
         console.error('API error response:', errorData)
+        // Parse error response if available
+        try {
+          const parsedError = JSON.parse(errorData)
+          if (parsedError.error?.includes('ENOTFOUND') || parsedError.details?.includes('ENOTFOUND')) {
+            console.warn('Database connection issue detected')
+            // Set empty events instead of throwing error
+            setEvents([])
+            return
+          }
+        } catch (parseError) {
+          console.warn('Could not parse error response')
+        }
         throw new Error(`Failed to fetch judge events: ${response.status}`)
       }
       
@@ -49,6 +61,8 @@ export default function JudgeScoring() {
       setEvents(data.events || [])
     } catch (error) {
       console.error('Error fetching judge events:', error)
+      // Set empty events on error to avoid breaking the UI
+      setEvents([])
     } finally {
       setLoading(false)
     }

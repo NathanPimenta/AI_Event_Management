@@ -2,14 +2,14 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -17,6 +17,18 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const { signIn, loading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnTo = searchParams.get('return_to') || '/dashboard'
+  const errorParam = searchParams.get('error')
+
+  // Display error message if coming from magic link with error
+  useEffect(() => {
+    if (errorParam === 'token_expired') {
+      setError('Your magic link has expired. Please log in again.')
+    } else if (errorParam === 'login_failed') {
+      setError('Login failed. Please try again.')
+    }
+  }, [errorParam])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,7 +36,8 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password)
-      router.push("/dashboard")
+      // Redirect to the return_to URL or dashboard
+      router.push(returnTo)
     } catch (err: any) {
       setError(err.message || "Invalid email or password")
     }

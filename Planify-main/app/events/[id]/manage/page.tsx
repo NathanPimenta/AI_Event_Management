@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { Users, Calendar, MessageSquare, Wand2, Download, FileText, UserCheck } from "lucide-react"
+import { Users, Calendar, MessageSquare, Wand2, Download, FileText, UserCheck, QrCode } from "lucide-react"
 import { MaterialRequestsManager } from "@/components/materials/material-requests-manager"
 import { MaterialSubmissionPanel } from "@/components/materials/material-submission-panel"
 import { AttendeeSubmissionReport } from "@/components/materials/attendee-submission-report"
 import { JudgeManagement } from "@/components/materials/judge-management"
 import { ScoreLeaderboard } from "@/components/materials/score-leaderboard"
+import EventQRCode from "@/components/events/event-qrcode"
 
 // Fallback event shape for initial state
 const mockEvent = {
@@ -111,9 +112,68 @@ export default function ManageEventPage() {
     }
   }
 
+  // Helper function to format ISO UTC string to datetime-local input format
+  const formatDateForInput = (isoString: string) => {
+    if (!isoString) return ""
+    const date = new Date(isoString)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
+  // Helper function to convert datetime-local value to ISO UTC string
+  const convertLocalToISO = (dateTimeString: string) => {
+    if (!dateTimeString) return null
+    // dateTimeString is "YYYY-MM-DDTHH:mm" in local time
+    const [datePart, timePart] = dateTimeString.split('T')
+    const [year, month, day] = datePart.split('-')
+    const [hours, minutes] = timePart ? timePart.split(':') : ['00', '00']
+    
+    // Create date in local timezone
+    const localDate = new Date(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hours),
+      parseInt(minutes),
+      0
+    )
+    
+    // Convert to ISO UTC string
+    return localDate.toISOString()
+  }
+
   const handleSaveEvent = async () => {
     try {
       setSavingEvent(true)
+      
+      // Validate that endDate is provided and after date
+      if (!event.date || !event.endDate) {
+        toast({
+          title: "Error",
+          description: "Both start date and end date are required.",
+          variant: "destructive",
+        })
+        setSavingEvent(false)
+        return
+      }
+      
+      const startDate = new Date(event.date)
+      const endDate = new Date(event.endDate)
+      
+      if (endDate <= startDate) {
+        toast({
+          title: "Error",
+          description: "End date must be after start date.",
+          variant: "destructive",
+        })
+        setSavingEvent(false)
+        return
+      }
+
       const response = await fetch(`/api/events/${id}`, {
         method: "PUT",
         headers: {
@@ -122,8 +182,8 @@ export default function ManageEventPage() {
         body: JSON.stringify({
           title: event.title,
           description: event.description,
-          date: event.date,
-          endDate: event.endDate,
+          date: convertLocalToISO(event.date),
+          endDate: convertLocalToISO(event.endDate),
           location: event.location,
           maxAttendees: event.maxAttendees,
         }),
@@ -217,7 +277,7 @@ export default function ManageEventPage() {
       </div>
 
       <Tabs defaultValue="details" className="space-y-4">
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 gap-2">
+        <TabsList className="grid grid-cols-4 md:grid-cols-7 gap-2">
           <TabsTrigger value="details" className="gap-2">
             <Calendar className="h-4 w-4" />
             Details
@@ -237,6 +297,10 @@ export default function ManageEventPage() {
           <TabsTrigger value="queries" className="gap-2">
             <MessageSquare className="h-4 w-4" />
             Queries
+          </TabsTrigger>
+          <TabsTrigger value="qr-code" className="gap-2">
+            <QrCode className="h-4 w-4" />
+            QR Code
           </TabsTrigger>
           <TabsTrigger value="ai-tools" className="gap-2">
             <Wand2 className="h-4 w-4" />
@@ -272,7 +336,7 @@ export default function ManageEventPage() {
                   <Input
                     id="date"
                     type="datetime-local"
-                    value={event.date ? new Date(event.date).toISOString().slice(0, 16) : ""}
+                    value={formatDateForInput(event.date)}
                     onChange={(e) => setEvent({ ...event, date: e.target.value })}
                   />
                 </div>
@@ -282,7 +346,7 @@ export default function ManageEventPage() {
                   <Input
                     id="endDate"
                     type="datetime-local"
-                    value={event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : ""}
+                    value={formatDateForInput(event.endDate)}
                     onChange={(e) => setEvent({ ...event, endDate: e.target.value })}
                   />
                 </div>
@@ -470,6 +534,27 @@ export default function ManageEventPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="qr-code">
+          <Card>
+            <CardHeader>
+              <CardTitle>Event QR Code</CardTitle>
+              <CardDescription>Share this QR code with participants to promote and register for your event</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="max-w-md">
+                <EventQRCode
+                  eventId={id as string}
+                  eventTitle={event.title}
+                  eventDate={event.date ? new Date(event.date || event.startDate).toLocaleDateString() : "TBA"}
+                  size="large"
+                  showDownload={true}
+                  showCopy={true}
+                />
               </div>
             </CardContent>
           </Card>

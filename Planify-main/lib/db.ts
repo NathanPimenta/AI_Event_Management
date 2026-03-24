@@ -282,17 +282,61 @@ export async function createEvent(eventData: any) {
 export async function updateEvent(id: string, data: any) {
   const { title, description, date, endDate, location, maxAttendees } = data
   
+  // Build dynamic UPDATE statement based on provided fields
+  const updates: string[] = []
+  const params: any[] = []
+  let paramIndex = 1
+  
+  if (title !== undefined && title !== null) {
+    updates.push(`title = $${paramIndex}`)
+    params.push(title)
+    paramIndex++
+  }
+  
+  if (description !== undefined && description !== null) {
+    updates.push(`description = $${paramIndex}`)
+    params.push(description)
+    paramIndex++
+  }
+  
+  if (date !== undefined && date !== null) {
+    updates.push(`date = $${paramIndex}`)
+    params.push(date)
+    paramIndex++
+  }
+  
+  if (endDate !== undefined && endDate !== null) {
+    updates.push(`end_date = $${paramIndex}`)
+    params.push(endDate)
+    paramIndex++
+  }
+  
+  if (location !== undefined && location !== null) {
+    updates.push(`location = $${paramIndex}`)
+    params.push(location)
+    paramIndex++
+  }
+  
+  if (maxAttendees !== undefined && maxAttendees !== null) {
+    updates.push(`max_attendees = $${paramIndex}`)
+    params.push(maxAttendees)
+    paramIndex++
+  }
+  
+  if (updates.length === 0) {
+    // No updates provided, return the existing event
+    return getEventById(id)
+  }
+  
+  // Add event id to params
+  params.push(id)
+  
   const result = await query(
     `UPDATE events
-     SET title = COALESCE($1, title),
-         description = COALESCE($2, description),
-         date = COALESCE($3, date),
-         end_date = COALESCE($4, end_date),
-         location = COALESCE($5, location),
-         max_attendees = COALESCE($6, max_attendees)
-     WHERE id = $7
+     SET ${updates.join(', ')}
+     WHERE id = $${paramIndex}
      RETURNING *`,
-    [title, description, date, endDate, location, maxAttendees, id]
+    params
   )
   
   if (result.rows.length === 0) return null

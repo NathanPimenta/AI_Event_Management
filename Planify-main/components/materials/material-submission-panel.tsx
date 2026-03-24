@@ -111,9 +111,10 @@ export function MaterialSubmissionPanel({ eventId }: MaterialSubmissionPanelProp
       setUploadingId(requestId)
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('requestId', requestId)
 
       const response = await fetch(
-        `/api/events/${eventId}/materials/${requestId}/submissions`,
+        `/api/events/${eventId}/materials/submissions`,
         {
           method: 'POST',
           body: formData,

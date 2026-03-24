@@ -1,4 +1,4 @@
-import { jwtVerify } from 'jose'
+import { jwtVerify, SignJWT } from 'jose'
 import { cookies } from 'next/headers'
 
 const secret = new TextEncoder().encode(
@@ -15,6 +15,63 @@ export interface Session {
   }
   iat?: number
   exp?: number
+}
+
+/**
+ * Generate a direct login link for judges (expires in 24 hours)
+ * This creates a special token that can be used to auto-login to the platform
+ */
+export async function generateDirectLoginLink(
+  userId: string,
+  email: string,
+  name: string,
+  role: string,
+  redirectPath: string = '/dashboard'
+): Promise<string> {
+  try {
+    const token = await new SignJWT({
+      user: { id: userId, email, name, role },
+      type: 'direct-login',
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(secret)
+
+    // Create the full login URL with the token
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const loginUrl = `${baseUrl}/api/auth/magic-link?token=${token}&redirect=${encodeURIComponent(redirectPath)}`
+
+    return loginUrl
+  } catch (error) {
+    console.error('Error generating direct login link:', error)
+    throw new Error('Failed to generate login link')
+  }
+}
+
+/**
+ * Verify and process a direct login link token
+ */
+export async function verifyDirectLoginToken(token: string): Promise<Session | null> {
+  try {
+    const verified = await jwtVerify(token, secret)
+    const payload = verified.payload as any
+
+    // Check if this is a direct-login token
+    if (payload.type !== 'direct-login') {
+      console.warn('Invalid token type')
+      return null
+    }
+
+    return {
+      user: payload.user,
+      iat: payload.iat as number,
+      exp: payload.exp as number,
+    }
+  } catch (error) {
+    console.error('Direct login token verification failed:', error)
+    return null
+  }
 }
 
 /**

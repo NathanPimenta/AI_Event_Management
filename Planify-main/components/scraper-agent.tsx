@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,6 +14,11 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Download, Mail, Calendar as CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
 
 type ScraperResult = {
   success?: boolean
@@ -27,6 +32,28 @@ type ScraperResult = {
   metadata?: Record<string, any>
   json_path?: string
   review_document_path?: string | null
+}
+
+type Email = {
+  id: string
+  timestamp: string
+  to: string
+  subject: string
+  body: string
+}
+
+type EmailDraft = {
+  id: string
+  to: string
+  subject: string
+  body: string
+  timestamp: string
+  person_data?: {
+    name?: string
+    title?: string
+    company?: string
+    email?: string
+  }
 }
 
 const EVENT_TYPES = [
@@ -47,11 +74,141 @@ export default function ScraperAgent() {
   const [type, setType] = useState("")
   const [useCustomType, setUseCustomType] = useState(false)
   const [description, setDescription] = useState("")
-  const [date, setDate] = useState("")
+  const [date, setDate] = useState<Date | undefined>(undefined)
   const [location, setLocation] = useState("")
+  const [rolesToSearch, setRolesToSearch] = useState<string[]>(["speakers", "mentors"])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<ScraperResult | null>(null)
+  const [emails, setEmails] = useState<Email[]>([])
+  const [emailsLoading, setEmailsLoading] = useState(false)
+  const [showEmailsSection, setShowEmailsSection] = useState(false)
+  const [drafts, setDrafts] = useState<EmailDraft[]>([])
+  const [draftsLoading, setDraftsLoading] = useState(false)
+  const [showDraftsSection, setShowDraftsSection] = useState(false)
+
+  const ROLE_OPTIONS = [
+    { id: "speakers", label: "Speakers" },
+    { id: "mentors", label: "Mentors (can be judges)" },
+    { id: "sponsors", label: "Sponsors" },
+  ]
+
+  useEffect(() => {
+    // Load emails and drafts on component mount
+    fetchEmails()
+    fetchDrafts()
+  }, [])
+
+  async function fetchEmails() {
+    setEmailsLoading(true)
+    try {
+      const res = await fetch("/api/scraper/emails")
+      const data = await res.json()
+      if (data.success) {
+        setEmails(data.emails || [])
+        if (data.emails?.length > 0) {
+          setShowEmailsSection(true)
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch emails:", e)
+    } finally {
+      setEmailsLoading(false)
+    }
+  }
+
+  async function fetchDrafts() {
+    setDraftsLoading(true)
+    try {
+      const res = await fetch("/api/scraper/email-drafts")
+      const data = await res.json()
+      if (data.success) {
+        setDrafts(data.drafts || [])
+        if (data.drafts?.length > 0) {
+          setShowDraftsSection(true)
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch drafts:", e)
+    } finally {
+      setDraftsLoading(false)
+    }
+  }
+
+  function toggleRole(roleId: string) {
+    setRolesToSearch((prev) =>
+      prev.includes(roleId) ? prev.filter((r) => r !== roleId) : [...prev, roleId]
+    )
+  }
+
+  function downloadEmail(email: Email) {
+    const content = `To: ${email.to}
+Subject: ${email.subject}
+Timestamp: ${email.timestamp}
+
+${email.body}`
+
+    const element = document.createElement("a")
+    element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(content))
+    element.setAttribute("download", `email_${email.id}_${Date.now()}.txt`)
+    element.style.display = "none"
+    document.body.appendChild(element)
+    element.click()
+    document.body.removeChild(element)
+  }
+
+  function downloadAllEmails() {
+    const allContent = emails
+      .map((email) => `To: ${email.to}\nSubject: ${email.subject}\nTimestamp: ${email.timestamp}\n\n${email.body}`)
+      .join("\n\n" + "=".repeat(80) + "\n\n")
+
+    const element = document.createElement("a")
+    element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(allContent))
+    element.setAttribute("download", `all_emails_${Date.now()}.txt`)
+    element.style.display = "none"
+    document.body.appendChild(element)
+    element.click()
+    document.body.removeChild(element)
+  }
+
+  function downloadDraft(draft: EmailDraft) {
+    const personInfo = draft.person_data
+      ? `\nPerson: ${draft.person_data.name || "Unknown"}\nTitle: ${draft.person_data.title || "N/A"}\nCompany: ${draft.person_data.company || "N/A"}`
+      : ""
+    
+    const content = `To: ${draft.to}
+Subject: ${draft.subject}
+Timestamp: ${draft.timestamp}${personInfo}
+
+${draft.body}`
+
+    const element = document.createElement("a")
+    element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(content))
+    element.setAttribute("download", `draft_${draft.id}_${Date.now()}.txt`)
+    element.style.display = "none"
+    document.body.appendChild(element)
+    element.click()
+    document.body.removeChild(element)
+  }
+
+  function downloadAllDrafts() {
+    const allContent = drafts
+      .map((draft) => {
+        const personInfo = draft.person_data
+          ? `Person: ${draft.person_data.name || "Unknown"}\nTitle: ${draft.person_data.title || "N/A"}\nCompany: ${draft.person_data.company || "N/A"}\n`
+          : ""
+        return `To: ${draft.to}\nSubject: ${draft.subject}\nTimestamp: ${draft.timestamp}\n${personInfo}\n${draft.body}`
+      })
+      .join("\n\n" + "=".repeat(80) + "\n\n")
+
+    const element = document.createElement("a")
+    element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(allContent))
+    element.setAttribute("download", `all_drafts_${Date.now()}.txt`)
+    element.style.display = "none"
+    document.body.appendChild(element)
+    element.click()
+    document.body.removeChild(element)
+  }
 
   async function handleRun() {
     setError(null)
@@ -62,31 +219,64 @@ export default function ScraperAgent() {
       return
     }
 
+    if (rolesToSearch.length === 0) {
+      setError("Please select at least one role to search for.")
+      return
+    }
+
     setLoading(true)
     try {
       const payload = {
         name: name.trim(),
         type: (type.trim() && type !== "none") ? type.trim() : undefined,
         description: description.trim() || undefined,
-        date: date.trim() || undefined,
+        date: date ? format(date, "yyyy-MM-dd") : undefined,
         location: location.trim() || undefined,
+        roles_to_search: rolesToSearch,
       }
 
-      const res = await fetch("/api/scraper", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
+      // Use AbortController with 12 minute timeout (720 seconds)
+      // Web scraping can take a while
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 720000)
 
-      const data: ScraperResult = await res.json().catch(() => ({}))
+      try {
+        const res = await fetch("/api/scraper", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        })
 
-      if (!res.ok) {
-        throw new Error(data?.message || (data as any)?.detail || (data as any)?.error || `Status ${res.status}`)
+        clearTimeout(timeoutId)
+
+        const data: ScraperResult = await res.json().catch(() => ({}))
+
+        if (!res.ok) {
+          const errorMessage =
+            data?.message ||
+            (data as any)?.detail ||
+            (data as any)?.error ||
+            `Request failed with status ${res.status}`
+          throw new Error(errorMessage)
+        }
+
+        setResult(data)
+        // Refresh emails and drafts after running scraper
+        await fetchEmails()
+        await fetchDrafts()
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        if (fetchError.name === "AbortError") {
+          throw new Error(
+            "Request timed out. The scraper took too long to complete. This might happen if many results were found. Please try again or adjust your search parameters."
+          )
+        }
+        throw fetchError
       }
-
-      setResult(data)
     } catch (e: any) {
-      setError(e?.message || "Failed to run scraper agent.")
+      console.error("Scraper error:", e)
+      setError(e?.message || "Failed to run scraper agent. Please check the backend is running on port 8001.")
     } finally {
       setLoading(false)
     }
@@ -169,7 +359,28 @@ export default function ScraperAgent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Date</label>
-              <Input placeholder="e.g. 2025-10-15" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    disabled={(date) =>
+                      date < new Date(new Date().setHours(0, 0, 0, 0))
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Location</label>
@@ -178,6 +389,25 @@ export default function ScraperAgent() {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Roles to Search For</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {ROLE_OPTIONS.map((role) => (
+                <button
+                  key={role.id}
+                  onClick={() => toggleRole(role.id)}
+                  className={`px-3 py-2 rounded-md border transition-colors text-sm font-medium ${
+                    rolesToSearch.includes(role.id)
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border hover:bg-muted"
+                  }`}
+                >
+                  {role.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -191,27 +421,229 @@ export default function ScraperAgent() {
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
             <Button onClick={handleRun} disabled={loading}>
-              {loading ? "Running..." : "Run Scraper Agent"}
+              {loading ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Scraping in progress...
+                </>
+              ) : (
+                "Run Scraper Agent"
+              )}
             </Button>
           </div>
 
-          {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+          {loading && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-900 font-medium">⏳ Scraper is running...</p>
+              <p className="text-xs text-blue-700 mt-1">
+                This may take several minutes as we search for candidates, extract information, and prepare emails.
+              </p>
+              <p className="text-xs text-blue-700 mt-2">Please don't close this window.</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-900 font-medium">❌ Error</p>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-8 border-amber-200 bg-amber-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            📝 Email Drafts
+          </CardTitle>
+          <CardDescription>
+            Email drafts generated in the latest scraper run. {drafts.length} draft(s) found.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {draftsLoading ? (
+            <div className="text-center text-sm text-muted-foreground py-8">
+              <p className="animate-pulse">Loading drafts...</p>
+            </div>
+          ) : drafts.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground py-8">
+              <p>No drafts found yet. Run the scraper agent to generate drafts.</p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-6 flex flex-wrap gap-2">
+                <Button
+                  onClick={downloadAllDrafts}
+                  variant="default"
+                  size="sm"
+                  className="gap-2 bg-amber-600 hover:bg-amber-700"
+                  type="button"
+                >
+                  <Download className="h-4 w-4" />
+                  Download All {drafts.length} Drafts
+                </Button>
+              </div>
+                <Accordion type="single" collapsible className="w-full">
+                  {drafts.map((draft) => (
+                    <AccordionItem key={draft.id} value={draft.id}>
+                      <AccordionTrigger>
+                        <div className="flex flex-col items-start flex-1 text-left">
+                          <div className="font-medium">{draft.subject}</div>
+                          <div className="text-sm text-muted-foreground">
+                            To: {draft.to}
+                            {draft.person_data?.name && ` (${draft.person_data.name})`}
+                            {draft.person_data?.title && ` - ${draft.person_data.title}`}
+                            {draft.person_data?.company && ` @ ${draft.person_data.company}`}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {draft.timestamp}
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-4">
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="font-medium">To:</span> {draft.to}
+                            </div>
+                            <div>
+                              <span className="font-medium">Subject:</span> {draft.subject}
+                            </div>
+                            {draft.person_data?.name && (
+                              <div>
+                                <span className="font-medium">Person:</span> {draft.person_data.name}
+                              </div>
+                            )}
+                            {draft.person_data?.title && (
+                              <div>
+                                <span className="font-medium">Title:</span> {draft.person_data.title}
+                              </div>
+                            )}
+                            {draft.person_data?.company && (
+                              <div>
+                                <span className="font-medium">Company:</span> {draft.person_data.company}
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-medium">Created:</span> {draft.timestamp}
+                            </div>
+                          </div>
+                          <div className="bg-white rounded-lg p-4 whitespace-pre-wrap text-sm font-mono max-h-96 overflow-y-auto border">
+                            {draft.body}
+                          </div>
+                        <Button
+                          onClick={() => downloadDraft(draft)}
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 hover:bg-amber-100"
+                          type="button"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download This Draft
+                        </Button>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </>
+            )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Sent Emails
+          </CardTitle>
+          <CardDescription>
+            View all emails generated and sent by the scraper agent. {emails.length} email(s) found.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {emailsLoading ? (
+            <div className="text-center text-sm text-muted-foreground py-8">
+              <p className="animate-pulse">Loading emails...</p>
+            </div>
+          ) : emails.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground py-8">
+              <p>No emails found yet. Run the scraper agent to generate emails.</p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-6 flex flex-wrap gap-2">
+                <Button
+                  onClick={downloadAllEmails}
+                  variant="default"
+                  size="sm"
+                  className="gap-2 bg-blue-600 hover:bg-blue-700"
+                  type="button"
+                >
+                  <Download className="h-4 w-4" />
+                  Download All {emails.length} Emails
+                </Button>
+              </div>
+                <Accordion type="single" collapsible className="w-full">
+                  {emails.map((email, index) => (
+                    <AccordionItem key={email.id} value={email.id}>
+                      <AccordionTrigger>
+                        <div className="flex flex-col items-start flex-1 text-left">
+                          <div className="font-medium">{email.subject}</div>
+                          <div className="text-sm text-muted-foreground">
+                            To: {email.to} • {email.timestamp}
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <div className="text-sm">
+                              <span className="font-medium">To:</span> {email.to}
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-medium">Subject:</span> {email.subject}
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-medium">Sent:</span> {email.timestamp}
+                            </div>
+                          </div>
+                          <div className="bg-muted rounded-lg p-4 whitespace-pre-wrap text-sm font-mono max-h-96 overflow-y-auto">
+                            {email.body}
+                          </div>
+                        <Button
+                          onClick={() => downloadEmail(email)}
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 hover:bg-blue-100"
+                          type="button"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download This Email
+                        </Button>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </>
+            )}
         </CardContent>
       </Card>
 
       {result && (
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>Agent Output</CardTitle>
+            <CardTitle>✅ Scraper Completed Successfully</CardTitle>
             <CardDescription>
-              Review the classification and candidate lists. Use the generated Markdown document for deep manual review.
+              {result.message || "The scraper has finished processing. Review the results below."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {result.event_classification && (
-              <div className="border rounded-lg p-4">
+              <div className="border rounded-lg p-4 bg-green-50 border-green-200">
                 <h3 className="font-semibold mb-2">Event Classification</h3>
                 <p className="text-sm">
                   <span className="font-medium">Type:</span> {result.event_classification.event_type || "N/A"}

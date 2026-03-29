@@ -1,11 +1,9 @@
 """Email outreach agent stub for future implementation."""
 
 from typing import List, Dict, Any, Protocol, Optional
-
-
-
 import os
 import time
+import json
 
 class EmailTransport(Protocol):
     """Interface for email sending."""
@@ -17,8 +15,16 @@ class EmailTransport(Protocol):
 class FileLogTransport:
     """Simulates email sending by logging to a file."""
     
-    def __init__(self, log_path: str = "sent_emails.log"):
-        self.log_path = log_path
+    def __init__(self, log_path: str = None, drafts_path: str = None):
+        # Save files in scraper_module directory
+        import os
+        scraper_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+        self.log_path = log_path or os.path.join(scraper_dir, "sent_emails.log")
+        self.drafts_path = drafts_path or os.path.join(scraper_dir, "email_drafts.json")
+        # Create one session-specific drafts file that stays consistent for this session
+        self.session_drafts_file = os.path.join(scraper_dir, f"email_drafts_session_{time.strftime('%Y%m%d_%H%M%S')}.json")
+        self.latest_file = os.path.join(scraper_dir, "email_drafts_latest.json")
         
     def send_email(self, to_address: str, subject: str, body: str) -> None:
         """Log the email to a file."""
@@ -34,23 +40,73 @@ class FileLogTransport:
             f.write(entry)
         print(f"   📧 Email 'sent' to {to_address} (logged to {self.log_path})")
 
+    def save_draft(self, to_address: str, subject: str, body: str, person_data: Dict[str, Any] = None) -> None:
+        """Save draft email to JSON file for the current session."""
+        draft_entry = {
+            "to": to_address,
+            "subject": subject,
+            "body": body,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "person_data": person_data or {}
+        }
+        
+        # Read existing drafts from session file
+        drafts = []
+        if os.path.exists(self.session_drafts_file):
+            try:
+                with open(self.session_drafts_file, 'r') as f:
+                    drafts = json.load(f)
+            except:
+                drafts = []
+        
+        # Add new draft
+        drafts.append(draft_entry)
+        
+        # Write back to session file
+        with open(self.session_drafts_file, 'w') as f:
+            json.dump(drafts, f, indent=2)
+        
+        # Also save to a "latest" file for quick access
+        with open(self.latest_file, 'w') as f:
+            json.dump(drafts, f, indent=2)
+        
+        print(f"   💾 Draft saved for {to_address}")
 
-def build_outreach_email(person: Dict[str, Any], event_name: str) -> Dict[str, str]:
+
+def build_outreach_email(person: Dict[str, Any], event_name: str, role: str = "speaker") -> Dict[str, str]:
     """
-    Build outreach email for a person.
+    Build outreach email for a person with role-specific customization.
     
     Args:
         person: Person data dict
         event_name: Event name
+        role: Role type (speaker, mentor, sponsor)
     
     Returns:
         Dict with 'subject' and 'body'
     """
     name = person.get("name") or "there"
-    role = person.get("title") or "Expert"
+    title = person.get("title") or "Expert"
     company = person.get("company") or ""
     
-    subject = f"Speaker Invitation: {event_name}"
+    # Role-specific templates
+    role = role.lower().strip()
+    if role == "speaker":
+        role_text = "speaker"
+        invitation_text = "join us as a speaker at our upcoming event"
+        subject = f"Speaker Invitation: {event_name}"
+    elif role == "mentor":
+        role_text = "mentor/judge"
+        invitation_text = "be a mentor or judge at our upcoming event"
+        subject = f"Mentor & Judge Invitation: {event_name}"
+    elif role == "sponsor":
+        role_text = "sponsor/partner"
+        invitation_text = "be a sponsor/partner for our upcoming event"
+        subject = f"Sponsorship Opportunity: {event_name}"
+    else:
+        role_text = role
+        invitation_text = f"participate as a {role} in our upcoming event"
+        subject = f"{role.title()} Invitation: {event_name}"
     
     body = f"""Hi {name},
 
@@ -58,7 +114,7 @@ I hope this email finds you well.
 
 I am reaching out from the organizing team of {event_name}. We have been following your work{f' at {company}' if company else ''} and are very impressed by your contributions to the field.
 
-We would be honored to have you join us as a speaker/mentor for our upcoming event. Your expertise would be invaluable to our attendees.
+We would be honored to have you {invitation_text}. Your expertise as a {role_text} would be invaluable to our attendees and event success.
 
 Could you please let us know if you would be open to a brief conversation about this opportunity?
 
@@ -73,16 +129,19 @@ The {event_name} Team
 def send_outreach_batch(
     approved_people: List[Dict[str, Any]],
     event_name: str,
-    transport: EmailTransport,
+    transport: FileLogTransport,
+    role: str = "speaker",
     override_email: Optional[str] = None,
 ) -> int:
     """
     Send outreach emails to approved people.
+    Also saves drafts for review before sending.
     
     Args:
         approved_people: List of approved people
         event_name: Event name
         transport: Email transport implementation
+        role: Role type (speaker, mentor, sponsor)
         override_email: Override recipient (for testing)
     
     Returns:
@@ -90,7 +149,7 @@ def send_outreach_batch(
     """
     sent = 0
     
-    print(f"   📧 Starting email batch for {len(approved_people)} candidates for {event_name}")
+    print(f"   📧 Starting email batch for {len(approved_people)} {role} candidates for {event_name}")
     
     for person in approved_people:
         email = override_email or person.get("email")
@@ -100,7 +159,13 @@ def send_outreach_batch(
             print(f"   ⚠️ Skipping {person.get('name', 'Unknown')}: No valid email")
             continue
         
-        msg = build_outreach_email(person, event_name)
+        msg = build_outreach_email(person, event_name, role)
+        
+        # Save draft before sending
+        try:
+            transport.save_draft(email, msg["subject"], msg["body"], person)
+        except Exception as e:
+            print(f"   ⚠️ Failed to save draft for {email}: {e}")
         
         try:
             transport.send_email(email, msg["subject"], msg["body"])

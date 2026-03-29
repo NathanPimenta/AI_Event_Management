@@ -29,6 +29,7 @@ class EventDetails(BaseModel):
     date: Optional[str] = None
     location: Optional[str] = None
     url: Optional[str] = None  # Optional direct URL to event website
+    roles_to_search: Optional[list] = None  # e.g., ["speakers", "mentors", "judges"]
 
 # Legacy model for backward compatibility
 class AgentRequest(BaseModel):
@@ -60,8 +61,9 @@ async def run_agentic_scraper_endpoint(event_details: EventDetails):
         agent = ReasoningAgent() # uses Ollama
         email_transport = FileLogTransport()
         
-        # Default roles targeted
-        roles = ["speakers", "judges", "mentors", "sponsors"]
+        # Use provided roles or default
+        roles = event_details.roles_to_search or ["speakers", "mentors", "sponsors"]
+        roles = [r.lower() for r in roles if r]  # Normalize
         
         results = {}
         total_emails_sent = 0
@@ -106,7 +108,7 @@ async def run_agentic_scraper_endpoint(event_details: EventDetails):
                                 html = summary 
                             
                             # 4. EXTRACT: Agent logic
-                            extracted = agent.extract_from_html(html, role, url)
+                            extracted = agent.extract_from_html(html, role, url, event_dict.get("location", ""))
                             if extracted:
                                 print(f"   ✨ Found {len(extracted)} candidates on {url}")
                                 role_candidates.extend(extracted)
@@ -130,7 +132,7 @@ async def run_agentic_scraper_endpoint(event_details: EventDetails):
             
             # 5. OUTREACH: Send Emails
             if unique_candidates:
-                sent = send_outreach_batch(unique_candidates, event_name, email_transport)
+                sent = send_outreach_batch(unique_candidates, event_name, email_transport, role=role)
                 total_emails_sent += sent
                 
         # Save results

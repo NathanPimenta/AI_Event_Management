@@ -120,7 +120,7 @@ export async function notifyNewEvent(eventId: string, createdByUserId: string): 
     console.log(`🔍 Fetching event details for ${eventId}`)
     const event = await getEventDetails(eventId)
     if (!event) {
-      console.warn(`❌ Event ${eventId} not found`)
+      console.warn(` Event ${eventId} not found`)
       return false
     }
 
@@ -130,7 +130,7 @@ export async function notifyNewEvent(eventId: string, createdByUserId: string): 
     const community = await getCommunityDetails(event.communityId)
 
     if (!admin || !community) {
-      console.warn('❌ Admin or community not found', { admin: !!admin, community: !!community })
+      console.warn(' Admin or community not found', { admin: !!admin, community: !!community })
       return false
     }
 
@@ -165,7 +165,7 @@ export async function notifyNewEvent(eventId: string, createdByUserId: string): 
     console.log(`✅ Notification result: ${result}`)
     return result
   } catch (error) {
-    console.error('❌ Error notifying new event:', error)
+    console.error(' Error notifying new event:', error)
     return false
   }
 }

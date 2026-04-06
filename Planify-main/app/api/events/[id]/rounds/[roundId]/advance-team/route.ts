@@ -121,7 +121,7 @@ export async function POST(
         )
       }
     } catch (emailError) {
-      console.error('❌ Failed to send advancement notification:', emailError)
+      console.error(' Failed to send advancement notification:', emailError)
     }
 
     return NextResponse.json({

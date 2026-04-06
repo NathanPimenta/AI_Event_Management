@@ -87,7 +87,7 @@ def load_data() -> Optional[Dict[str, Any]]:
     print("path = ",Path.cwd())
     # DATA_DIR = "/home/nathanpimenta/AI_Event_Management/report_generator/data/"
     if not DATA_DIR.exists():
-        print(f"❌ ERROR: Event data directory not found: {DATA_DIR}")
+        print(f" ERROR: Event data directory not found: {DATA_DIR}")
         print(f"💡 TIP: Create the directory and add your event data files.")
         return None
     
@@ -110,7 +110,7 @@ def load_data() -> Optional[Dict[str, Any]]:
         )
         print("✓ Core event data loaded successfully\n")
     except DataLoadError as e:
-        print(f"❌ ERROR: {e}")
+        print(f" ERROR: {e}")
         print("⚠️  Cannot proceed without required event data. Aborting.\n")
         return None
     
@@ -143,4 +143,4 @@ if __name__ == "__main__":
         print("\n✅ Data Ingestor Test: PASSED")
         print(f"Available datasets: {list(loaded_data.keys())}")
     else:
-        print("\n❌ Data Ingestor Test: FAILED")
+        print("\n Data Ingestor Test: FAILED")

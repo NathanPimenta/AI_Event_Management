@@ -95,7 +95,7 @@ export async function POST(
         console.warn(`⚠️ Failed to send registration email to ${email}`)
       }
     } catch (emailError) {
-      console.error('❌ Error sending registration email:', emailError)
+      console.error(' Error sending registration email:', emailError)
       // Don't fail the registration if email fails, just log it
     }
 

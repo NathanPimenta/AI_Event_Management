@@ -74,7 +74,7 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
     console.log(`✅ Email sent successfully: ${info.messageId}`)
     return true
   } catch (error) {
-    console.error('❌ Email sending failed:')
+    console.error(' Email sending failed:')
     if (error instanceof Error) {
       console.error('Error message:', error.message)
       console.error('Error code:', (error as any).code)
@@ -254,7 +254,7 @@ export async function sendEventCancellationNotification(
       <body>
         <div class="container">
           <div class="header">
-            <h1>❌ Event Cancelled: ${eventData.title}</h1>
+            <h1> Event Cancelled: ${eventData.title}</h1>
           </div>
           
           <div class="content">
@@ -281,7 +281,7 @@ export async function sendEventCancellationNotification(
 
   return sendEmail({
     to: recipientEmails,
-    subject: `❌ Event Cancelled: ${eventData.title}`,
+    subject: ` Event Cancelled: ${eventData.title}`,
     html,
     text: `Event Cancelled: ${eventData.title}\n\nReason: ${reason}`,
   })

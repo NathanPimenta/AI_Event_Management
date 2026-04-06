@@ -207,7 +207,7 @@ export async function POST(
               directLoginLink
             )
           } catch (error) {
-            console.error(`❌ Failed to send email to judge ${judge.email}:`, error)
+            console.error(` Failed to send email to judge ${judge.email}:`, error)
             // Continue sending to other judges
           }
         }
@@ -215,7 +215,7 @@ export async function POST(
         console.log(`⚠️  No judges assigned to event ${id}`)
       }
     } catch (emailError) {
-      console.error('❌ Error notifying judges:', emailError)
+      console.error(' Error notifying judges:', emailError)
       // Don't fail the submission if notification fails
     }
 

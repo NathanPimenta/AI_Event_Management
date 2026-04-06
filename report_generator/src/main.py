@@ -76,7 +76,7 @@ class EventReportGenerator:
         data = data_ingestor.load_data()
         
         if data is None:
-            print("\n❌ Failed to load event data. Cannot generate report.")
+            print("\n Failed to load event data. Cannot generate report.")
             return None
         
         return data
@@ -401,7 +401,7 @@ class EventReportGenerator:
             print("\n\n⚠️  Report generation cancelled by user.")
             return False
         except Exception as e:
-            print(f"\n❌ ERROR during report generation: {e}")
+            print(f"\n ERROR during report generation: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -444,7 +444,7 @@ def main():
         print("  4. Archive for institutional records\n")
     else:
         print("="*70)
-        print("❌ Report generation failed.")
+        print(" Report generation failed.")
         print("="*70)
         print("\n🔍 Troubleshooting:")
         print("  1. Check that all required data files exist")

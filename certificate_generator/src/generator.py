@@ -102,7 +102,7 @@ class CertificateGenerator:
         try:
             participants_df = pd.read_csv(self.config["csv_path"])
         except FileNotFoundError:
-            print(f"❌ ERROR: Participants CSV not found at {self.config['csv_path']}")
+            print(f" ERROR: Participants CSV not found at {self.config['csv_path']}")
             return []
 
         # --- AI Color Generation ---

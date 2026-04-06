@@ -63,7 +63,7 @@ def create_reel_from_images(image_paths, music_path=None, output_path="output/re
             print(f"   - Skipping {os.path.basename(img_path)} due to error: {e}")
 
     if not clips:
-        print("❌ No valid images found. Exiting.")
+        print(" No valid images found. Exiting.")
         return
 
     final_clip = concatenate_videoclips(clips, method="compose")

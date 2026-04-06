@@ -342,7 +342,7 @@ async function seed() {
 
   } catch (error) {
     await client.query('ROLLBACK')
-    console.error('❌ Seeding failed:', error)
+    console.error(' Seeding failed:', error)
     throw error
   } finally {
     client.release()

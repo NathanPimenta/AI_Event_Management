@@ -315,7 +315,7 @@ class TeamFormationGA:
                 json.dump(output_data, f, indent=2)
             print(f"✅ Best team assignment saved to '{filepath}'")
         except Exception as e:
-            print(f"❌ ERROR saving result to '{filepath}': {e}")
+            print(f" ERROR saving result to '{filepath}': {e}")
 
 
 # Example Usage

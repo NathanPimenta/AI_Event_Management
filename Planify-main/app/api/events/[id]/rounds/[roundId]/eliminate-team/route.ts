@@ -93,7 +93,7 @@ export async function POST(
         )
       }
     } catch (emailError) {
-      console.error('❌ Failed to send elimination notification:', emailError)
+      console.error(' Failed to send elimination notification:', emailError)
     }
 
     return NextResponse.json({

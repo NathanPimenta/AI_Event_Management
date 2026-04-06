@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
     if (!token) {
-      console.log('❌ Missing login token, redirecting to login')
+      console.log(' Missing login token, redirecting to login')
       // Redirect to login page with return_to parameter
       const loginUrl = new URL('/login', baseUrl)
       loginUrl.searchParams.set('return_to', redirect)
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const session = await verifyDirectLoginToken(token)
 
     if (!session) {
-      console.log('❌ Invalid or expired token, redirecting to login')
+      console.log(' Invalid or expired token, redirecting to login')
       // Token is invalid or expired - redirect to login with return_to parameter
       const loginUrl = new URL('/login', baseUrl)
       loginUrl.searchParams.set('return_to', redirect)

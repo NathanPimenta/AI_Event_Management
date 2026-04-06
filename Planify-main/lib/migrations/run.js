@@ -52,7 +52,7 @@ async function runMigrations() {
     console.log('✅ All migrations completed successfully!')
     process.exit(0)
   } catch (error) {
-    console.error('❌ Migration failed:', error)
+    console.error(' Migration failed:', error)
     process.exit(1)
   } finally {
     client.release()

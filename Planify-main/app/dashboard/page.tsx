@@ -87,7 +87,7 @@ export default function DashboardPage() {
       </div>
 
       <Tabs defaultValue="communities" className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <TabsList className="grid grid-cols-3 md:grid-cols-5 gap-2">
           <TabsTrigger value="communities" className="gap-2">
             <Users className="h-4 w-4" />
             Communities

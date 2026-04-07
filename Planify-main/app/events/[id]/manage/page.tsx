@@ -277,23 +277,27 @@ export default function ManageEventPage() {
       </div>
 
       <Tabs defaultValue="details" className="space-y-4">
-        <TabsList className="grid grid-cols-4 md:grid-cols-7 gap-2">
+        <TabsList className={`grid gap-2 ${user?.role === 'community_admin' ? 'grid-cols-4 md:grid-cols-7' : 'grid-cols-2 md:grid-cols-4'}`}>
           <TabsTrigger value="details" className="gap-2">
             <Calendar className="h-4 w-4" />
             Details
           </TabsTrigger>
-          <TabsTrigger value="attendees" className="gap-2">
-            <Users className="h-4 w-4" />
-            Attendees
-          </TabsTrigger>
+          {user?.role === 'community_admin' && (
+            <TabsTrigger value="attendees" className="gap-2">
+              <Users className="h-4 w-4" />
+              Attendees
+            </TabsTrigger>
+          )}
           <TabsTrigger value="materials" className="gap-2">
             <FileText className="h-4 w-4" />
             Materials
           </TabsTrigger>
-          <TabsTrigger value="judges" className="gap-2">
-            <UserCheck className="h-4 w-4" />
-            Judges
-          </TabsTrigger>
+          {user?.role === 'community_admin' && (
+            <TabsTrigger value="judges" className="gap-2">
+              <UserCheck className="h-4 w-4" />
+              Judges
+            </TabsTrigger>
+          )}
           <TabsTrigger value="queries" className="gap-2">
             <MessageSquare className="h-4 w-4" />
             Queries
@@ -302,85 +306,133 @@ export default function ManageEventPage() {
             <QrCode className="h-4 w-4" />
             QR Code
           </TabsTrigger>
-          <TabsTrigger value="ai-tools" className="gap-2">
-            <Wand2 className="h-4 w-4" />
-            AI Tools
-          </TabsTrigger>
+          {user?.role === 'community_admin' && (
+            <TabsTrigger value="ai-tools" className="gap-2">
+              <Wand2 className="h-4 w-4" />
+              AI Tools
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="details">
           <Card>
             <CardHeader>
               <CardTitle>Event Details</CardTitle>
-              <CardDescription>Update your event information</CardDescription>
+              <CardDescription>
+                {user?.role === 'community_admin' ? 'Update your event information' : 'View event information'}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Event Title</Label>
-                <Input id="title" value={event.title} onChange={(e) => setEvent({ ...event, title: e.target.value })} />
-              </div>
+              {user?.role === 'community_admin' ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Event Title</Label>
+                    <Input id="title" value={event.title} onChange={(e) => setEvent({ ...event, title: e.target.value })} />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={event.description}
-                  onChange={(e) => setEvent({ ...event, description: e.target.value })}
-                  rows={4}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={event.description}
+                      onChange={(e) => setEvent({ ...event, description: e.target.value })}
+                      rows={4}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="datetime-local"
-                    value={formatDateForInput(event.date)}
-                    onChange={(e) => setEvent({ ...event, date: e.target.value })}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date">Date</Label>
+                      <Input
+                        id="date"
+                        type="datetime-local"
+                        value={formatDateForInput(event.date)}
+                        onChange={(e) => setEvent({ ...event, date: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="endDate">End Date</Label>
+                      <Input
+                        id="endDate"
+                        type="datetime-local"
+                        value={formatDateForInput(event.endDate)}
+                        onChange={(e) => setEvent({ ...event, endDate: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={event.location}
+                      onChange={(e) => setEvent({ ...event, location: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="maxAttendees">Maximum Attendees</Label>
+                      <Input
+                        id="maxAttendees"
+                        type="number"
+                        value={event.maxAttendees}
+                        onChange={(e) => setEvent({ ...event, maxAttendees: Number.parseInt(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Event Title</Label>
+                    <p className="text-lg font-semibold">{event.title}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Description</Label>
+                    <p className="text-sm whitespace-pre-wrap">{event.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Start Date</Label>
+                      <p className="text-sm font-medium">
+                        {event.date ? new Date(event.date).toLocaleString() : 'Not set'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">End Date</Label>
+                      <p className="text-sm font-medium">
+                        {event.endDate ? new Date(event.endDate).toLocaleString() : 'Not set'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Location</Label>
+                    <p className="text-sm font-medium">{event.location || 'Not specified'}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Maximum Attendees</Label>
+                    <p className="text-sm font-medium">{event.maxAttendees || 'Unlimited'}</p>
+                  </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input
-                    id="endDate"
-                    type="datetime-local"
-                    value={formatDateForInput(event.endDate)}
-                    onChange={(e) => setEvent({ ...event, endDate: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  value={event.location}
-                  onChange={(e) => setEvent({ ...event, location: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="maxAttendees">Maximum Attendees</Label>
-                  <Input
-                    id="maxAttendees"
-                    type="number"
-                    value={event.maxAttendees}
-                    onChange={(e) => setEvent({ ...event, maxAttendees: Number.parseInt(e.target.value) })}
-                  />
-                </div>
-              </div>
+              )}
             </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-              <Button variant="outline" onClick={handleCancelEdit} disabled={savingEvent}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveEvent} disabled={savingEvent}>
-                {savingEvent ? "Saving..." : "Save Changes"}
-              </Button>
-            </CardFooter>
+            {user?.role === 'community_admin' && (
+              <CardFooter className="flex justify-end gap-2">
+                <Button variant="outline" onClick={handleCancelEdit} disabled={savingEvent}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEvent} disabled={savingEvent}>
+                  {savingEvent ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         </TabsContent>
 

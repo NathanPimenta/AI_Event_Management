@@ -1,4 +1,5 @@
 import sys
+import logging
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,10 @@ import json
 import uuid
 import subprocess
 import csv
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Add the src directory to Python path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -32,7 +37,10 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR = ROOT_DIR / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Clear data directory on startup
+UPLOADS_DIR = ROOT_DIR / "static" / "uploads"
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Only clear data/ on startup (non-image CSVs/JSONs); static/uploads persists across restarts
 for file in DATA_DIR.glob('*'):
     if file.is_file():
         file.unlink()
@@ -50,7 +58,16 @@ async def upload_file(file_type: str, file: UploadFile = File(...)):
     safe_name = Path(file_type).name
     file_ext = file.filename.split('.')[-1].lower() if file.filename and '.' in file.filename else ''
     
-    file_path = DATA_DIR / safe_name
+    # Use Flask server logic: save images to static/uploads/
+    valid_image_exts = ['png', 'jpg', 'jpeg', 'gif', 'webp']
+    if any(safe_name.lower().endswith(f".{ext}") for ext in valid_image_exts) or file_ext in valid_image_exts:
+        upload_dir = ROOT_DIR / "static" / "uploads"
+    else:
+        upload_dir = DATA_DIR
+        
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    file_path = upload_dir / safe_name
+    
     try:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -79,54 +96,72 @@ async def generate_event_report(payload: dict):
             payload["registration"] = {}
         payload["registration"]["students"] = students
 
-        # Resolve image paths to DATA_DIR with comprehensive validation
+        # Resolve image paths to static/uploads/ with comprehensive validation
         def resolve_img(filename_base_names: list):
             """Given a list of base names (without extension), look for any matching image"""
-            valid_extensions = ['.png', '.jpg', '.jpeg']
+            valid_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+            search_dir = UPLOADS_DIR
+
+            # Try exact matches first (including extensions)
+            for base_name in filename_base_names:
+                if any(base_name.endswith(ext) for ext in valid_extensions):
+                    path = search_dir / base_name
+                    if path.exists():
+                        result = str(path)
+                        logger.info(f"✅ Image found (exact): {base_name} → {result}")
+                        return result
+
+            # Then try with extensions
             for base_name in filename_base_names:
                 for ext in valid_extensions:
                     filename = f"{base_name}{ext}"
-                    path = DATA_DIR / filename
+                    path = search_dir / filename
                     if path.exists():
                         result = str(path)
-                        print(f"✅ Image found: {filename} → {result}")
+                        logger.info(f"✅ Image found: {filename} → {result}")
                         return result
-            # Try matching exactly what was passed in case it has an extension already
-            for base_name in filename_base_names:
-                if any(base_name.endswith(ext) for ext in valid_extensions):
-                    path = DATA_DIR / base_name
-                    if path.exists():
-                        result = str(path)
-                        print(f"✅ Image found: {base_name} → {result}")
-                        return result
-            print(f"⚠️  Image not found for any of: {filename_base_names}")
+
+            logger.warning(f"⚠️  Image not found for any of: {filename_base_names}")
             return ""
 
         inst = payload.setdefault("institute", {})
         
-        # Handle college logo - check multiple possible names
-        college_logo = resolve_img(["college_logo", "logo"])
+        # Hardcoded Left Logo (College Logo)
+        college_logo = str(ROOT_DIR / "dbit_logo.png")
+        if not os.path.exists(college_logo):
+            # Fallback to the one in certificate_generator if not in report_generator root
+            default_dbit = ROOT_DIR.parent / "certificate_generator" / "assets" / "logos" / "logo_original.png"
+            if default_dbit.exists():
+                college_logo = str(default_dbit)
         inst["college_logo"] = college_logo
-        print(f"College logo resolved to: {college_logo}")
+        logger.info(f"Left logo (College) hardcoded to: {college_logo}")
         
-        inst["club_logo"] = resolve_img(["club_logo"])
+        # User-uploaded Right Logo (Club Logo)
+        club_logo = resolve_img(["club_logo", "logo"])
+        if not club_logo:
+            # Fallback to default dummy logo if nothing uploaded
+            default_club = ROOT_DIR.parent / "certificate_generator" / "assets" / "logos" / "dummy_logo.png"
+            if default_club.exists():
+                club_logo = str(default_club)
+        inst["club_logo"] = club_logo
+        logger.info(f"Right logo (Club) resolved to: {club_logo}")
 
         images = payload.setdefault("images", {})
         
         # event photos - check for multiple photos uploaded by name
         resolved_photos = []
-        valid_extensions = ['.png', '.jpg', '.jpeg']
+        valid_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
         # Frontend can upload multiple photos by naming them photo1.png, photo2.jpg, etc.
         for i in range(1, 10):
             photo_base = f"photo{i}"
             found_photo = False
             for ext in valid_extensions:
                 photo_name = f"{photo_base}{ext}"
-                photo_path = DATA_DIR / photo_name
+                photo_path = UPLOADS_DIR / photo_name
                 if photo_path.exists():
                     full_path = str(photo_path)
                     resolved_photos.append(full_path)
-                    print(f"✅ Photo {i} found: {full_path}")
+                    logger.info(f"✅ Photo {i} found: {full_path}")
                     found_photo = True
                     break
             
@@ -135,27 +170,35 @@ async def generate_event_report(payload: dict):
                 report_img_base = f"report_image_{i}"
                 for ext in valid_extensions:
                     photo_name = f"{report_img_base}{ext}"
-                    photo_path = DATA_DIR / photo_name
+                    photo_path = UPLOADS_DIR / photo_name
                     if photo_path.exists():
                         full_path = str(photo_path)
                         resolved_photos.append(full_path)
-                        print(f"✅ Photo {i} found (as report_image): {full_path}")
+                        logger.info(f"✅ Photo {i} found (as report_image): {full_path}")
                         found_photo = True
                         break
 
+        # Also include snapshot image in event photos grid
+        snapshot_img = resolve_img(["snapshot_image", "snapshot"])
+        if snapshot_img and snapshot_img not in resolved_photos:
+            resolved_photos.append(snapshot_img)
+            logger.info(f"✅ Snapshot added to event photos: {snapshot_img}")
+
         if not resolved_photos:
-            print("⚠️  No photos found by standard naming convention")
-            # check what the user may have sent in the payload
+            logger.warning("⚠️  No photos found by standard naming convention")
             for p in images.get("event_photos", []):
-                if (DATA_DIR / p).exists():
+                if (UPLOADS_DIR / p).exists():
+                    resolved_photos.append(str(UPLOADS_DIR / p))
+                elif (DATA_DIR / p).exists():
                     resolved_photos.append(str(DATA_DIR / p))
         
-        print(f"📸 Total photos resolved: {len(resolved_photos)}")
+        logger.info(f"📸 Total photos resolved: {len(resolved_photos)}")
         images["event_photos"] = resolved_photos
         
-        # Handle feedback and poster images - check multiple names
-        feedback_img = resolve_img(["feedback_image", "snapshot", "feedback"])
+        # Handle feedback, snapshot and poster images
+        feedback_img = resolve_img(["feedback_image", "feedback"])
         images["feedback_image"] = feedback_img
+        images["snapshot_image"] = snapshot_img
         
         poster_img = resolve_img(["poster_image", "poster"])
         images["poster_image"] = poster_img
@@ -168,74 +211,200 @@ async def generate_event_report(payload: dict):
             json.dump(payload, f, indent=2)
 
         output_docx = OUTPUT_DIR / f"event_report_{unique_id}.docx"
+        output_pdf = OUTPUT_DIR / f"event_report_{unique_id}.pdf"
+        output_txt = OUTPUT_DIR / f"event_report_{unique_id}.txt"
         
-        # Call docx generation via src.main
-        script_path = ROOT_DIR / "src" / "main.py"
-        
-        # We can pass custom arguments to the generation script
-        # However, looking at src.main.py, it takes some effort to just pass JSON.
-        # Wait, verify_docx.py uses EventReportGenerator from src.main directly.
-        # Let's import it and run it.
-        
-        from src.main import EventReportGenerator, EventReportConfig
-        
-        config = EventReportConfig(
-            event_name=payload.get("event_meta", {}).get("title", "Event"),
-            event_type=payload.get("event_meta", {}).get("event_type", ""),
-            department_name=payload.get("event_meta", {}).get("department_name", ""),
-            event_title=payload.get("event_meta", {}).get("title", ""),
-            event_date=payload.get("event_meta", {}).get("date", ""),
-            event_time=payload.get("event_meta", {}).get("time", ""),
-            event_venue=payload.get("event_meta", {}).get("venue", ""),
-            target_audience=payload.get("participants", {}).get("target_audience", ""),
-            dbit_students_count=str(payload.get("registration", {}).get("dbit_students", 0)),
-            non_dbit_students_count=str(payload.get("registration", {}).get("non_dbit_students", 0)),
-            resource_person_name=payload.get("organizers", {}).get("resource_person", ""),
-            resource_person_org=payload.get("organizers", {}).get("resource_org", ""),
-            organizing_body=payload.get("organizers", {}).get("organizing_body", ""),
-            faculty_coordinator=payload.get("organizers", {}).get("faculty_coordinator", ""),
-            detailed_description=payload.get("content", {}).get("detailed_report", ""),
-            facebook_link=payload.get("social_media", {}).get("facebook", ""),
-            instagram_link=payload.get("social_media", {}).get("instagram", ""),
-            linkedin_link=payload.get("social_media", {}).get("linkedin", ""),
-            approver_1_name=payload.get("signatories", {}).get("approved_name", ""),
-            approver_1_post=payload.get("signatories", {}).get("approved_post", ""),
-            preparer_1_name=payload.get("signatories", {}).get("prepared_name", ""),
-            preparer_1_post=payload.get("signatories", {}).get("prepared_post", ""),
-            # We must specify docx generation config
-            report_filename=f"event_report_{unique_id}.docx",
-            output_dir=OUTPUT_DIR
-        )
-        
-        # Manually extract objectives and outcomes lists into config if possible.
-        # EventReportConfig expects objective_1, objective_2, etc.
-        objectives = payload.get("content", {}).get("objectives", [])
-        if len(objectives) > 0: config.objective_1 = objectives[0]
-        if len(objectives) > 1: config.objective_2 = objectives[1]
-        if len(objectives) > 2: config.objective_3 = objectives[2]
-        
-        outcomes = payload.get("content", {}).get("outcomes", [])
-        if len(outcomes) > 0: config.outcome_1 = outcomes[0]
-        if len(outcomes) > 1: config.outcome_2 = outcomes[1]
-        if len(outcomes) > 2: config.outcome_3 = outcomes[2]
-        
-        generator = EventReportGenerator(config)
-        
-        # Override data loading directly rather than relying on json dumps 
-        # so that it uses the exact resolved payload.
-        # But `EventReportGenerator.generate()` calls `self._load_event_data()` which reads from globals. 
-        # Since it uses data_ingestor, it will reload whatever is in `data/`.
-        # To make it use our JSON exactly, we should either bypass it or let it run normally since we saved `report_data_{id}.json`.
-        # But wait, data_ingestor reads attendees.csv, feedback.csv, etc directly.
-        # Let's just generate it (it will run AI analytics)
-        success = generator.generate()
+        # ── Generate Analytics Charts from uploaded CSVs ─────────────────────
+        ratings_chart_path = ""
+        demographics_chart_path = ""
+        try:
+            sys.path.insert(0, str(ROOT_DIR / "src"))
+            from src.quantitative_analyzer import EventAnalytics
+            import pandas as pd
 
-        if not success:
+            analyzer_q = EventAnalytics()
+            feedback_file = DATA_DIR / 'feedback.csv'
+            attendees_file = DATA_DIR / 'attendees.csv'
+
+            if feedback_file.exists():
+                feedback_df = pd.read_csv(feedback_file)
+                # If no session_name column, synthesize one so chart can render
+                if 'session_name' not in feedback_df.columns:
+                    feedback_df['session_name'] = 'Event Session'
+                # Ensure a numeric rating column exists
+                rating_col = next(
+                    (c for c in feedback_df.columns
+                     if c.lower() in ['rating', 'score', 'overall_rating', 'overall', 'stars']),
+                    None
+                )
+                if rating_col and rating_col != 'rating':
+                    feedback_df['rating'] = pd.to_numeric(feedback_df[rating_col], errors='coerce')
+                elif 'rating' in feedback_df.columns:
+                    feedback_df['rating'] = pd.to_numeric(feedback_df['rating'], errors='coerce')
+                else:
+                    feedback_df['rating'] = 4.0  # default if no rating column
+                feedback_df = feedback_df.dropna(subset=['rating'])
+
+                if not feedback_df.empty:
+                    ratings_out = str(OUTPUT_DIR / f"session_ratings_{unique_id}.png")
+                    try:
+                        analyzer_q.create_session_ratings_chart(feedback_df, ratings_out)
+                        ratings_chart_path = ratings_out
+                        logger.info(f"✅ Session ratings chart saved: {ratings_out}")
+                    except Exception as ce:
+                        logger.warning(f"⚠️ Session ratings chart failed: {ce}")
+
+            if attendees_file.exists():
+                attendees_df = pd.read_csv(attendees_file)
+                demographics_out = str(OUTPUT_DIR / f"participant_demographics_{unique_id}.png")
+                try:
+                    analyzer_q.create_participant_demographics_chart(attendees_df, demographics_out)
+                    demographics_chart_path = demographics_out
+                    logger.info(f"✅ Demographics chart saved: {demographics_out}")
+                except Exception as ce:
+                    logger.warning(f"⚠️ Demographics chart failed: {ce}")
+
+        except Exception as qa_err:
+            logger.warning(f"⚠️ Chart generation skipped: {qa_err}")
+        # ─────────────────────────────────────────────────────────────
+
+        # Build comprehensive data dictionary mapped for ReportLab format
+        data = {
+            # Event metadata
+            'department': payload.get("event_meta", {}).get("department_name", ""),
+            'event_type': payload.get("event_meta", {}).get("event_type", ""),
+            'title': payload.get("event_meta", {}).get("title", ""),
+            'date': payload.get("event_meta", {}).get("date", ""),
+            'time': payload.get("event_meta", {}).get("time", ""),
+            'venue': payload.get("event_meta", {}).get("venue", ""),
+            
+            # Participants
+            'target_audience': payload.get("participants", {}).get("target_audience", ""),
+            'total_participants': payload.get("participants", {}).get("total_participants", 0),
+            'girl_participants': payload.get("participants", {}).get("girl_participants", 0),
+            'boy_participants': payload.get("participants", {}).get("boy_participants", 0),
+            'dbit_students': payload.get("registration", {}).get("dbit_students", 0),
+            'non_dbit_students': payload.get("registration", {}).get("non_dbit_students", 0),
+            
+            # Organizers
+            'resource_person': payload.get("organizers", {}).get("resource_person", ""),
+            'resource_organization': payload.get("organizers", {}).get("resource_org", ""),
+            'organizing_body': payload.get("organizers", {}).get("organizing_body", ""),
+            'faculty_coordinator': payload.get("organizers", {}).get("faculty_coordinator", ""),
+            
+            # Content — AI-generate detailed report paragraph from user hints
+            'objectives': payload.get("content", {}).get("objectives", []),
+            'outcomes': payload.get("content", {}).get("outcomes", []),
+            'detailed_report': payload.get("content", {}).get("detailed_report", ""),
+            'snapshot_description': payload.get("content", {}).get("snapshot_description", ""),
+            'feedback_text': payload.get("feedback", {}).get("feedback_text", ""),
+            
+            # Social media
+            'social_media': payload.get("social_media", {}),
+            'social_org_name': 'ACM-DBIT',
+            
+            # Signatories
+            'approved_name': payload.get("signatories", {}).get("approved_name", ""),
+            'approved_post': payload.get("signatories", {}).get("approved_post", ""),
+            'prepared_name': payload.get("signatories", {}).get("prepared_name", ""),
+            'prepared_post': payload.get("signatories", {}).get("prepared_post", ""),
+            
+            # Student list
+            'students': payload.get("registration", {}).get("students", []),
+            
+            # Images
+            'college_logo': inst.get("college_logo", ""),
+            'club_logo': inst.get("club_logo", ""),
+            'event_photos': images.get("event_photos", []),
+            'feedback_images': [images.get("feedback_image")] if images.get("feedback_image") else [],
+            'poster_image': images.get("poster_image", ""),
+            # Analytics charts
+            'ratings_chart': ratings_chart_path,
+            'demographics_chart': demographics_chart_path,
+        }
+        
+        # ── Ollama AI Generation ──────────────────────────────────────────────
+        event_name = data.get('title') or data.get('event_type') or 'the event'
+        try:
+            from src.llm_analyzer import EventFeedbackAnalyzer, LLMConfig
+            analyzer = EventFeedbackAnalyzer(LLMConfig(model_name="llama3:8b"))
+
+            # 1) AI-generated detailed report from user's description pointers
+            hints = payload.get("content", {}).get("detailed_description", "") \
+                    or payload.get("content", {}).get("detailed_report", "")
+            if hints and hints.strip():
+                logger.info("🤖 Generating detailed report paragraph via Ollama...")
+                data['detailed_report'] = analyzer.generate_detailed_report(hints, event_name)
+                logger.info("✅ Detailed report generated")
+
+            # 2) AI-generated feedback summary from uploaded feedback CSV
+            feedback_comments = []
+            feedback_file = DATA_DIR / 'feedback.csv'
+            if feedback_file.exists():
+                with open(feedback_file, 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        # Look for any column that looks like free-text comments
+                        for col_name in ['Comments', 'comments', 'Feedback', 'feedback',
+                                         'Comment', 'comment', 'Review', 'review', 'Suggestions']:
+                            val = row.get(col_name, '').strip()
+                            if val:
+                                feedback_comments.append(val)
+                                break
+
+            if feedback_comments:
+                logger.info(f"🤖 Generating feedback summary from {len(feedback_comments)} comments via Ollama...")
+                data['feedback_text'] = analyzer.generate_feedback_summary_text(feedback_comments, event_name)
+                logger.info("✅ Feedback summary generated")
+            elif not data.get('feedback_text'):
+                data['feedback_text'] = "Feedback was collected from participants. Overall response was positive."
+
+        except Exception as llm_err:
+            logger.warning(f"⚠️ Ollama AI generation skipped: {llm_err}")
+            # Fall back to the user-entered text if LLM fails
+            if not data.get('detailed_report'):
+                data['detailed_report'] = payload.get("content", {}).get("detailed_report", "") \
+                                           or payload.get("content", {}).get("detailed_description", "")
+
+        # ─────────────────────────────────────────────────────────────────────
+        logger.info(f"   Output: {output_pdf}")
+        logger.info(f"   College Logo: {'✅' if data['college_logo'] else '❌'}")
+        logger.info(f"   Photos: {'✅ ' + str(len(data['event_photos'])) + ' images' if data['event_photos'] else '❌'}")
+        logger.info(f"   Poster: {'✅' if data['poster_image'] else '❌'}")
+        logger.info(f"   Feedback Image: {'✅' if data['feedback_images'] else '❌'}")
+        
+        # Generate Reports
+        from src.reportlab_pdf_generator import generate_report_pdf
+        from src.text_report_generator import TextReportGenerator
+        
+        try:
+            generate_report_pdf(data, str(output_pdf))
+            success_pdf = True
+        except Exception as e:
+            logger.error(f"ReportLab generation failed: {e}")
+            success_pdf = False
+
+        text_generator = TextReportGenerator()
+        success_txt = text_generator.generate_report(data, output_txt)
+
+        if not success_pdf and not success_txt:
             raise HTTPException(status_code=500, detail="Report generation failed.")
+
+        # ── Cache Cleanup ──────────────────────────────────────────────────
+        # Clear uploaded images after successful generation to prevent leak into next report
+        try:
+            for file in UPLOADS_DIR.glob('*'):
+                if file.is_file():
+                    file.unlink()
+            logger.info("🧹 Uploads cache cleared successfully")
+        except Exception as cleanup_err:
+            logger.warning(f"⚠️ Failed to clear uploads cache: {cleanup_err}")
+        # ───────────────────────────────────────────────────────────────────
 
         return {
             "message": "Report generated successfully",
-            "pdf_url": f"/download-report/docx?filename=event_report_{unique_id}.docx"
+            "pdf_url": f"/download-report/pdf?filename=event_report_{unique_id}.pdf",
+            "txt_url": f"/download-report/txt?filename=event_report_{unique_id}.txt"
         }
 
     except Exception as e:
@@ -246,8 +415,35 @@ async def generate_event_report(payload: dict):
             detail=f"Failed to generate report: {str(e)}"
         )
 
+@app.get("/download-report/pdf")
+async def download_pdf_report(filename: str):
+    """Download generated PDF report."""
+    report_path = ROOT_DIR / "output" / filename
+    if not report_path.exists():
+        raise HTTPException(status_code=404, detail="PDF report file not found.")
+
+    return FileResponse(
+        path=report_path,
+        media_type="application/pdf",
+        filename=filename
+    )
+
+@app.get("/download-report/txt")
+async def download_txt_report(filename: str):
+    """Download generated strict TXT report."""
+    report_path = ROOT_DIR / "output" / filename
+    if not report_path.exists():
+        raise HTTPException(status_code=404, detail="TXT report file not found.")
+
+    return FileResponse(
+        path=report_path,
+        media_type="text/plain",
+        filename=filename
+    )
+
 @app.get("/download-report/docx")
 async def download_docx_report(filename: str):
+    """Download generated DOCX report (legacy support)."""
     report_path = ROOT_DIR / "output" / filename
     if not report_path.exists():
         raise HTTPException(status_code=404, detail="Report file not found.")

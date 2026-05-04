@@ -47,6 +47,7 @@ export default function ReportGeneratorPage() {
     const [outcome2, setOutcome2] = useState("")
     const [outcome3, setOutcome3] = useState("")
     const [detailedDescription, setDetailedDescription] = useState("")
+    const [snapshotDescription, setSnapshotDescription] = useState("")
 
     // File states
     const [attendeesFileName, setAttendeesFileName] = useState("")
@@ -204,6 +205,14 @@ export default function ReportGeneratorPage() {
                     if (purpose === 'poster') filename = `poster.${ext}`
                     if (purpose === 'snapshot') filename = `snapshot.${ext}`
                     if (purpose === 'logo') filename = `logo.${ext}`
+                    
+                    // Actually upload the file
+                    const formData = new FormData()
+                    formData.append('file', f)
+                    await fetch(`http://127.0.0.1:8004/upload/${filename}`, {
+                        method: 'POST',
+                        body: formData,
+                    })
                 }
             }
 
@@ -258,7 +267,7 @@ export default function ReportGeneratorPage() {
                     objectives: getList(objective1, objective2, objective3),
                     outcomes: getList(outcome1, outcome2, outcome3),
                     detailed_report: detailedDescription,
-                    snapshot_description: ""
+                    snapshot_description: snapshotDescription
                 },
                 feedback: {
                     feedback_text: ""
@@ -292,9 +301,10 @@ export default function ReportGeneratorPage() {
 
             const data = await response.json()
             setResult({
-                content: data.content || "DOCX Generated successfully",
-                filename: data.report_filename || "event_report.docx",
-                pdf_url: data.pdf_url // Backend might still return pdf_url key but docx path, we map loosely 
+                content: data.content || "Report generated successfully",
+                filename: data.report_filename || "event_report.pdf",
+                pdf_url: data.pdf_url,
+                txt_url: data.txt_url
             })
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "An error occurred")
@@ -312,6 +322,13 @@ export default function ReportGeneratorPage() {
                 `http://127.0.0.1:8004/download-report/pdf?filename=${encodeURIComponent(result.filename)}`,
                 "_blank"
             )
+        }
+    }
+
+    const downloadTXT = () => {
+        if (!result) return
+        if ((result as any).txt_url) {
+            window.open(`http://127.0.0.1:8004${(result as any).txt_url}`, "_blank")
         }
     }
 
@@ -393,7 +410,7 @@ export default function ReportGeneratorPage() {
                         <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                         <h2 className="text-3xl font-bold">Your Report is Ready!</h2>
                         <p className="text-muted-foreground mt-2">
-                            Review the AI-generated DOCX analysis for the <span className="font-bold">{eventName}</span> event.
+                            Review the AI-generated PDF and TXT analysis for the <span className="font-bold">{eventName}</span> event.
                         </p>
                     </div>
                     <Card>
@@ -403,7 +420,11 @@ export default function ReportGeneratorPage() {
                                 <div className="flex gap-2">
                                     <Button size="sm" onClick={downloadPDF}>
                                         <Download className="mr-2 h-4 w-4" />
-                                        Download .docx
+                                        Download .pdf
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={downloadTXT}>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download .txt
                                     </Button>
                                 </div>
                             </div>
@@ -432,7 +453,7 @@ export default function ReportGeneratorPage() {
             <div className="text-center mb-10">
                 <h1 className="text-4xl font-bold">AI Event Report Generator</h1>
                 <p className="mt-4 text-lg text-muted-foreground">
-                    Upload your event data to generate a comprehensive, AI-powered DOCX analysis.
+                    Upload your event data to generate a comprehensive, AI-powered PDF and TXT analysis.
                 </p>
             </div>
 
@@ -565,6 +586,10 @@ export default function ReportGeneratorPage() {
                                 <div className="space-y-2 mt-4">
                                     <Label htmlFor="detailedDescription">Detailed Description Pointers</Label>
                                     <Input id="detailedDescription" value={detailedDescription} onChange={(e) => setDetailedDescription(e.target.value)} placeholder="Provide pointers. The AI will write the paragraph." />
+                                </div>
+                                <div className="space-y-2 mt-4">
+                                    <Label htmlFor="snapshotDescription">Snapshot Description</Label>
+                                    <Input id="snapshotDescription" value={snapshotDescription} onChange={(e) => setSnapshotDescription(e.target.value)} placeholder="Brief description of the event snapshot images." />
                                 </div>
 
                                 <div className="grid gap-4 md:grid-cols-3 mt-4">
@@ -714,105 +739,7 @@ export default function ReportGeneratorPage() {
                                     </div>
                                 </div>
 
-                                <div className="grid gap-4 md:grid-cols-2 mt-4">
-                                    {/* Event Poster (Optional) */}
-                                    <div className="space-y-2">
-                                        <Label>Event Poster</Label>
-                                        <p className="text-xs text-yellow-500">poster.png/jpg (Optional)</p>
-                                        <div
-                                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${posterFileName ? "border-green-500" : "border-muted"
-                                                }`}
-                                            onClick={() => posterRef.current?.click()}
-                                        >
-                                            <input
-                                                type="file"
-                                                ref={posterRef}
-                                                className="hidden"
-                                                accept=".png,.jpg,.jpeg"
-                                                onChange={(e) => {
-                                                    handleFileChange(e, setPosterFileName)
-                                                    if (e.target.files?.[0]) {
-                                                        setPosterPreview(URL.createObjectURL(e.target.files[0]))
-                                                    } else {
-                                                        setPosterPreview(null)
-                                                    }
-                                                }}
-                                            />
-                                            <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                            <span className="text-sm">
-                                                {posterFileName || "Click to upload"}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Event Snapshot (Optional) */}
-                                    <div className="space-y-2">
-                                        <Label>Event Snapshot</Label>
-                                        <p className="text-xs text-yellow-500">snapshot.png/jpg (Optional)</p>
-                                        <div
-                                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${snapshotFileName ? "border-green-500" : "border-muted"
-                                                }`}
-                                            onClick={() => snapshotRef.current?.click()}
-                                        >
-                                            <input
-                                                type="file"
-                                                ref={snapshotRef}
-                                                className="hidden"
-                                                accept=".png,.jpg,.jpeg"
-                                                onChange={(e) => {
-                                                    handleFileChange(e, setSnapshotFileName)
-                                                    if (e.target.files?.[0]) {
-                                                        setSnapshotPreview(URL.createObjectURL(e.target.files[0]))
-                                                    } else {
-                                                        setSnapshotPreview(null)
-                                                    }
-                                                }}
-                                            />
-                                            <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                            <span className="text-sm">
-                                                {snapshotFileName || "Click to upload"}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 {/* Additional Images Options */}
-
-
-
-                                <div>
-                                    <div className="space-y-2">
-
-
-                                        {/* Optional: Logo upload */}
-                                        <div className="mt-4">
-                                            <Label>Logo (Optional)</Label>
-                                            <p className="text-xs text-muted-foreground">Upload an organization/logo image to be inserted where the template has a logo placeholder.</p>
-                                            <div
-                                                className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${logoFileName ? "border-green-500" : "border-muted"
-                                                    }`}
-                                                onClick={() => logoRef.current?.click()}
-                                            >
-                                                <input
-                                                    type="file"
-                                                    ref={logoRef}
-                                                    className="hidden"
-                                                    accept=".png,.jpg,.jpeg,.gif"
-                                                    onChange={(e) => {
-                                                        handleFileChange(e, setLogoFileName)
-                                                        if (e.target.files?.[0]) {
-                                                            setLogoPreview(URL.createObjectURL(e.target.files[0]))
-                                                        } else {
-                                                            setLogoPreview(null)
-                                                        }
-                                                    }}
-                                                />
-                                                <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                                <span className="text-sm">{logoFileName || "Click to upload a logo (optional)"}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Optional: ask user if they'd like to include images and how many up front */}
                                         <div className="mt-4">
                                             <Label>Include images in report?</Label>
                                             <div className="flex items-center gap-4 mt-2">
@@ -900,8 +827,6 @@ export default function ReportGeneratorPage() {
                                             )}
                                         </div>
 
-                                    </div>
-                                </div>
                             </CardContent>
                         </Card>
 
@@ -921,7 +846,7 @@ export default function ReportGeneratorPage() {
                                 disabled={!isFormValid()}
                             >
                                 <Wand2 className="mr-2 h-5 w-5" />
-                                Generate DOCX Report
+                                Generate PDF Report
                             </Button>
                         </div>
                     </form>

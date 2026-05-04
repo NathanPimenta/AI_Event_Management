@@ -397,8 +397,11 @@ class EventAnalytics:
                         fontsize=20, fontweight='bold', y=0.995)
             
             # 1. Top Institutions/Colleges
-            if 'country' in participant_df.columns:
-                institution_counts = participant_df['country'].value_counts().head(10)
+            # Check multiple possible column names for institution/college
+            inst_col = next((c for c in ['country', 'institution', 'college', 'department', 'Branch'] if c in participant_df.columns), None)
+            
+            if inst_col:
+                institution_counts = participant_df[inst_col].value_counts().head(10)
                 axes[0, 0].barh(institution_counts.index, institution_counts.values, 
                                color='#3498DB', alpha=0.8, edgecolor='#2C3E50')
                 axes[0, 0].set_xlabel('Number of Participants', fontweight='bold', fontsize=11)

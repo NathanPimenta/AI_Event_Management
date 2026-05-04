@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 # Ensure sibling modules in src/ are importable regardless of how the app is launched
@@ -36,6 +36,7 @@ class EventReportConfig:
     outcome_2: str = ""
     outcome_3: str = ""
     detailed_description: str = ""
+    snapshot_description: str = ""
     facebook_link: str = ""
     instagram_link: str = ""
     linkedin_link: str = ""
@@ -47,6 +48,13 @@ class EventReportConfig:
     preparer_1_post: str = ""
     preparer_2_name: str = ""
     preparer_2_post: str = ""
+
+    college_logo_path: str = ""
+    club_logo_path: str = ""
+    poster_image_path: str = ""
+    feedback_image_path: str = ""
+    snapshot_image_path: str = ""
+    event_photos: list = field(default_factory=list)
 
     ollama_model: str = "llama3:8b"
     generate_ai_recommendations: bool = True
@@ -204,11 +212,12 @@ class EventReportGenerator:
         analysis: Dict[str, str],
         recommendations: str
     ):
-        """Generate the final report based on the DOCX template."""
-        from docx_generator import DocxReportGenerator
+        """Generate the final report based on the LaTeX and Text templates."""
+        from latex_pdf_generator import LatexPdfGenerator
+        from text_report_generator import TextReportGenerator
         
         print("\n" + "="*70)
-        print("📝 STEP 5: GENERATING DOCX REPORT")
+        print("📝 STEP 5: GENERATING REPORTS (PDF & TEXT)")
         print("="*70)
 
         # Get AI generated detailed report paragraph
@@ -220,47 +229,97 @@ class EventReportGenerator:
             self.config.detailed_description, self.config.event_name
         )
 
-        generator = DocxReportGenerator()
         
+        # Build comprehensive data dictionary with proper field mapping
         data = {
+            # Event metadata
             'event_name': self.config.event_name,
+            'event_title': self.config.event_title,
+            'title': self.config.event_title,
+            'event_type': self.config.event_type,
+            'department_name': self.config.department_name,
+            'institution_name': self.config.department_name,
             'date': self.config.event_date,
             'time': self.config.event_time,
             'venue': self.config.event_venue,
+            'address': 'Mumbai, India',
+            
+            # Participants
             'target_audience': self.config.target_audience,
             'total_participants': stats.get('total_participants', 0),
             'female_count': stats.get('female_count', 0),
+            'girl_participants': stats.get('female_count', 0),
             'male_count': stats.get('male_count', 0),
+            'boy_participants': stats.get('male_count', 0),
+            'dbit_students': self.config.dbit_students_count or 0,
+            'non_dbit_students': self.config.non_dbit_students_count or 0,
+            
+            # Organizers and signatories
             'resource_person': self.config.resource_person_name,
+            'resource_org': self.config.resource_person_org,
             'rp_org': self.config.resource_person_org,
-            'department': self.config.department_name,
+            'organizing_body': self.config.organizing_body,
+            'department': self.config.organizing_body or self.config.department_name,
             'coordinator': self.config.faculty_coordinator,
-            'institution_name': self.config.department_name,
-            'social_links': f"Facebook: {self.config.facebook_link or 'N/A'}, Instagram: {self.config.instagram_link or 'N/A'}, LinkedIn: {self.config.linkedin_link or 'N/A'}",
+            'faculty_coordinator': self.config.faculty_coordinator,
+            
+            # Content
             'objectives': [o for o in [self.config.objective_1, self.config.objective_2, self.config.objective_3] if o],
             'outcomes': [o for o in [self.config.outcome_1, self.config.outcome_2, self.config.outcome_3] if o],
             'detailed_report': detailed_report_paragraph,
-            'student_list_table': stats.get('student_list_table', [])
+            'snapshot_description': self.config.snapshot_description,
+            'feedback_summary_text': analysis.get('feedback_summary_text', ''),
+            'feedback_text': analysis.get('feedback_summary_text', ''),
+            
+            # Social media
+            'facebook_link': self.config.facebook_link or '',
+            'instagram_link': self.config.instagram_link or '',
+            'linkedin_link': self.config.linkedin_link or '',
+            
+            # Signatories
+            'approver_1_name': self.config.approver_1_name,
+            'approver_1_post': self.config.approver_1_post,
+            'preparer_1_name': self.config.preparer_1_name,
+            'preparer_1_post': self.config.preparer_1_post,
+            
+            # Student list
+            'student_list_table': stats.get('student_list_table', []),
+            'registration': {'students': stats.get('student_list_table', [])}
         }
 
-        # Need to collect charts and images if present
-        data_dir = self.config.output_dir.parent / "data"
-        charts = {
-            'logo': str(data_dir / 'logo.png') if (data_dir / 'logo.png').exists() else (str(data_dir / 'college_logo.png') if (data_dir / 'college_logo.png').exists() else None),
-            'ratings_chart': str(self.config.ratings_chart_path) if self.config.ratings_chart_path.exists() else None,
-            'demographics': str(self.config.demographics_chart_path) if self.config.demographics_chart_path.exists() else None,
-            'poster': str(data_dir / 'poster.png') if (data_dir / 'poster.png').exists() else None,
-            'snapshot': str(data_dir / 'snapshot.png') if (data_dir / 'snapshot.png').exists() else None
+        # Properly map image paths with multiple key options
+        data.update({
+            'college_logo': self.config.college_logo_path or '',
+            'club_logo': self.config.club_logo_path or '',
+            'poster_image': self.config.poster_image_path or '',
+            'event_photos': [str(self.config.snapshot_image_path)] if self.config.snapshot_image_path else [],
+            'feedback_images': [str(self.config.feedback_image_path)] if self.config.feedback_image_path else [],
+        })
+        
+        # Merge social media link dicts
+        data['social_media'] = {
+            'Facebook': data['facebook_link'],
+            'Instagram': data['instagram_link'],
+            'LinkedIn': data['linkedin_link']
         }
 
-        # For multiple photos handling (photo1.png etc)
-        # Not explicitly mapped in docx_generator, but handled via snapshot above. 
+        text_generator = TextReportGenerator()
 
         try:
-            generator.generate_report(data, self.config.report_path, charts)
-            print(f"\n✅ Report saved to: {self.config.report_path}")
+            pdf_path = self.config.report_path.with_suffix('.pdf')
+            txt_path = self.config.report_path.with_suffix('.txt')
+            
+            from reportlab_pdf_generator import generate_report_pdf
+            generate_report_pdf(data, str(pdf_path))
+            text_generator.generate_report(data, txt_path)
+            
+            print(f"\n✅ Reports saved to:")
+            print(f"   - {pdf_path}")
+            print(f"   - {txt_path}")
         except Exception as e:
-            print(f"\n❌ Error generating docx: {e}")
+            print(f"\n❌ Error generating reports: {e}")
+            import traceback
+            traceback.print_exc()
 
     def generate(self) -> bool:
         """

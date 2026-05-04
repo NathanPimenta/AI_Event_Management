@@ -53,10 +53,11 @@ except ImportError:
 DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1neAVyq2-TQkkNW5R_5WVjrr1WOjBy3UN?usp=sharing"
 #DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1lU-F433mn_9iGjm2TkBVTngynWlSDTrq?usp=sharing"
 TEMP_MEDIA_DIR = "temp_images/"
+SERVED_IMAGES_DIR = "served_images/"  # Persistent directory for images shown in UI
 OUTPUT_VIDEO_PATH = "output/final_reel.mp4"
 MUSIC_FILE_PATH = "assets/background_music.mp3"
 MAX_FILES_TO_PROCESS = 100
-IMAGES_FOR_REEL = 15
+IMAGES_FOR_REEL = 5
 # When True, try to extract EXIF timestamps from saved images and order the top assets by time
 APPLY_EXIF_TIMESTAMP_ORDERING = True
 
@@ -258,11 +259,15 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if MODELS is None:
         print("!!! Aborting pipeline because AI models failed to initialize.")
-        return
+        return None
 
     if drive_folder_url == "YOUR_GOOGLE_DRIVE_FOLDER_URL_HERE":
         print("!!! ERROR: Please update the DRIVE_FOLDER_URL in main.py before running.")
-        return
+        return None
+    
+    if not drive_folder_url or drive_folder_url.strip() == "":
+        print("!!! ERROR: DRIVE_FOLDER_URL is empty. Please set a valid Google Drive folder URL.")
+        return None
 
     print("\n--- Starting Planify Reel Maker Pipeline ---")
 
@@ -274,7 +279,7 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if not clean_media_objects:
         print("Pipeline stopped: No media passed the pre-processing stage.")
-        return
+        return None
 
     # MODULE 2: Scoring
     print(f"\n-> Scoring {len(clean_media_objects)} high-quality media assets...")
@@ -323,7 +328,7 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if not scored_media_data:
         print("Pipeline stopped: Could not score any images.")
-        return
+        return None
 
     # Sort by final score first
     scored_media_data.sort(key=lambda item: item['final_score'], reverse=True)
@@ -404,7 +409,7 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if not top_image_paths:
         print("!!! ERROR: No valid media files could be saved for video generation.")
-        return
+        return None
 
     print(f"   - Saved {len(top_image_paths)} images to temporary directory. Converted {converted_count}, skipped {skipped_count}.")
 
@@ -454,7 +459,7 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if not top_image_paths:
         print("!!! ERROR: No valid media files could be saved for video generation.")
-        return
+        return None
 
     print(f"   - Saved {len(top_image_paths)} images to temporary directory. Converted {converted_count}, skipped {skipped_count}.")
 
@@ -588,7 +593,120 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
             print(f"\n-> Warning: Could not remove temporary downloads directory {temp_download_dir}. Error: {e_rm}")
 
     print(f"\n--- Pipeline Finished Successfully. AI-curated reel saved at: {final_output_path} ---")
-    return final_output_path
+    return {
+        "video_path": final_output_path,
+        "image_paths": padded_image_paths
+    }
+
+# =========================
+# Slideshow Pipeline (for manual captioning)
+# =========================
+def run_slideshow_pipeline(drive_folder_url=None, max_files=None):
+    """
+    Generate a slideshow from images in Google Drive.
+    Returns a list of image paths saved for slideshow display.
+    This is used for the caption workflow where users will add captions manually.
+    """
+    if drive_folder_url is None:
+        drive_folder_url = DRIVE_FOLDER_URL
+    if max_files is None:
+        max_files = IMAGES_FOR_REEL
+
+    if MODELS is None:
+        print("!!! Aborting slideshow pipeline because AI models failed to initialize.")
+        return []
+
+    print("\n--- Starting Slideshow Generation ---")
+
+    # MODULE 1: Ingestion
+    clean_media_objects = intelligent_ingestor.run_ingestion_pipeline(
+        drive_folder_url=drive_folder_url,
+        max_files=MAX_FILES_TO_PROCESS
+    )
+
+    if not clean_media_objects:
+        print("Slideshow generation stopped: No media passed the pre-processing stage.")
+        return []
+
+    # MODULE 2: Scoring (lightweight)
+    print(f"\n-> Scoring {len(clean_media_objects)} media assets...")
+    scored_media_data = []
+    
+    for media in clean_media_objects:
+        try:
+            is_original = media.get('is_original_image', True)
+            scores = image_scorer.get_all_scores(media['array'], MODELS, is_original)
+        except Exception as ex_score:
+            print(f"   - ERROR scoring {media.get('name', 'unknown')}: {ex_score}")
+            continue
+
+        final_score = (W_TECH * scores.get('technical_score', 0.0)) + \
+                      (W_SEM  * scores.get('semantic_score', 0.0)) + \
+                      (W_ENG  * scores.get('engagement_score', 0.0))
+
+        media_with_scores = media.copy()
+        media_with_scores['scores'] = scores
+        media_with_scores['final_score'] = final_score
+        media_with_scores['detected_objects'] = scores.get('detected_objects', [])
+        
+        scored_media_data.append(media_with_scores)
+
+    if not scored_media_data:
+        print("Slideshow generation stopped: Could not score any images.")
+        return []
+
+    # Sort by final score
+    scored_media_data.sort(key=lambda item: item['final_score'], reverse=True)
+    
+    # Select top images for slideshow
+    top_media_objects = scored_media_data[:max_files]
+    print(f"\n-> Selected top {len(top_media_objects)} images for slideshow")
+
+    # MODULE 3: Save images for slideshow (in persistent served_images directory)
+    print(f"\n-> Saving top {len(top_media_objects)} images for slideshow...")
+    if not os.path.exists(SERVED_IMAGES_DIR):
+        os.makedirs(SERVED_IMAGES_DIR, exist_ok=True)
+
+    image_filenames = []  # Just store filenames, not full paths
+    for idx, media in enumerate(top_media_objects):
+        try:
+            safe_filename = media['name'].replace(" ", "_")
+            orig_ext = os.path.splitext(media['name'])[1] or ".jpg"
+            save_name = f"slide_{idx:02d}_{safe_filename}{orig_ext}"
+            save_path = os.path.join(SERVED_IMAGES_DIR, save_name)
+
+            if isinstance(media.get('array'), np.ndarray) and media['array'].ndim == 3 and media['array'].shape[2] == 3:
+                written_path = safe_save_image_from_array(media['array'], save_path)
+                if written_path:
+                    image_filenames.append(save_name)  # Store just filename
+                    print(f"   - Saved slideshow image {idx + 1}/{len(top_media_objects)}: {save_name}")
+            else:
+                print(f"   - Warning: Skipping invalid image array for {media.get('name','unknown')}")
+
+        except Exception as e_save:
+            print(f"   - Warning: Could not save image {media.get('name','unknown')}. Error: {e_save}")
+
+    if not image_filenames:
+        print("!!! ERROR: No valid images saved for slideshow.")
+        return []
+
+    print(f"\n--- Slideshow Generated Successfully. {len(image_filenames)} images ready for captioning ---")
+    return image_filenames
+
 
 if __name__ == "__main__":
-    run_pipeline()
+    print("\n" + "="*80)
+    print("PLANIFY REELMAKER - AI-POWERED VIDEO GENERATION")
+    print("="*80)
+    result = run_pipeline()
+    if result:
+        print("\n" + "="*80)
+        print("✅ PIPELINE EXECUTION COMPLETED SUCCESSFULLY")
+        print("="*80)
+        if isinstance(result, dict):
+            print(f"Video Path: {result.get('video_path')}")
+            print(f"Images Used: {len(result.get('image_paths', []))}")
+    else:
+        print("\n" + "="*80)
+        print("❌ PIPELINE EXECUTION FAILED OR WAS ABORTED")
+        print("="*80)

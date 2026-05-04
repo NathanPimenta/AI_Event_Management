@@ -1,8 +1,8 @@
 {
   "event_meta": {
-    "department_name": "Department of Computer Engineering",
-    "event_type": "Game Development",
-    "title": "Ideathon",
+    "department_name": "DBIT",
+    "event_type": "Ai ml",
+    "title": "AI Summit",
     "date": "",
     "time": "",
     "venue": ""
@@ -78,12 +78,16 @@
     "approved_post": ""
   },
   "institute": {
-    "college_logo": "",
-    "club_logo": ""
+    "college_logo": "/home/nathanpimenta/Projects/AI_Event_Management/report_generator/dbit_logo.png",
+    "club_logo": "/home/nathanpimenta/Projects/AI_Event_Management/certificate_generator/assets/logos/dummy_logo.png"
   },
   "images": {
-    "event_photos": [],
+    "event_photos": [
+      "/home/nathanpimenta/Projects/AI_Event_Management/report_generator/static/uploads/report_image_1.jpg",
+      "/home/nathanpimenta/Projects/AI_Event_Management/report_generator/static/uploads/report_image_2.jpeg"
+    ],
     "feedback_image": "",
+    "snapshot_image": "",
     "poster_image": ""
   }
 }

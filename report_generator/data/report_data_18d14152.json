@@ -1,0 +1,100 @@
+{
+  "event_meta": {
+    "department_name": "ACM",
+    "event_type": "A game Development Event",
+    "title": "Teknack Workshop",
+    "date": "21st May 2026",
+    "time": "12:28 PM",
+    "venue": "Comp Center"
+  },
+  "participants": {
+    "target_audience": "DBIT Students",
+    "total_participants": 50,
+    "girl_participants": 0,
+    "boy_participants": 0
+  },
+  "organizers": {
+    "resource_person": "Mr. John Doe",
+    "resource_org": "JP",
+    "organizing_body": "ACM",
+    "faculty_coordinator": "Prof Shaye"
+  },
+  "content": {
+    "objectives": [
+      "To teach how to prepare game assets",
+      "To learn in game motions",
+      "To teach basic game mechanics"
+    ],
+    "outcomes": [
+      "Successfully taught game assets creation",
+      "Used Blender",
+      "Learned basic animations"
+    ],
+    "detailed_report": "The teknack game development workshop held for engineering students to teach them basics of unity ",
+    "snapshot_description": "students induldged in it"
+  },
+  "feedback": {
+    "feedback_text": ""
+  },
+  "social_media": {
+    "facebook": "linka",
+    "instagram": "linkb",
+    "linkedin": "linkc"
+  },
+  "registration": {
+    "dbit_students": 39,
+    "non_dbit_students": 11,
+    "students": [
+      {
+        "name": "John Doe",
+        "branch": "John Doe"
+      },
+      {
+        "name": "Jane Smith",
+        "branch": "Jane Smith"
+      },
+      {
+        "name": "Alice Johnson",
+        "branch": "Alice Johnson"
+      },
+      {
+        "name": "Bob Brown",
+        "branch": "Bob Brown"
+      },
+      {
+        "name": "Charlie Davis",
+        "branch": "Charlie Davis"
+      },
+      {
+        "name": "Diana Evans",
+        "branch": "Diana Evans"
+      },
+      {
+        "name": "Evan Foster",
+        "branch": "Evan Foster"
+      },
+      {
+        "name": "Fiona Green",
+        "branch": "Fiona Green"
+      }
+    ]
+  },
+  "signatories": {
+    "prepared_name": "nate",
+    "prepared_post": "admin",
+    "approved_name": "abc",
+    "approved_post": "admin"
+  },
+  "institute": {
+    "college_logo": "/home/nathanpimenta/Projects/AI_Event_Management/report_generator/dbit_logo.png",
+    "club_logo": "/home/nathanpimenta/Projects/AI_Event_Management/certificate_generator/assets/logos/dummy_logo.png"
+  },
+  "images": {
+    "event_photos": [
+      "/home/nathanpimenta/Projects/AI_Event_Management/report_generator/static/uploads/snapshot.png"
+    ],
+    "feedback_image": "",
+    "snapshot_image": "/home/nathanpimenta/Projects/AI_Event_Management/report_generator/static/uploads/snapshot.png",
+    "poster_image": "/home/nathanpimenta/Projects/AI_Event_Management/report_generator/static/uploads/poster.png"
+  }
+}

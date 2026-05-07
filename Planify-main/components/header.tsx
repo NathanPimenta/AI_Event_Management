@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
-import { Menu, User, LogOut, Home, Calendar, Users, Award, FileText, Search, ChevronDown, ImageIcon, Images, Video } from "lucide-react"
+import { Menu, User, LogOut, Home, Calendar, Users, Award, FileText, Search, ChevronDown, ImageIcon, Images, Video, Megaphone, Globe, Bot } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ModeToggle } from "./mode-toggle"
@@ -20,9 +20,9 @@ import Notifications from "./notifications"
 
 const AI_TOOLS = [
   { href: "/ai-tools/certificate-generator", label: "Certificate Generator", icon: Award },
-  { href: "/ai-tools/image-curator", label: "Image Curator", icon: Image },
-  { href: "/ai-tools/planify-reelmaker", label: "Reel Maker", icon: Film },
-  { href: "/ai-tools/poster-generator", label: "Poster Generator", icon: Megaphone },
+  { href: "/ai-tools/image-curator", label: "Image Curator", icon: Images },
+  { href: "/ai-tools/planify-reelmaker", label: "Reel Maker", icon: Video },
+  { href: "/ai-tools/poster-generator", label: "Poster Generator", icon: ImageIcon },
   { href: "/ai-tools/report-generator", label: "Report Generator", icon: FileText },
   { href: "/ai-tools/scraper", label: "Web Scraper", icon: Globe },
   { href: "/ai-tools/team-formation", label: "Team Formation", icon: Users }

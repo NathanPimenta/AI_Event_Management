@@ -47,6 +47,7 @@ export default function ReportGeneratorPage() {
     const [outcome2, setOutcome2] = useState("")
     const [outcome3, setOutcome3] = useState("")
     const [detailedDescription, setDetailedDescription] = useState("")
+    const [snapshotDescription, setSnapshotDescription] = useState("")
 
     // File states
     const [attendeesFileName, setAttendeesFileName] = useState("")
@@ -63,6 +64,12 @@ export default function ReportGeneratorPage() {
     const [numImages, setNumImages] = useState<number>(0)
     const [imageFiles, setImageFiles] = useState<Array<File | null>>([])
     const [imagePurposes, setImagePurposes] = useState<Array<string>>([]) // 'auto' | 'poster' | 'snapshot' | 'logo' | 'other'
+
+    // Local object URLs for preview 
+    const [posterPreview, setPosterPreview] = useState<string | null>(null)
+    const [snapshotPreview, setSnapshotPreview] = useState<string | null>(null)
+    const [logoPreview, setLogoPreview] = useState<string | null>(null)
+    const [extraImagesPreview, setExtraImagesPreview] = useState<string[]>([])
 
     // File refs
     const attendeesRef = useRef<HTMLInputElement>(null)
@@ -113,7 +120,7 @@ export default function ReportGeneratorPage() {
             // Upload attendees file
             const attendeesFormData = new FormData()
             attendeesFormData.append("file", attendeesFile)
-            await fetch("http://127.0.0.1:8003/upload/attendees.csv", {
+            await fetch("http://127.0.0.1:8004/upload/attendees.csv", {
                 method: "POST",
                 body: attendeesFormData,
             })
@@ -121,7 +128,7 @@ export default function ReportGeneratorPage() {
             // Upload feedback file
             const feedbackFormData = new FormData()
             feedbackFormData.append("file", feedbackFile)
-            await fetch("http://127.0.0.1:8003/upload/feedback.csv", {
+            await fetch("http://127.0.0.1:8004/upload/feedback.csv", {
                 method: "POST",
                 body: feedbackFormData,
             })
@@ -130,7 +137,7 @@ export default function ReportGeneratorPage() {
             if (crowdFile) {
                 const crowdFormData = new FormData()
                 crowdFormData.append("file", crowdFile)
-                await fetch("http://127.0.0.1:8003/upload/crowd_analytics.json", {
+                await fetch("http://127.0.0.1:8004/upload/crowd_analytics.json", {
                     method: "POST",
                     body: crowdFormData,
                 })
@@ -140,7 +147,7 @@ export default function ReportGeneratorPage() {
             if (socialFile) {
                 const socialFormData = new FormData()
                 socialFormData.append("file", socialFile)
-                await fetch("http://127.0.0.1:8003/upload/social_mentions.json", {
+                await fetch("http://127.0.0.1:8004/upload/social_mentions.json", {
                     method: "POST",
                     body: socialFormData,
                 })
@@ -151,7 +158,9 @@ export default function ReportGeneratorPage() {
             if (posterFile) {
                 const posterFormData = new FormData()
                 posterFormData.append("file", posterFile)
-                await fetch(`http://127.0.0.1:8003/upload/poster.png`, {
+                // Use the file's original extension to maintain formats like jpg OR png
+                const ext = posterFile.name.split('.').pop() || 'png'
+                await fetch(`http://127.0.0.1:8004/upload/poster.${ext}`, {
                     method: "POST",
                     body: posterFormData,
                 })
@@ -162,7 +171,8 @@ export default function ReportGeneratorPage() {
             if (snapshotFile) {
                 const snapshotFormData = new FormData()
                 snapshotFormData.append("file", snapshotFile)
-                await fetch(`http://127.0.0.1:8003/upload/snapshot.png`, {
+                const ext = snapshotFile.name.split('.').pop() || 'png'
+                await fetch(`http://127.0.0.1:8004/upload/snapshot.${ext}`, {
                     method: "POST",
                     body: snapshotFormData,
                 })
@@ -175,7 +185,8 @@ export default function ReportGeneratorPage() {
             if (logoFile) {
                 const logoFd = new FormData()
                 logoFd.append('file', logoFile)
-                await fetch(`http://127.0.0.1:8003/upload/logo.png`, {
+                const ext = logoFile.name.split('.').pop() || 'png'
+                await fetch(`http://127.0.0.1:8004/upload/logo.${ext}`, {
                     method: 'POST',
                     body: logoFd,
                 })
@@ -194,6 +205,14 @@ export default function ReportGeneratorPage() {
                     if (purpose === 'poster') filename = `poster.${ext}`
                     if (purpose === 'snapshot') filename = `snapshot.${ext}`
                     if (purpose === 'logo') filename = `logo.${ext}`
+                    
+                    // Actually upload the file
+                    const formData = new FormData()
+                    formData.append('file', f)
+                    await fetch(`http://127.0.0.1:8004/upload/${filename}`, {
+                        method: 'POST',
+                        body: formData,
+                    })
                 }
             }
 
@@ -248,7 +267,7 @@ export default function ReportGeneratorPage() {
                     objectives: getList(objective1, objective2, objective3),
                     outcomes: getList(outcome1, outcome2, outcome3),
                     detailed_report: detailedDescription,
-                    snapshot_description: ""
+                    snapshot_description: snapshotDescription
                 },
                 feedback: {
                     feedback_text: ""
@@ -269,7 +288,7 @@ export default function ReportGeneratorPage() {
                     approved_post: approver1Post || approver2Post
                 }
             };
-            const response = await fetch("http://127.0.0.1:8003/generate-report", {
+            const response = await fetch("http://127.0.0.1:8004/generate-report", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -282,9 +301,10 @@ export default function ReportGeneratorPage() {
 
             const data = await response.json()
             setResult({
-                content: data.content || "PDF Generated successfully",
+                content: data.content || "Report generated successfully",
                 filename: data.report_filename || "event_report.pdf",
-                pdf_url: data.pdf_url
+                pdf_url: data.pdf_url,
+                txt_url: data.txt_url
             })
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "An error occurred")
@@ -293,28 +313,22 @@ export default function ReportGeneratorPage() {
         }
     }
 
-    const downloadText = () => {
-        if (!result) return
-        const blob = new Blob([result.content], { type: "text/plain" })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = result.filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }
-
     const downloadPDF = () => {
         if (!result) return
         if ((result as any).pdf_url) {
-            window.open(`http://127.0.0.1:8003${(result as any).pdf_url}`, "_blank")
+            window.open(`http://127.0.0.1:8004${(result as any).pdf_url}`, "_blank")
         } else {
             window.open(
-                `http://127.0.0.1:8003/download-report/pdf?filename=${encodeURIComponent(result.filename)}`,
+                `http://127.0.0.1:8004/download-report/pdf?filename=${encodeURIComponent(result.filename)}`,
                 "_blank"
             )
+        }
+    }
+
+    const downloadTXT = () => {
+        if (!result) return
+        if ((result as any).txt_url) {
+            window.open(`http://127.0.0.1:8004${(result as any).txt_url}`, "_blank")
         }
     }
 
@@ -396,7 +410,7 @@ export default function ReportGeneratorPage() {
                         <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                         <h2 className="text-3xl font-bold">Your Report is Ready!</h2>
                         <p className="text-muted-foreground mt-2">
-                            Review the AI-generated analysis for the <span className="font-bold">{eventName}</span> event.
+                            Review the AI-generated PDF and TXT analysis for the <span className="font-bold">{eventName}</span> event.
                         </p>
                     </div>
                     <Card>
@@ -404,26 +418,27 @@ export default function ReportGeneratorPage() {
                             <div className="flex justify-between items-center">
                                 <CardTitle>Generated Report</CardTitle>
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={downloadText}>
-                                        <FileCode className="mr-2 h-4 w-4" />
-                                        Download .txt
-                                    </Button>
                                     <Button size="sm" onClick={downloadPDF}>
                                         <Download className="mr-2 h-4 w-4" />
                                         Download .pdf
                                     </Button>
+                                    <Button size="sm" variant="outline" onClick={downloadTXT}>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download .txt
+                                    </Button>
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent>
-                            <div
-                                className="max-w-none max-h-[600px] overflow-y-auto p-6 bg-white dark:bg-zinc-900 rounded-lg border font-mono text-sm leading-relaxed"
-                                dangerouslySetInnerHTML={{ __html: renderReport(result.content) }}
-                            />
-                        </CardContent>
                     </Card>
                     <div className="text-center mt-8">
-                        <Button variant="outline" onClick={() => window.location.reload()}>
+                        <Button variant="outline" onClick={() => {
+                            setResult(null)
+                            // Clean up object URLs
+                            if (posterPreview) URL.revokeObjectURL(posterPreview)
+                            if (snapshotPreview) URL.revokeObjectURL(snapshotPreview)
+                            if (logoPreview) URL.revokeObjectURL(logoPreview)
+                            extraImagesPreview.forEach(p => URL.revokeObjectURL(p))
+                        }}>
                             Generate Another Report
                         </Button>
                     </div>
@@ -433,474 +448,582 @@ export default function ReportGeneratorPage() {
     }
 
     return (
-        <div className="container mx-auto p-6 md:p-12">
-            <div className="max-w-4xl mx-auto">
-                {/* Page Header */}
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold">AI Event Report Generator</h1>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        Upload your event data to generate a comprehensive, AI-powered analysis.
-                    </p>
-                </div>
+        <div className="container mx-auto p-4 md:p-8 max-w-[1600px]">
+            {/* Page Header */}
+            <div className="text-center mb-10">
+                <h1 className="text-4xl font-bold">AI Event Report Generator</h1>
+                <p className="mt-4 text-lg text-muted-foreground">
+                    Upload your event data to generate a comprehensive, AI-powered PDF and TXT analysis.
+                </p>
+            </div>
 
-                <form onSubmit={handleSubmit}>
-                    {/* Step 1: Configure Report */}
-                    <Card className="mb-8">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm">1</span>
-                                Configure Your Report
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col xl:flex-row gap-8 items-start">
+
+                {/* Form Column */}
+                <div className="w-full xl:w-1/2 flex-none">
+                    <form onSubmit={handleSubmit}>
+                        {/* Step 1: Configure Report */}
+                        <Card className="mb-8">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm">1</span>
+                                    Configure Your Report
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="eventName">Event Name *</Label>
+                                        <Input
+                                            id="eventName"
+                                            value={eventName}
+                                            onChange={(e) => setEventName(e.target.value)}
+                                            placeholder="e.g., TechFest 2025"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="eventType">Event Type *</Label>
+                                        <Input
+                                            id="eventType"
+                                            value={eventType}
+                                            onChange={(e) => setEventType(e.target.value)}
+                                            placeholder="e.g., AI/ML Workshop Series"
+                                            required
+                                        />
+                                    </div>
+                                </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="eventName">Event Name *</Label>
+                                    <Label htmlFor="institutionName">Institution / Department *</Label>
                                     <Input
-                                        id="eventName"
-                                        value={eventName}
-                                        onChange={(e) => setEventName(e.target.value)}
-                                        placeholder="e.g., TechFest 2025"
+                                        id="institutionName"
+                                        value={institutionName}
+                                        onChange={(e) => setInstitutionName(e.target.value)}
+                                        placeholder="e.g., Department of Computer Science"
                                         required
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="eventType">Event Type *</Label>
-                                    <Input
-                                        id="eventType"
-                                        value={eventType}
-                                        onChange={(e) => setEventType(e.target.value)}
-                                        placeholder="e.g., AI/ML Workshop Series"
-                                        required
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="institutionName">Institution / Department *</Label>
-                                <Input
-                                    id="institutionName"
-                                    value={institutionName}
-                                    onChange={(e) => setInstitutionName(e.target.value)}
-                                    placeholder="e.g., Department of Computer Science"
-                                    required
-                                />
-                            </div>
 
-                            <div className="grid gap-4 md:grid-cols-3 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="eventDate">Event Date</Label>
-                                    <Input id="eventDate" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+                                <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="eventDate">Event Date</Label>
+                                        <Input id="eventDate" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="eventTime">Event Time</Label>
+                                        <Input id="eventTime" type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="eventVenue">Event Venue</Label>
+                                        <Input id="eventVenue" value={eventVenue} onChange={(e) => setEventVenue(e.target.value)} placeholder="e.g. Main Auditorium" />
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="eventTime">Event Time</Label>
-                                    <Input id="eventTime" type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)} />
+                                <div className="grid gap-4 md:grid-cols-2 mt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="targetAudience">Target Audience</Label>
+                                        <Input id="targetAudience" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} placeholder="e.g. TE IT & Comps" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="organizingBody">Organizing Body</Label>
+                                        <Input id="organizingBody" value={organizingBody} onChange={(e) => setOrganizingBody(e.target.value)} placeholder="e.g. ACM Student Chapter" />
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="eventVenue">Event Venue</Label>
-                                    <Input id="eventVenue" value={eventVenue} onChange={(e) => setEventVenue(e.target.value)} placeholder="e.g. Main Auditorium" />
+                                <div className="grid gap-4 md:grid-cols-2 mt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="dbitStudentsCount">DBIT Students Count</Label>
+                                        <Input id="dbitStudentsCount" value={dbitStudentsCount} onChange={(e) => setDbitStudentsCount(e.target.value)} placeholder="e.g. 50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="nonDbitStudentsCount">Non-DBIT Students Count</Label>
+                                        <Input id="nonDbitStudentsCount" value={nonDbitStudentsCount} onChange={(e) => setNonDbitStudentsCount(e.target.value)} placeholder="e.g. 10" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="targetAudience">Target Audience</Label>
-                                    <Input id="targetAudience" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} placeholder="e.g. TE IT & Comps" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="organizingBody">Organizing Body</Label>
-                                    <Input id="organizingBody" value={organizingBody} onChange={(e) => setOrganizingBody(e.target.value)} placeholder="e.g. ACM Student Chapter" />
-                                </div>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="dbitStudentsCount">DBIT Students Count</Label>
-                                    <Input id="dbitStudentsCount" value={dbitStudentsCount} onChange={(e) => setDbitStudentsCount(e.target.value)} placeholder="e.g. 50" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="nonDbitStudentsCount">Non-DBIT Students Count</Label>
-                                    <Input id="nonDbitStudentsCount" value={nonDbitStudentsCount} onChange={(e) => setNonDbitStudentsCount(e.target.value)} placeholder="e.g. 10" />
-                                </div>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-3 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="resourcePersonName">Resource Person Name</Label>
-                                    <Input id="resourcePersonName" value={resourcePersonName} onChange={(e) => setResourcePersonName(e.target.value)} placeholder="e.g. Mr. John Doe" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="resourcePersonOrg">Resource Person Org</Label>
-                                    <Input id="resourcePersonOrg" value={resourcePersonOrg} onChange={(e) => setResourcePersonOrg(e.target.value)} placeholder="e.g. Google" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
-                                    <Input id="facultyCoordinator" value={facultyCoordinator} onChange={(e) => setFacultyCoordinator(e.target.value)} placeholder="e.g. Prof. Smith" />
-                                </div>
-                            </div>
-
-                            <div className="grid gap-4 md:grid-cols-3 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="objective1">Objective 1</Label>
-                                    <Input id="objective1" value={objective1} onChange={(e) => setObjective1(e.target.value)} placeholder="" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="objective2">Objective 2</Label>
-                                    <Input id="objective2" value={objective2} onChange={(e) => setObjective2(e.target.value)} placeholder="" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="objective3">Objective 3</Label>
-                                    <Input id="objective3" value={objective3} onChange={(e) => setObjective3(e.target.value)} placeholder="" />
-                                </div>
-                            </div>
-
-                            <div className="grid gap-4 md:grid-cols-3 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="outcome1">Outcome 1</Label>
-                                    <Input id="outcome1" value={outcome1} onChange={(e) => setOutcome1(e.target.value)} placeholder="" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="outcome2">Outcome 2</Label>
-                                    <Input id="outcome2" value={outcome2} onChange={(e) => setOutcome2(e.target.value)} placeholder="" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="outcome3">Outcome 3</Label>
-                                    <Input id="outcome3" value={outcome3} onChange={(e) => setOutcome3(e.target.value)} placeholder="" />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2 mt-4">
-                                <Label htmlFor="detailedDescription">Detailed Description Pointers</Label>
-                                <Input id="detailedDescription" value={detailedDescription} onChange={(e) => setDetailedDescription(e.target.value)} placeholder="Provide pointers. The AI will write the paragraph." />
-                            </div>
-
-                            <div className="grid gap-4 md:grid-cols-3 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="facebookLink">Facebook Link</Label>
-                                    <Input id="facebookLink" value={facebookLink} onChange={(e) => setFacebookLink(e.target.value)} placeholder="Link or N/A" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="instagramLink">Instagram Link</Label>
-                                    <Input id="instagramLink" value={instagramLink} onChange={(e) => setInstagramLink(e.target.value)} placeholder="Link or N/A" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="linkedinLink">LinkedIn Link</Label>
-                                    <Input id="linkedinLink" value={linkedinLink} onChange={(e) => setLinkedinLink(e.target.value)} placeholder="Link or N/A" />
-                                </div>
-                            </div>
-
-                            <div className="grid gap-4 md:grid-cols-2 mt-4">
-                                <div className="space-y-2">
-                                    <Label>Approver 1 Detail</Label>
-                                    <Input className="mb-2" value={approver1Name} onChange={(e) => setApprover1Name(e.target.value)} placeholder="Name (e.g. Dr. Phadke)" />
-                                    <Input value={approver1Post} onChange={(e) => setApprover1Post(e.target.value)} placeholder="Post (e.g. Principal)" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Approver 2 Detail</Label>
-                                    <Input className="mb-2" value={approver2Name} onChange={(e) => setApprover2Name(e.target.value)} placeholder="Name" />
-                                    <Input value={approver2Post} onChange={(e) => setApprover2Post(e.target.value)} placeholder="Post" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Preparer 1 Detail</Label>
-                                    <Input className="mb-2" value={preparer1Name} onChange={(e) => setPreparer1Name(e.target.value)} placeholder="Name" />
-                                    <Input value={preparer1Post} onChange={(e) => setPreparer1Post(e.target.value)} placeholder="Post" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Preparer 2 Detail</Label>
-                                    <Input className="mb-2" value={preparer2Name} onChange={(e) => setPreparer2Name(e.target.value)} placeholder="Name" />
-                                    <Input value={preparer2Post} onChange={(e) => setPreparer2Post(e.target.value)} placeholder="Post" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Step 2: Upload Data */}
-                    <Card className="mb-8">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm">2</span>
-                                Upload Your Data
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="grid gap-4 md:grid-cols-2">
-                                {/* Attendees CSV (Required) */}
-                                <div className="space-y-2">
-                                    <Label>
-                                        Participant Data <span className="text-red-500">*</span>
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">attendees.csv (Required)</p>
-                                    <div
-                                        className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${attendeesFileName ? "border-green-500" : "border-muted"
-                                            }`}
-                                        onClick={() => attendeesRef.current?.click()}
-                                    >
-                                        <input
-                                            type="file"
-                                            ref={attendeesRef}
-                                            className="hidden"
-                                            accept=".csv"
-                                            onChange={(e) => handleFileChange(e, setAttendeesFileName)}
-                                        />
-                                        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                        <span className="text-sm">
-                                            {attendeesFileName || "Click to upload"}
-                                        </span>
+                                <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="resourcePersonName">Resource Person Name</Label>
+                                        <Input id="resourcePersonName" value={resourcePersonName} onChange={(e) => setResourcePersonName(e.target.value)} placeholder="e.g. Mr. John Doe" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="resourcePersonOrg">Resource Person Org</Label>
+                                        <Input id="resourcePersonOrg" value={resourcePersonOrg} onChange={(e) => setResourcePersonOrg(e.target.value)} placeholder="e.g. Google" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
+                                        <Input id="facultyCoordinator" value={facultyCoordinator} onChange={(e) => setFacultyCoordinator(e.target.value)} placeholder="e.g. Prof. Smith" />
                                     </div>
                                 </div>
 
-                                {/* Feedback CSV (Required) */}
-                                <div className="space-y-2">
-                                    <Label>
-                                        Feedback Data <span className="text-red-500">*</span>
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">feedback.csv (Required)</p>
-                                    <div
-                                        className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${feedbackFileName ? "border-green-500" : "border-muted"
-                                            }`}
-                                        onClick={() => feedbackRef.current?.click()}
-                                    >
-                                        <input
-                                            type="file"
-                                            ref={feedbackRef}
-                                            className="hidden"
-                                            accept=".csv"
-                                            onChange={(e) => handleFileChange(e, setFeedbackFileName)}
-                                        />
-                                        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                        <span className="text-sm">
-                                            {feedbackFileName || "Click to upload"}
-                                        </span>
+                                <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="objective1">Objective 1</Label>
+                                        <Input id="objective1" value={objective1} onChange={(e) => setObjective1(e.target.value)} placeholder="" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="objective2">Objective 2</Label>
+                                        <Input id="objective2" value={objective2} onChange={(e) => setObjective2(e.target.value)} placeholder="" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="objective3">Objective 3</Label>
+                                        <Input id="objective3" value={objective3} onChange={(e) => setObjective3(e.target.value)} placeholder="" />
                                     </div>
                                 </div>
 
-                                {/* Crowd Analytics JSON (Optional) */}
-                                <div className="space-y-2">
-                                    <Label>Crowd Analytics</Label>
-                                    <p className="text-xs text-yellow-500">crowd_analytics.json (Optional)</p>
-                                    <div
-                                        className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${crowdFileName ? "border-green-500" : "border-muted"
-                                            }`}
-                                        onClick={() => crowdRef.current?.click()}
-                                    >
-                                        <input
-                                            type="file"
-                                            ref={crowdRef}
-                                            className="hidden"
-                                            accept=".json"
-                                            onChange={(e) => handleFileChange(e, setCrowdFileName)}
-                                        />
-                                        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                        <span className="text-sm">
-                                            {crowdFileName || "Click to upload"}
-                                        </span>
+                                <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="outcome1">Outcome 1</Label>
+                                        <Input id="outcome1" value={outcome1} onChange={(e) => setOutcome1(e.target.value)} placeholder="" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="outcome2">Outcome 2</Label>
+                                        <Input id="outcome2" value={outcome2} onChange={(e) => setOutcome2(e.target.value)} placeholder="" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="outcome3">Outcome 3</Label>
+                                        <Input id="outcome3" value={outcome3} onChange={(e) => setOutcome3(e.target.value)} placeholder="" />
                                     </div>
                                 </div>
 
-                                {/* Social Mentions JSON (Optional) */}
-                                <div className="space-y-2">
-                                    <Label>Social Media Mentions</Label>
-                                    <p className="text-xs text-yellow-500">social_mentions.json (Optional)</p>
-                                    <div
-                                        className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${socialFileName ? "border-green-500" : "border-muted"
-                                            }`}
-                                        onClick={() => socialRef.current?.click()}
-                                    >
-                                        <input
-                                            type="file"
-                                            ref={socialRef}
-                                            className="hidden"
-                                            accept=".json"
-                                            onChange={(e) => handleFileChange(e, setSocialFileName)}
-                                        />
-                                        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                        <span className="text-sm">
-                                            {socialFileName || "Click to upload"}
-                                        </span>
-                                    </div>
+                                <div className="space-y-2 mt-4">
+                                    <Label htmlFor="detailedDescription">Detailed Description Pointers</Label>
+                                    <Input id="detailedDescription" value={detailedDescription} onChange={(e) => setDetailedDescription(e.target.value)} placeholder="Provide pointers. The AI will write the paragraph." />
                                 </div>
-                            </div>
+                                <div className="space-y-2 mt-4">
+                                    <Label htmlFor="snapshotDescription">Snapshot Description</Label>
+                                    <Input id="snapshotDescription" value={snapshotDescription} onChange={(e) => setSnapshotDescription(e.target.value)} placeholder="Brief description of the event snapshot images." />
+                                </div>
 
-                            <div className="grid gap-4 md:grid-cols-2 mt-4">
-                                {/* Event Poster (Optional) */}
-                                <div className="space-y-2">
-                                    <Label>Event Poster</Label>
-                                    <p className="text-xs text-yellow-500">poster.png/jpg (Optional)</p>
-                                    <div
-                                        className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${posterFileName ? "border-green-500" : "border-muted"
-                                            }`}
-                                        onClick={() => posterRef.current?.click()}
-                                    >
-                                        <input
-                                            type="file"
-                                            ref={posterRef}
-                                            className="hidden"
-                                            accept=".png,.jpg,.jpeg"
-                                            onChange={(e) => handleFileChange(e, setPosterFileName)}
-                                        />
-                                        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                        <span className="text-sm">
-                                            {posterFileName || "Click to upload"}
-                                        </span>
+                                <div className="grid gap-4 md:grid-cols-3 mt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="facebookLink">Facebook Link</Label>
+                                        <Input id="facebookLink" value={facebookLink} onChange={(e) => setFacebookLink(e.target.value)} placeholder="Link or N/A" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="instagramLink">Instagram Link</Label>
+                                        <Input id="instagramLink" value={instagramLink} onChange={(e) => setInstagramLink(e.target.value)} placeholder="Link or N/A" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="linkedinLink">LinkedIn Link</Label>
+                                        <Input id="linkedinLink" value={linkedinLink} onChange={(e) => setLinkedinLink(e.target.value)} placeholder="Link or N/A" />
                                     </div>
                                 </div>
 
-                                {/* Event Snapshot (Optional) */}
-                                <div className="space-y-2">
-                                    <Label>Event Snapshot</Label>
-                                    <p className="text-xs text-yellow-500">snapshot.png/jpg (Optional)</p>
-                                    <div
-                                        className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${snapshotFileName ? "border-green-500" : "border-muted"
-                                            }`}
-                                        onClick={() => snapshotRef.current?.click()}
-                                    >
-                                        <input
-                                            type="file"
-                                            ref={snapshotRef}
-                                            className="hidden"
-                                            accept=".png,.jpg,.jpeg"
-                                            onChange={(e) => handleFileChange(e, setSnapshotFileName)}
-                                        />
-                                        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                        <span className="text-sm">
-                                            {snapshotFileName || "Click to upload"}
-                                        </span>
+                                <div className="grid gap-4 md:grid-cols-2 mt-4">
+                                    <div className="space-y-2">
+                                        <Label>Approver 1 Detail</Label>
+                                        <Input className="mb-2" value={approver1Name} onChange={(e) => setApprover1Name(e.target.value)} placeholder="Name (e.g. Dr. Phadke)" />
+                                        <Input value={approver1Post} onChange={(e) => setApprover1Post(e.target.value)} placeholder="Post (e.g. Principal)" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Approver 2 Detail</Label>
+                                        <Input className="mb-2" value={approver2Name} onChange={(e) => setApprover2Name(e.target.value)} placeholder="Name" />
+                                        <Input value={approver2Post} onChange={(e) => setApprover2Post(e.target.value)} placeholder="Post" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Preparer 1 Detail</Label>
+                                        <Input className="mb-2" value={preparer1Name} onChange={(e) => setPreparer1Name(e.target.value)} placeholder="Name" />
+                                        <Input value={preparer1Post} onChange={(e) => setPreparer1Post(e.target.value)} placeholder="Post" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Preparer 2 Detail</Label>
+                                        <Input className="mb-2" value={preparer2Name} onChange={(e) => setPreparer2Name(e.target.value)} placeholder="Name" />
+                                        <Input value={preparer2Post} onChange={(e) => setPreparer2Post(e.target.value)} placeholder="Post" />
                                     </div>
                                 </div>
-                            </div>
+                            </CardContent>
+                        </Card>
 
-                            {/* Additional Images Options */}
-
-
-
-                            <div>
-                                <div className="space-y-2">
-
-
-                                    {/* Optional: Logo upload */}
-                                    <div className="mt-4">
-                                        <Label>Logo (Optional)</Label>
-                                        <p className="text-xs text-muted-foreground">Upload an organization/logo image to be inserted where the template has a logo placeholder.</p>
+                        {/* Step 2: Upload Data */}
+                        <Card className="mb-8">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm">2</span>
+                                    Upload Your Data
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {/* Attendees CSV (Required) */}
+                                    <div className="space-y-2">
+                                        <Label>
+                                            Participant Data <span className="text-red-500">*</span>
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">attendees.csv (Required)</p>
                                         <div
-                                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${logoFileName ? "border-green-500" : "border-muted"
+                                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${attendeesFileName ? "border-green-500" : "border-muted"
                                                 }`}
-                                            onClick={() => logoRef.current?.click()}
+                                            onClick={() => attendeesRef.current?.click()}
                                         >
                                             <input
                                                 type="file"
-                                                ref={logoRef}
+                                                ref={attendeesRef}
                                                 className="hidden"
-                                                accept=".png,.jpg,.jpeg,.gif"
-                                                onChange={(e) => handleFileChange(e, setLogoFileName)}
+                                                accept=".csv"
+                                                onChange={(e) => handleFileChange(e, setAttendeesFileName)}
                                             />
                                             <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                            <span className="text-sm">{logoFileName || "Click to upload a logo (optional)"}</span>
+                                            <span className="text-sm">
+                                                {attendeesFileName || "Click to upload"}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    {/* Optional: ask user if they'd like to include images and how many up front */}
-                                    <div className="mt-4">
-                                        <Label>Include images in report?</Label>
-                                        <div className="flex items-center gap-4 mt-2">
-                                            <label className="flex items-center gap-2">
-                                                <input
-                                                    type="radio"
-                                                    name="includeImages"
-                                                    checked={!includeImages}
-                                                    onChange={() => setIncludeImages(false)}
-                                                />
-                                                No
-                                            </label>
-                                            <label className="flex items-center gap-2">
-                                                <input
-                                                    type="radio"
-                                                    name="includeImages"
-                                                    checked={includeImages}
-                                                    onChange={() => setIncludeImages(true)}
-                                                />
-                                                Yes
-                                            </label>
+                                    {/* Feedback CSV (Required) */}
+                                    <div className="space-y-2">
+                                        <Label>
+                                            Feedback Data <span className="text-red-500">*</span>
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">feedback.csv (Required)</p>
+                                        <div
+                                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${feedbackFileName ? "border-green-500" : "border-muted"
+                                                }`}
+                                            onClick={() => feedbackRef.current?.click()}
+                                        >
+                                            <input
+                                                type="file"
+                                                ref={feedbackRef}
+                                                className="hidden"
+                                                accept=".csv"
+                                                onChange={(e) => handleFileChange(e, setFeedbackFileName)}
+                                            />
+                                            <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                                            <span className="text-sm">
+                                                {feedbackFileName || "Click to upload"}
+                                            </span>
                                         </div>
-
-                                        {includeImages && (
-                                            <div className="mt-3 space-y-2">
-                                                <Label>How many images would you like to include?</Label>
-                                                <Input
-                                                    type="number"
-                                                    min={1}
-                                                    value={numImages}
-                                                    onChange={(e) => {
-                                                        const v = parseInt(e.target.value || "0", 10)
-                                                        setNumImages(v)
-                                                        setImageFiles(Array.from({ length: Math.max(0, v) }, (_, i) => imageFiles[i] || null))
-                                                        setImagePurposes(Array.from({ length: Math.max(0, v) }, (_, i) => imagePurposes[i] || 'auto'))
-                                                    }}
-                                                />
-
-                                                {Array.from({ length: numImages }).map((_, i) => (
-                                                    <div key={i} className="mt-2">
-                                                        <Label>Image #{i + 1}</Label>
-                                                        <div className="flex gap-2 items-center">
-                                                            <input
-                                                                type="file"
-                                                                accept=".png,.jpg,.jpeg,.gif"
-                                                                className="block"
-                                                                onChange={(e) => {
-                                                                    const f = e.target.files?.[0] || null
-                                                                    setImageFiles((prev) => {
-                                                                        const copy = prev.slice()
-                                                                        copy[i] = f
-                                                                        return copy
-                                                                    })
-                                                                }}
-                                                            />
-
-                                                            <select
-                                                                value={imagePurposes[i] || 'auto'}
-                                                                onChange={(e) => {
-                                                                    const v = e.target.value
-                                                                    setImagePurposes((prev) => {
-                                                                        const copy = prev.slice()
-                                                                        copy[i] = v
-                                                                        return copy
-                                                                    })
-                                                                }}
-                                                                className="border rounded px-2 py-1 text-sm"
-                                                            >
-                                                                <option value="auto">Auto</option>
-                                                                <option value="poster">Poster</option>
-                                                                <option value="snapshot">Snapshot</option>
-                                                                <option value="logo">Logo</option>
-                                                                <option value="other">Other</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
                                     </div>
 
+                                    {/* Crowd Analytics JSON (Optional) */}
+                                    <div className="space-y-2">
+                                        <Label>Crowd Analytics</Label>
+                                        <p className="text-xs text-yellow-500">crowd_analytics.json (Optional)</p>
+                                        <div
+                                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${crowdFileName ? "border-green-500" : "border-muted"
+                                                }`}
+                                            onClick={() => crowdRef.current?.click()}
+                                        >
+                                            <input
+                                                type="file"
+                                                ref={crowdRef}
+                                                className="hidden"
+                                                accept=".json"
+                                                onChange={(e) => handleFileChange(e, setCrowdFileName)}
+                                            />
+                                            <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                                            <span className="text-sm">
+                                                {crowdFileName || "Click to upload"}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Social Mentions JSON (Optional) */}
+                                    <div className="space-y-2">
+                                        <Label>Social Media Mentions</Label>
+                                        <p className="text-xs text-yellow-500">social_mentions.json (Optional)</p>
+                                        <div
+                                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors ${socialFileName ? "border-green-500" : "border-muted"
+                                                }`}
+                                            onClick={() => socialRef.current?.click()}
+                                        >
+                                            <input
+                                                type="file"
+                                                ref={socialRef}
+                                                className="hidden"
+                                                accept=".json"
+                                                onChange={(e) => handleFileChange(e, setSocialFileName)}
+                                            />
+                                            <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                                            <span className="text-sm">
+                                                {socialFileName || "Click to upload"}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                {/* Additional Images Options */}
+                                        <div className="mt-4">
+                                            <Label>Include images in report?</Label>
+                                            <div className="flex items-center gap-4 mt-2">
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                        type="radio"
+                                                        name="includeImages"
+                                                        checked={!includeImages}
+                                                        onChange={() => setIncludeImages(false)}
+                                                    />
+                                                    No
+                                                </label>
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                        type="radio"
+                                                        name="includeImages"
+                                                        checked={includeImages}
+                                                        onChange={() => setIncludeImages(true)}
+                                                    />
+                                                    Yes
+                                                </label>
+                                            </div>
+
+                                            {includeImages && (
+                                                <div className="mt-3 space-y-2">
+                                                    <Label>How many images would you like to include?</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min={1}
+                                                        value={numImages}
+                                                        onChange={(e) => {
+                                                            const v = parseInt(e.target.value || "0", 10)
+                                                            setNumImages(v)
+                                                            setImageFiles(Array.from({ length: Math.max(0, v) }, (_, i) => imageFiles[i] || null))
+                                                            setImagePurposes(Array.from({ length: Math.max(0, v) }, (_, i) => imagePurposes[i] || 'auto'))
+                                                        }}
+                                                    />
+
+                                                    {Array.from({ length: numImages }).map((_, i) => (
+                                                        <div key={i} className="mt-2">
+                                                            <Label>Image #{i + 1}</Label>
+                                                            <div className="flex gap-2 items-center">
+                                                                <input
+                                                                    type="file"
+                                                                    accept=".png,.jpg,.jpeg,.gif"
+                                                                    className="block"
+                                                                    onChange={(e) => {
+                                                                        const f = e.target.files?.[0] || null
+                                                                        setImageFiles((prev) => {
+                                                                            const copy = prev.slice()
+                                                                            copy[i] = f
+                                                                            return copy
+                                                                        })
+                                                                        setExtraImagesPreview((prev) => {
+                                                                            const copy = prev.slice()
+                                                                            if (copy[i]) URL.revokeObjectURL(copy[i]) // clean up previous
+                                                                            copy[i] = f ? URL.createObjectURL(f) : ""
+                                                                            return copy
+                                                                        })
+                                                                    }}
+                                                                />
+
+                                                                <select
+                                                                    value={imagePurposes[i] || 'auto'}
+                                                                    onChange={(e) => {
+                                                                        const v = e.target.value
+                                                                        setImagePurposes((prev) => {
+                                                                            const copy = prev.slice()
+                                                                            copy[i] = v
+                                                                            return copy
+                                                                        })
+                                                                    }}
+                                                                    className="border rounded px-2 py-1 text-sm"
+                                                                >
+                                                                    <option value="auto">Auto</option>
+                                                                    <option value="poster">Poster</option>
+                                                                    <option value="snapshot">Snapshot</option>
+                                                                    <option value="logo">Logo</option>
+                                                                    <option value="other">Other</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                            </CardContent>
+                        </Card>
+
+                        {/* Error Message */}
+                        {error && (
+                            <Alert variant="destructive" className="mb-6">
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
+
+                        {/* Submit Button */}
+                        <div className="text-center mt-8">
+                            <Button
+                                type="submit"
+                                size="lg"
+                                className="px-12 w-full md:w-auto"
+                                disabled={!isFormValid()}
+                            >
+                                <Wand2 className="mr-2 h-5 w-5" />
+                                Generate PDF Report
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+
+                {/* Live Preview Column */}
+                <div className="w-full xl:w-1/2 flex-none xl:sticky xl:top-8 max-h-[90vh] overflow-y-auto no-scrollbar pb-10">
+                    <Card className="h-full bg-white dark:bg-[#1e1e1e]">
+                        <CardHeader className="border-b sticky top-0 bg-white dark:bg-[#1e1e1e] z-10 pb-4">
+                            <CardTitle className="text-xl flex items-center justify-between">
+                                <span>Live Report Preview</span>
+                                <span className="text-xs text-muted-foreground font-normal px-2 py-1 bg-muted rounded-md border">Dynamic Visualizer</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6 md:p-8 relative">
+                            {/* Document Mockup Wrapper */}
+                            <div className="space-y-6 text-sm text-foreground doc-preview">
+
+                                {/* Header / Logos */}
+                                <div className="text-center mb-8 border-b-2 border-primary pb-6">
+                                    {logoPreview && (
+                                        <div className="mb-4">
+                                            <img src={logoPreview} alt="Institute Logo" className="mx-auto max-h-24 object-contain" />
+                                        </div>
+                                    )}
+                                    <h1 className="text-2xl font-bold uppercase tracking-wider text-primary">
+                                        {institutionName || "DEPARTMENT / INSTITUTION NAME"}
+                                    </h1>
+                                    <p className="mt-2 text-muted-foreground text-sm uppercase">Event Report</p>
+                                </div>
+
+                                {/* Event Meta Data */}
+                                <div className="space-y-4">
+                                    <h2 className="text-lg font-bold border-b pb-2">Part 1: Basic Information</h2>
+                                    <div className="grid grid-cols-[150px_1fr] gap-2 items-start py-1">
+                                        <span className="font-semibold text-muted-foreground">Event Title:</span>
+                                        <span className="font-medium">{eventName || "N/A"}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[150px_1fr] gap-2 items-start py-1 bg-muted/30">
+                                        <span className="font-semibold text-muted-foreground">Event Type:</span>
+                                        <span className="font-medium">{eventType || "N/A"}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[150px_1fr] gap-2 items-start py-1">
+                                        <span className="font-semibold text-muted-foreground">Date & Time:</span>
+                                        <span>{eventDate ? new Date(eventDate).toLocaleDateString() : "N/A"} - {eventTime || "N/A"}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[150px_1fr] gap-2 items-start py-1 bg-muted/30">
+                                        <span className="font-semibold text-muted-foreground">Venue:</span>
+                                        <span>{eventVenue || "N/A"}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[150px_1fr] gap-2 items-start py-1">
+                                        <span className="font-semibold text-muted-foreground">Target Audience:</span>
+                                        <span>{targetAudience || "N/A"}</span>
+                                    </div>
+                                </div>
+
+                                {/* Organizers */}
+                                <div className="space-y-4 pt-4">
+                                    <h2 className="text-lg font-bold border-b pb-2">Part 2: Dignitaries and Organizers</h2>
+                                    <div className="grid grid-cols-[150px_1fr] gap-2 items-start py-1">
+                                        <span className="font-semibold text-muted-foreground">Resource Person:</span>
+                                        <span>{resourcePersonName || "N/A"} ({resourcePersonOrg || "N/A"})</span>
+                                    </div>
+                                    <div className="grid grid-cols-[150px_1fr] gap-2 items-start py-1 bg-muted/30">
+                                        <span className="font-semibold text-muted-foreground">Organizing Body:</span>
+                                        <span>{organizingBody || "N/A"}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[150px_1fr] gap-2 items-start py-1">
+                                        <span className="font-semibold text-muted-foreground">Coordinator:</span>
+                                        <span>{facultyCoordinator || "N/A"}</span>
+                                    </div>
+                                </div>
+
+                                {/* Objectives and Outcomes */}
+                                <div className="space-y-4 pt-4">
+                                    <h2 className="text-lg font-bold border-b pb-2">Part 3: Objectives & Outcomes</h2>
+                                    <div className="mb-4">
+                                        <h3 className="font-semibold text-muted-foreground mb-2">Objectives:</h3>
+                                        <ul className="list-disc pl-5 space-y-1">
+                                            {objective1 ? <li>{objective1}</li> : null}
+                                            {objective2 ? <li>{objective2}</li> : null}
+                                            {objective3 ? <li>{objective3}</li> : null}
+                                            {!objective1 && !objective2 && !objective3 && <li className="text-muted-foreground italic list-none">No objectives provided.</li>}
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-muted-foreground mb-2">Outcomes:</h3>
+                                        <ul className="list-disc pl-5 space-y-1">
+                                            {outcome1 ? <li>{outcome1}</li> : null}
+                                            {outcome2 ? <li>{outcome2}</li> : null}
+                                            {outcome3 ? <li>{outcome3}</li> : null}
+                                            {!outcome1 && !outcome2 && !outcome3 && <li className="text-muted-foreground italic list-none">No outcomes provided.</li>}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Generated Description Area */}
+                                <div className="space-y-4 pt-4">
+                                    <h2 className="text-lg font-bold border-b pb-2">Part 4: Detailed Report</h2>
+                                    <div className="p-4 bg-muted/30 rounded-md border border-dashed border-muted-foreground/30 relative">
+                                        <Wand2 className="absolute top-4 right-4 h-5 w-5 text-muted-foreground/50" />
+                                        <p className="whitespace-pre-wrap leading-relaxed">
+                                            {detailedDescription
+                                                ? `(AI will generate a detailed multi-paragraph write-up based on your pointers):\n\n${detailedDescription}`
+                                                : "Provide description pointers in the form. The AI will generate a comprehensive report here."}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Images Visualizations */}
+                                <div className="space-y-4 pt-4">
+                                    <h2 className="text-lg font-bold border-b pb-2">Attachments & Images</h2>
+
+                                    {(!posterPreview && !snapshotPreview && extraImagesPreview.filter(p => p !== "").length === 0) ? (
+                                        <p className="text-muted-foreground italic text-center py-8">Upload images on the left to securely attach them within the report.</p>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {posterPreview && (
+                                                <div className="space-y-2">
+                                                    <p className="font-semibold text-xs text-center text-muted-foreground">Event Poster</p>
+                                                    <div className="border rounded bg-muted/20 p-2 flex items-center justify-center h-48">
+                                                        <img src={posterPreview} alt="Poster" className="max-h-full object-contain" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {snapshotPreview && (
+                                                <div className="space-y-2">
+                                                    <p className="font-semibold text-xs text-center text-muted-foreground">Event Snapshot</p>
+                                                    <div className="border rounded bg-muted/20 p-2 flex items-center justify-center h-48">
+                                                        <img src={snapshotPreview} alt="Snapshot" className="max-h-full object-contain" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {includeImages && extraImagesPreview.map((url, i) => url && (
+                                                <div key={i} className="space-y-2">
+                                                    <p className="font-semibold text-xs text-center text-muted-foreground">{imagePurposes[i] === 'auto' ? `Image #${i + 1}` : imagePurposes[i]}</p>
+                                                    <div className="border rounded bg-muted/20 p-2 flex items-center justify-center h-48">
+                                                        <img src={url} alt={`Preview ${i}`} className="max-h-full object-contain" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Social Links */}
+                                <div className="space-y-4 pt-4">
+                                    <h2 className="text-lg font-bold border-b pb-2">Social Media Coverage</h2>
+                                    <div className="flex gap-4 items-center">
+                                        <span className="font-semibold text-muted-foreground">Links:</span>
+                                        {facebookLink && <span className="text-blue-500">Facebook</span>}
+                                        {instagramLink && <span className="text-pink-500">Instagram</span>}
+                                        {linkedinLink && <span className="text-cyan-500">LinkedIn</span>}
+                                        {!facebookLink && !instagramLink && !linkedinLink && <span>N/A</span>}
+                                    </div>
+                                </div>
+
+                                {/* Signatures */}
+                                <div className="space-y-4 pt-8 mt-12">
+                                    <div className="grid grid-cols-2 gap-8 text-center">
+                                        <div>
+                                            <div className="border-b border-black w-3/4 mx-auto mb-2"></div>
+                                            <p className="font-semibold">{preparer1Name || "Report Preparer"}</p>
+                                            <p className="text-xs text-muted-foreground">{preparer1Post || "Designation"}</p>
+                                        </div>
+                                        <div>
+                                            <div className="border-b border-black w-3/4 mx-auto mb-2"></div>
+                                            <p className="font-semibold">{approver1Name || "Report Approver"}</p>
+                                            <p className="text-xs text-muted-foreground">{approver1Post || "Designation"}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* Error Message */}
-                    {error && (
-                        <Alert variant="destructive" className="mb-6">
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-
-                    {/* Submit Button */}
-                    <div className="text-center">
-                        <Button
-                            type="submit"
-                            size="lg"
-                            className="px-12"
-                            disabled={!isFormValid()}
-                        >
-                            <Wand2 className="mr-2 h-5 w-5" />
-                            Generate Report
-                        </Button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     )

@@ -23,6 +23,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "Team Formation API is running"}
+
 # --- HELPER FUNCTION TO RUN THE OPTIMIZATION ---
 def run_optimizer_task(requirements: dict, participants_df: pd.DataFrame) -> dict:
     """

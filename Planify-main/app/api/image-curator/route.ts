@@ -5,8 +5,8 @@ export async function POST(request: Request) {
     try {
         const body = await request.json()
 
-        // Assuming the Python service is running on port 8005
-        const res = await fetch("https://affinitive-unicuspid-cinthia.ngrok-free.dev/curate", {
+        const curatorUrl = process.env.IMAGE_CURATOR_URL || "http://127.0.0.1:8005"
+        const res = await fetch(`${curatorUrl}/curate`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -51,7 +51,8 @@ export async function GET(request: Request) {
     }
 
     try {
-        const res = await fetch(`https://affinitive-unicuspid-cinthia.ngrok-free.dev/status/${requestId}`)
+        const curatorUrl = process.env.IMAGE_CURATOR_URL || "http://127.0.0.1:8005"
+        const res = await fetch(`${curatorUrl}/status/${requestId}`)
         const data = await res.json().catch(() => ({}))
 
         if (!res.ok) {

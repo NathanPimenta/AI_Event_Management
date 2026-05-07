@@ -58,7 +58,7 @@ def save_detailed_report(requirements: Dict[str, Any],
         fitness_score: Final fitness score
         execution_time: Time taken for optimization
     """
-    output_dir = os.path.join("team_formation", "output")
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
     report_path = os.path.join(output_dir, "optimization_report.txt")
     
     try:
@@ -301,7 +301,7 @@ def run_team_formation(event_id: str) -> bool:
     save_detailed_report(requirements, participants_df, best_assignment, 
                         final_fitness, execution_time)
     
-    output_dir = os.path.join("team_formation", "output")
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
     print(f"\n📁 Output files located in: {output_dir}/")
     print(f"   - optimal_teams.json (structured assignment)")
     print(f"   - optimization_report.txt (detailed analysis)")

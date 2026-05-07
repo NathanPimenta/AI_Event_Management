@@ -58,7 +58,7 @@ export default function ImageCuratorPage() {
             const reqId = data.request_id
             setRequestId(reqId)
             setStatusMessage("Queued...")
-            
+
             // Poll every 2 seconds
             const interval = window.setInterval(async () => {
                 try {
@@ -71,9 +71,12 @@ export default function ImageCuratorPage() {
                         setRequestId(null)
                         setStatusMessage(null)
 
-                        const infoWithFullUrls = statusData.result.curated_images.map((url: string) =>
-                            url.startsWith("http") ? url : `http://localhost:8004${url}`
-                        )
+                        console.log("Image Curator Result:", statusData.result)
+                        const imagesList = statusData.result.curated_images || []
+                        const infoWithFullUrls = imagesList.map((url: string) => {
+                            const baseUrl = process.env.NEXT_PUBLIC_IMAGE_CURATOR_URL || "http://localhost:8005"
+                            return url.startsWith("http") ? url : `${baseUrl}/${url.startsWith('/') ? url.slice(1) : url}`
+                        })
 
                         setCuratedImages(infoWithFullUrls)
                         setTotalProcessed(statusData.result.total_processed)
@@ -85,6 +88,13 @@ export default function ImageCuratorPage() {
                         setRequestId(null)
                         setStatusMessage(null)
                         setError(statusData.error || "Curation failed")
+                        setLoading(false)
+                    } else if (statusData.error) {
+                        // Catch cases where the proxy returns a 404 or other error directly
+                        clearInterval(interval)
+                        setRequestId(null)
+                        setStatusMessage(null)
+                        setError(statusData.error)
                         setLoading(false)
                     } else {
                         // Still processing, show progress (non-error)
@@ -124,7 +134,7 @@ export default function ImageCuratorPage() {
                 const a = document.createElement('a')
                 const objectUrl = URL.createObjectURL(blob)
                 a.href = objectUrl
-                a.download = `curated_image_${i+1}.jpg`
+                a.download = `curated_image_${i + 1}.jpg`
                 document.body.appendChild(a)
                 a.click()
                 a.remove()
@@ -274,20 +284,20 @@ export default function ImageCuratorPage() {
                                 </div>
                             </div>
                         ))}
-                        {error && (
-                            <Alert variant="destructive">
-                                <AlertTitle>Error</AlertTitle>
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                        )}
-
-                        {loading && statusMessage && (
-                            <Alert>
-                                <AlertTitle>Processing</AlertTitle>
-                                <AlertDescription>{statusMessage}</AlertDescription>
-                            </Alert>
-                        )}
                     </div>
+                </div>
+            )}
+
+            {/* Show processing indicator independently from success state */}
+            {loading && statusMessage && !success && (
+                <div className="mt-8 animate-in fade-in duration-500">
+                    <Alert className="border-2 border-primary/20 bg-primary/5">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <AlertTitle className="ml-2 font-semibold">Processing Images</AlertTitle>
+                        <AlertDescription className="ml-2 font-mono mt-1 text-sm bg-white/50 p-2 rounded w-fit">
+                            {statusMessage}
+                        </AlertDescription>
+                    </Alert>
                 </div>
             )}
         </div>

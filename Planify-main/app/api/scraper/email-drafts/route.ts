@@ -117,3 +117,58 @@ export async function GET() {
     )
   }
 }
+
+export async function DELETE() {
+  try {
+    const baseDir = path.join(process.cwd(), "..", "scraper_module")
+
+    if (!fs.existsSync(baseDir)) {
+      return NextResponse.json({ success: true, removed: 0, message: "No scraper_module directory found" })
+    }
+
+    const files = fs.readdirSync(baseDir)
+    let removed = 0
+
+    // Remove email_drafts_latest.json
+    const latestPath = path.join(baseDir, "email_drafts_latest.json")
+    if (fs.existsSync(latestPath)) {
+      fs.unlinkSync(latestPath)
+      removed++
+      console.log("[email-drafts] Deleted:", latestPath)
+    }
+
+    // Remove all session draft files
+    const sessionFiles = files.filter(
+      (f) => f.startsWith("email_drafts_session_") && f.endsWith(".json")
+    )
+    for (const f of sessionFiles) {
+      fs.unlinkSync(path.join(baseDir, f))
+      removed++
+      console.log("[email-drafts] Deleted session file:", f)
+    }
+
+    // Also clear from parent AI_Event_Management directory (root-level drafts)
+    const rootDir = path.join(process.cwd(), "..")
+    const rootFiles = fs.readdirSync(rootDir)
+    const rootLatest = path.join(rootDir, "email_drafts_latest.json")
+    if (fs.existsSync(rootLatest)) {
+      fs.unlinkSync(rootLatest)
+      removed++
+    }
+    for (const f of rootFiles.filter(
+      (f) => f.startsWith("email_drafts_session_") && f.endsWith(".json")
+    )) {
+      fs.unlinkSync(path.join(rootDir, f))
+      removed++
+    }
+
+    console.log(`[email-drafts] Cleared ${removed} draft file(s)`)
+    return NextResponse.json({ success: true, removed, message: `Cleared ${removed} draft file(s)` })
+  } catch (error: any) {
+    console.error("[email-drafts] DELETE error:", error)
+    return NextResponse.json(
+      { success: false, error: error?.message || "Failed to clear email drafts" },
+      { status: 500 },
+    )
+  }
+}

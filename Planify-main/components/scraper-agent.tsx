@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Download, Mail, Calendar as CalendarIcon } from "lucide-react"
+import { Download, Mail, Calendar as CalendarIcon, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 
 type ScraperResult = {
@@ -86,6 +86,8 @@ export default function ScraperAgent() {
   const [drafts, setDrafts] = useState<EmailDraft[]>([])
   const [draftsLoading, setDraftsLoading] = useState(false)
   const [showDraftsSection, setShowDraftsSection] = useState(false)
+  const [clearingDrafts, setClearingDrafts] = useState(false)
+  const [draftsCleared, setDraftsCleared] = useState(false)
 
   const ROLE_OPTIONS = [
     { id: "speakers", label: "Speakers" },
@@ -132,6 +134,21 @@ export default function ScraperAgent() {
       console.error("Failed to fetch drafts:", e)
     } finally {
       setDraftsLoading(false)
+    }
+  }
+
+  async function clearDrafts() {
+    setClearingDrafts(true)
+    setDraftsCleared(false)
+    try {
+      await fetch("/api/scraper/email-drafts", { method: "DELETE" })
+      setDrafts([])
+      setDraftsCleared(true)
+      setTimeout(() => setDraftsCleared(false), 3000)
+    } catch (e) {
+      console.error("Failed to clear drafts:", e)
+    } finally {
+      setClearingDrafts(false)
     }
   }
 
@@ -276,7 +293,7 @@ ${draft.body}`
       }
     } catch (e: any) {
       console.error("Scraper error:", e)
-      setError(e?.message || "Failed to run scraper agent. Please check the backend is running on port 8001.")
+      setError(e?.message || "Failed to run scraper agent. Please check the backend is running on port 8007.")
     } finally {
       setLoading(false)
     }
@@ -455,12 +472,35 @@ ${draft.body}`
 
       <Card className="mt-8 border-amber-200 bg-amber-50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            📝 Email Drafts
-          </CardTitle>
-          <CardDescription>
-            Email drafts generated in the latest scraper run. {drafts.length} draft(s) found.
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                📝 Email Drafts
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Email drafts generated in the latest scraper run. {drafts.length} draft(s) found.
+                {draftsCleared && <span className="ml-2 text-green-600 font-medium">✓ Drafts cleared!</span>}
+              </CardDescription>
+            </div>
+            {drafts.length > 0 && (
+              <Button
+                id="clear-drafts-btn"
+                onClick={clearDrafts}
+                disabled={clearingDrafts}
+                variant="outline"
+                size="sm"
+                className="gap-2 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 shrink-0 mt-1"
+                type="button"
+              >
+                {clearingDrafts ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Clear Drafts
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {draftsLoading ? (

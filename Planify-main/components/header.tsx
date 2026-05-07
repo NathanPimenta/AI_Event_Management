@@ -170,12 +170,6 @@ export default function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/ai-tools/poster-generator" className="flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" />
-                    Poster Generator
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
                   <Link href="/ai-tools/image-curator" className="flex items-center gap-2">
                     <Images className="h-4 w-4" />
                     Image Curator

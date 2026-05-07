@@ -15,7 +15,7 @@ class EmailTransport(Protocol):
 class FileLogTransport:
     """Simulates email sending by logging to a file."""
     
-    def __init__(self, log_path: str = None, drafts_path: str = None):
+    def __init__(self, log_path: str = None, drafts_path: str = None, clear_old_drafts: bool = True):
         # Save files in scraper_module directory
         import os
         scraper_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +25,37 @@ class FileLogTransport:
         # Create one session-specific drafts file that stays consistent for this session
         self.session_drafts_file = os.path.join(scraper_dir, f"email_drafts_session_{time.strftime('%Y%m%d_%H%M%S')}.json")
         self.latest_file = os.path.join(scraper_dir, "email_drafts_latest.json")
+        self._scraper_dir = scraper_dir
         
+        # Clear old draft files at the start of each new session
+        if clear_old_drafts:
+            self.clear_drafts()
+        
+    def clear_drafts(self) -> int:
+        """Delete all existing email draft files (latest + all session files). Returns the count removed."""
+        import glob
+        removed = 0
+        
+        # Remove email_drafts_latest.json
+        if os.path.exists(self.latest_file):
+            os.remove(self.latest_file)
+            removed += 1
+            print(f"   🗑️  Cleared: {self.latest_file}")
+        
+        # Remove all session draft files
+        pattern = os.path.join(self._scraper_dir, "email_drafts_session_*.json")
+        for f in glob.glob(pattern):
+            os.remove(f)
+            removed += 1
+            print(f"   🗑️  Cleared: {f}")
+        
+        if removed:
+            print(f"   ✅ Cleared {removed} old draft file(s).")
+        else:
+            print("   ℹ️  No old draft files to clear.")
+        
+        return removed
+
     def send_email(self, to_address: str, subject: str, body: str) -> None:
         """Log the email to a file."""
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")

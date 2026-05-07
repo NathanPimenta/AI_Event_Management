@@ -1,311 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Sidebar Certificate</title>
-
+    <title>Formal Certificate</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
     <style>
         :root {
-
-            /* --- COLOR PALETTE (Navy & Platinum) --- */
-            --primary-color: {
-                    {
-                    colors.primary | default('#1e3c72')
-                }
-            }
-
-            ;
-
-            --secondary-color: {
-                    {
-                    colors.secondary | default('#2a5298')
-                }
-            }
-
-            ;
-
-            --text-color: {
-                    {
-                    colors.text | default('#2c3e50')
-                }
-            }
-
-            ;
-
-            --accent-color: {
-                    {
-                    colors.accent | default('#b3a168')
-                }
-            }
-
-            ;
-            --bg-color: #ffffff;
-
-            /* --- FONTS --- */
-            --title-font: {
-                    {
-                    fonts.title | default("'Playfair Display', serif")
-                }
-            }
-
-            ;
-
-            --body-font: {
-                    {
-                    fonts.body | default("'Lato', sans-serif")
-                }
-            }
-
-            ;
-            --sign-font: 'Dancing Script',
-            cursive;
+            --primary-color: {{ colors.header | default('#1e3c72') }};
+            --secondary-color: {{ colors.accent | default('#2a5298') }};
+            --text-color: {{ colors.text | default('#2c3e50') }};
+            --accent-color: {{ colors.accent | default('#b3a168') }};
+            --bg-color: {{ colors.background | default('#ffffff') }};
+            --title-font: {{ fonts.header_family | default("'Playfair Display', serif") }};
+            --body-font: {{ fonts.body_family | default("'Lato', sans-serif") }};
+            --sign-font: 'Dancing Script', cursive;
         }
 
-        @page {
-            size: A4 landscape;
-            margin: 0;
-        }
+        @page { size: A4 landscape; margin: 0; }
+
+        * { box-sizing: border-box; }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: var(--body-font, 'Lato', sans-serif);
+            margin: 0; padding: 0;
+            font-family: var(--body-font);
             background: #e0e0e0;
-            /* Web preview background */
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            width: 297mm;
+            height: 210mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         .certificate-container {
             width: 297mm;
             height: 210mm;
-            background: var(--bg-color, #ffffff);
+            background: var(--bg-color);
             position: relative;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             display: flex;
-            /* Flex layout for Side-by-Side */
             overflow: hidden;
         }
 
-        /* --- LEFT SIDEBAR SECTION --- */
+        /* --- LEFT SIDEBAR --- */
         .sidebar {
             width: 30%;
-            /* Left 30% of page */
-            background: linear-gradient(135deg, var(--primary-color, #1e3c72) 0%, var(--secondary-color, #2a5298) 100%);
-            color: white;
-            padding: 40px;
-            box-sizing: border-box;
+            background: linear-gradient(160deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: #ffffff;
+            padding: 36px 32px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             position: relative;
             -webkit-print-color-adjust: exact;
-            /* Forces background color print */
         }
 
-        /* Geometric Decoration */
         .sidebar::after {
             content: '';
             position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 0;
-            height: 0;
+            bottom: 0; right: 0;
+            width: 0; height: 0;
             border-style: solid;
-            border-width: 0 0 100px 100px;
-            border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            border-width: 0 0 90px 90px;
+            border-color: transparent transparent rgba(255,255,255,0.08) transparent;
         }
 
-        .sidebar-logo img {
-            max-width: 140px;
-            filter: brightness(0) invert(1);
-            /* Forces logos to white */
-        }
-
-        .sidebar-details {
+        .sidebar-logo {
             margin-bottom: 20px;
         }
 
-        .detail-item {
-            margin-bottom: 25px;
+        .sidebar-logo img {
+            max-width: 130px;
+            height: auto;
+            max-height: 80px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
+
+        .sidebar-logo-text {
+            font-size: 1.3rem;
+            font-family: var(--title-font);
+            line-height: 1.3;
+        }
+
+        .sidebar-details { }
+
+        .detail-item { margin-bottom: 22px; }
 
         .detail-label {
             text-transform: uppercase;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             letter-spacing: 2px;
-            opacity: 0.7;
-            margin-bottom: 5px;
+            opacity: 0.65;
+            margin-bottom: 4px;
         }
 
         .detail-value {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
-            font-family: var(--title-font, 'Playfair Display', serif);
+            font-family: var(--title-font);
         }
 
-        /* --- RIGHT CONTENT SECTION --- */
+        /* --- RIGHT CONTENT --- */
         .main-content {
             width: 70%;
-            padding: 50px 60px;
-            box-sizing: border-box;
+            padding: 44px 52px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             position: relative;
         }
 
-        /* Subtle background pattern */
         .main-content::before {
             content: '';
             position: absolute;
-            top: 20px;
-            right: 20px;
-            bottom: 20px;
-            left: 0;
+            top: 18px; right: 18px; bottom: 18px; left: 0;
             border: 2px solid #f0f0f0;
-            z-index: 0;
             pointer-events: none;
         }
 
-        .header-section {
-            z-index: 1;
+        /* Club logo top-right */
+        .club-logo-wrap {
+            position: absolute;
+            top: 30px; right: 30px;
+        }
+
+        .club-logo-wrap img {
+            height: 60px;
+            width: auto;
+            max-width: 130px;
+            object-fit: contain;
         }
 
         .sub-title {
             text-transform: uppercase;
             letter-spacing: 4px;
-            color: var(--primary-color, #1e3c72);
+            color: var(--primary-color);
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         h1 {
-            font-family: var(--title-font, 'Playfair Display', serif);
-            font-size: 3.2rem;
-            color: var(--text-color, #2c3e50);
-            margin: 10px 0 30px 0;
+            font-family: var(--title-font);
+            font-size: 2.9rem;
+            color: var(--text-color);
+            margin: 8px 0 0 0;
             line-height: 1;
         }
 
-        .recipient-section {
-            margin: 20px 0;
-            z-index: 1;
-        }
-
-        .presented-to {
-            font-style: italic;
-            color: #7f8c8d;
-            font-size: 1.1rem;
-        }
+        .presented-to { font-style: italic; color: #7f8c8d; font-size: 1rem; margin-top: 16px; }
 
         .recipient-name {
-            font-family: var(--title-font, 'Playfair Display', serif);
-            font-size: 3.8rem;
-            color: var(--primary-color, #1e3c72);
-            margin: 15px 0;
-            border-bottom: 2px solid var(--accent-color, #b3a168);
+            font-family: var(--title-font);
+            font-size: 3.2rem;
+            color: var(--primary-color);
+            margin: 10px 0;
+            border-bottom: 2px solid var(--accent-color);
             display: inline-block;
-            padding-bottom: 5px;
+            padding-bottom: 4px;
         }
 
         .achievement-text {
-            font-size: 1.05rem;
+            font-size: 1rem;
             line-height: 1.7;
             color: #555;
-            max-width: 90%;
-            margin-bottom: 40px;
-            z-index: 1;
+            max-width: 88%;
         }
 
-        /* Footer / Signatures */
+        /* Footer */
         .footer {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            margin-top: auto;
-            z-index: 1;
         }
 
-        .signature-box {
-            min-width: 180px;
-        }
+        .signature-box { min-width: 170px; }
 
-        .sign-img {
-            height: 50px;
-            display: block;
-            margin-bottom: 5px;
-        }
+        .sign-img { height: 50px; display: block; margin-bottom: 5px; }
 
         .sign-placeholder {
             font-family: var(--sign-font);
-            font-size: 2rem;
-            color: var(--primary-color, #1e3c72);
-            margin-bottom: 5px;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 4px;
         }
 
-        .sign-line {
-            height: 1px;
-            background: #ccc;
-            width: 100%;
-            margin-bottom: 5px;
-        }
+        .sign-line { height: 1px; background: #ccc; width: 100%; margin-bottom: 5px; }
 
-        .sign-name {
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--text-color, #2c3e50);
-        }
+        .sign-name { font-weight: 700; font-size: 0.85rem; color: var(--text-color); }
+        .sign-title { font-size: 0.7rem; color: #888; text-transform: uppercase; }
 
-        .sign-title {
-            font-size: 0.75rem;
-            color: #888;
-            text-transform: uppercase;
-        }
-
-        .qr-badge {
-            position: absolute;
-            top: 40px;
-            right: 40px;
-        }
-
-        .qr-badge img {
-            width: 70px;
-            opacity: 0.9;
-        }
+        .qr-badge img { width: 65px; opacity: 0.9; }
 
         @media print {
-            body {
-                background: none;
-            }
-
-            .certificate-container {
-                box-shadow: none;
-            }
+            body { background: none; }
+            .certificate-container { box-shadow: none; }
         }
     </style>
 </head>
 
 <body>
+    <!-- Marker: prevent inject_fixed_logos from running -->
+    <div data-fixed-logos="true" style="display:none;"></div>
 
     <div class="certificate-container">
 
         <div class="sidebar">
             <div class="sidebar-logo">
                 {% if college_logo_path %}
-                <img src="file://{{ college_logo_path }}" alt="Logo">
+                <img src="file://{{ college_logo_path }}" alt="Institution Logo">
                 {% else %}
-                <div style="font-size: 1.5rem; font-family: var(--title-font);">{{ institution_name }}</div>
+                <div class="sidebar-logo-text">{{ institution_name }}</div>
                 {% endif %}
             </div>
 
@@ -314,75 +222,59 @@
                     <div class="detail-label">Issued Date</div>
                     <div class="detail-value">{{ event_date }}</div>
                 </div>
-
-                <div class="detail-item">
-                    <div class="detail-label">Certificate ID</div>
-                    <div class="detail-value">
-                        {{ certificate_id | default('CID-' ~ range(1000, 9999) | random) }}
-                    </div>
-                </div>
-
                 <div class="detail-item">
                     <div class="detail-label">Type</div>
                     <div class="detail-value">{{ achievement_type }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Institution</div>
+                    <div class="detail-value">{{ institution_name }}</div>
                 </div>
             </div>
         </div>
 
         <div class="main-content">
 
-            {% if qr_code_path %}
-            <div class="qr-badge">
-                <img src="file://{{ qr_code_path }}" alt="Verify">
+            {% if club_logo_path %}
+            <div class="club-logo-wrap">
+                <img src="file://{{ club_logo_path }}" alt="Club Logo">
             </div>
             {% endif %}
 
-            <div class="header-section">
+            <div>
                 <div class="sub-title">Certificate of Achievement</div>
                 <h1>{{ event_name }}</h1>
             </div>
 
-            <div class="recipient-section">
+            <div>
                 <div class="presented-to">This certificate is awarded to</div>
                 <div class="recipient-name">{{ name }}</div>
-            </div>
-
-            <div class="achievement-text">
-                {% if rank and rank != 'Participant' %}
-                For demonstrating exceptional skill and securing <strong>{{ rank }} Place</strong>.
-                Your strategic thinking and technical execution stood out among all participants.
-                {% else %}
-                For your active participation and dedication.
-                We recognize your commitment to learning and your contribution to the success of this event.
-                {% endif %}
+                <div class="achievement-text">
+                    For your active participation and dedication in <strong>{{ event_name }}</strong>.
+                    We recognise your commitment to excellence and your contribution to the success of this event.
+                </div>
             </div>
 
             <div class="footer">
                 <div class="signature-box">
                     {% if signature_path %}
-                    <img src="file://{{ signature_path }}" class="sign-img" alt="Sign">
+                    <img src="file://{{ signature_path }}" class="sign-img" alt="Signature">
                     {% else %}
                     <div class="sign-placeholder">{{ signature_name }}</div>
                     {% endif %}
-
                     <div class="sign-line"></div>
                     <div class="sign-name">{{ signature_name }}</div>
-                    <div class="sign-title">Event Organizer</div>
+                    <div class="sign-title">Event Organiser</div>
                 </div>
 
-                {% if second_signature_name %}
-                <div class="signature-box">
-                    <div class="sign-placeholder">Dean's Sig</div>
-                    <div class="sign-line"></div>
-                    <div class="sign-name">{{ second_signature_name }}</div>
-                    <div class="sign-title">Dean of Dept.</div>
+                {% if qr_code_path %}
+                <div class="qr-badge">
+                    <img src="file://{{ qr_code_path }}" alt="Verify QR">
                 </div>
                 {% endif %}
             </div>
 
         </div>
     </div>
-
 </body>
-
 </html>

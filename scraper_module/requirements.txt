@@ -1,0 +1,15 @@
+
+selenium
+webdriver-manager
+beautifulsoup4
+langchain
+langchain-core
+langchain-community
+langchain-ollama
+duckduckgo-search
+ollama
+fastapi
+uvicorn[standard]
+ddgs
+google-generativeai
+python-dotenv

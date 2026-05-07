@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     console.log('👤 User found:', user ? `Yes (${user.email})` : 'No')
     
     if (!user) {
-      console.log('❌ User not found in database')
+      console.log(' User not found in database')
       return NextResponse.json({ error: "Invalid email or password" }, { status: 400 })
     }
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     console.log('🔑 Password valid:', isPasswordValid)
     
     if (!isPasswordValid) {
-      console.log('❌ Invalid password')
+      console.log(' Invalid password')
       return NextResponse.json({ error: "Invalid email or password" }, { status: 400 })
     }
 

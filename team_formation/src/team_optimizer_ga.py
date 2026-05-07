@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 from . import data_loader
 from . import utils
 
-OUTPUT_DIR = os.path.join("team_formation", "output")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
 OUTPUT_FILENAME = "optimal_teams.json"
 
 # --- GA Configuration ---
@@ -315,7 +315,7 @@ class TeamFormationGA:
                 json.dump(output_data, f, indent=2)
             print(f"✅ Best team assignment saved to '{filepath}'")
         except Exception as e:
-            print(f"❌ ERROR saving result to '{filepath}': {e}")
+            print(f" ERROR saving result to '{filepath}': {e}")
 
 
 # Example Usage

@@ -2,151 +2,242 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Certificate of Achievement</title>
+    <title>Modern Certificate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        /* Import a nice font */
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
-
-        /* The AI will provide values for these CSS variables */
         :root {
-            --bg-color: {{ colors.background | default('#f5f7fa') }};
-            --text-color: {{ colors.text | default('#333333') }};
-            --accent-color: {{ colors.accent | default('#4A90E2') }};
-            --header-color: {{ colors.header | default('#2c3e50') }};
+            --bg-color: {{ colors.background | default('#ffffff', true) }};
+            --text-color: {{ colors.text | default('#2c3e50', true) }};
+            --accent-color: {{ colors.accent | default('#3498db', true) }};
+            --header-color: {{ colors.header | default('#2980b9', true) }};
+            --border-color: {{ colors.border | default('#bdc3c7', true) }};
+            --header-font: {{ fonts.header_family | default("'Orbitron', sans-serif", true) }};
+            --body-font: {{ fonts.body_family | default("'Montserrat', sans-serif", true) }};
+            --content-top: {{ layout.content_top | default('100px', true) }};
+            --inner-pad: {{ layout.inner_pad | default('60px', true) }};
+            --logo-width: {{ layout.logo_width | default('110px', true) }};
+            --title-size: {{ layout.title_font_size | default('2.8rem', true) }};
+            --body-size: {{ layout.body_font_size | default('1.05rem', true) }};
+            --watermark-opacity: {{ layout.watermark_opacity | default('0.05', true) }};
         }
 
+        @page { size: A4 landscape; margin: 0; }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Montserrat', sans-serif;
-            color: var(--text-color);
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-            width: 297mm; /* A4 landscape width */
-            height: 210mm; /* A4 landscape height */
-            box-sizing: border-box;
+            margin: 0; padding: 0;
+            font-family: var(--body-font);
             display: flex;
             justify-content: center;
             align-items: center;
+            width: 297mm;
+            height: 210mm;
+            background-color: #f0f0f0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         .certificate-container {
-            width: 95%;
-            height: 95%;
-            border: 2px solid var(--accent-color);
-            background: white;
-            padding: 20px;
-            box-sizing: border-box;
-            text-align: center;
+            width: 297mm;
+            height: 210mm;
+            position: relative;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+
+        /* Thin coloured sidebar */
+        .sidebar {
+            width: 80px;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, var(--header-color) 0%, var(--accent-color) 100%);
+            -webkit-print-color-adjust: exact;
+        }
+
+        /* Decorative circle (top-right) */
+        .decorative-circle {
+            position: absolute;
+            top: -100px; right: -100px;
+            width: 380px; height: 380px;
+            border-radius: 50%;
+            border: 40px solid var(--accent-color);
+            opacity: 0.08;
+            pointer-events: none;
+        }
+
+        /* Watermark */
+        .watermark {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-family: var(--header-font);
+            font-size: 5.5rem;
+            color: var(--text-color);
+            opacity: var(--watermark-opacity);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* Main content area (right of sidebar) */
+        .content {
+            flex: 1;
+            padding: 50px var(--inner-pad) 40px var(--inner-pad);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             position: relative;
         }
 
-        .logo {
+        /* Logos — top-right corner, stacked if both present */
+        .logo-row {
             position: absolute;
-            top: 30px;
-            left: 40px;
-            max-width: 100px;
-            max-height: 50px;
+            top: 20px;
+            right: var(--inner-pad);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .qr-code {
-            position: absolute;
-            top: 30px;
-            right: 40px;
-            width: 80px;
-            height: 80px;
+        .logo-img {
+            height: 56px;
+            width: auto;
+            max-width: var(--logo-width);
+            object-fit: contain;
+        }
+
+        /* Header */
+        .inst-name {
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            opacity: 0.6;
+            margin-bottom: 6px;
         }
 
         h1 {
-            font-size: 32px;
+            font-family: var(--header-font);
+            font-size: var(--title-size);
             color: var(--header-color);
-            margin-top: 80px;
-            margin-bottom: 20px;
-        }
-
-        .subtitle {
-            font-size: 18px;
-            margin-bottom: 40px;
-        }
-
-        .presented-to {
-            font-size: 14px;
+            margin: 0;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
+            line-height: 1.1;
         }
 
-        .participant-name {
-            font-size: 48px;
-            font-weight: 700;
+        /* Body */
+        .body-section { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; margin: 20px 0; }
+
+        .certify-label { font-size: 1rem; margin-bottom: 8px; opacity: 0.7; }
+
+        .recipient {
+            font-family: var(--header-font);
+            font-size: 2.6rem;
             color: var(--accent-color);
-            margin-bottom: 30px;
-            border-bottom: 2px solid var(--header-color);
+            margin: 8px 0 14px 0;
+            border-bottom: 2px solid var(--border-color);
             display: inline-block;
-            padding-bottom: 10px;
         }
 
-        .achievement-text {
-            font-size: 16px;
-            margin: 0 auto 50px auto;
-            max-width: 80%;
-        }
+        .body-text { font-size: var(--body-size); line-height: 1.65; }
 
+        /* Footer */
         .footer {
-            position: absolute;
-            bottom: 40px;
-            width: 100%;
-            left: 0;
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
             align-items: flex-end;
         }
 
-        .signature-block {
-            width: 250px;
-        }
+        .sig-block { text-align: center; }
 
-        .signature-image {
-            max-height: 60px;
-            margin-bottom: 5px;
-        }
+        .sig-img { height: 55px; display: block; margin: 0 auto 5px auto; }
 
-        .signature-line {
+        .sig-line {
+            width: 180px;
             border-top: 1px solid var(--text-color);
             padding-top: 5px;
-            font-weight: bold;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
         }
 
-        .date-block .signature-line {
-             font-weight: normal;
+        .qr-section img {
+            height: 76px; width: 76px;
+            border: 2px solid var(--border-color);
+            padding: 4px;
+        }
+
+        @media print {
+            body { background: none; }
+            .certificate-container { box-shadow: none; }
         }
     </style>
 </head>
+
 <body>
+    <!-- Marker: tells the inject function not to add its own logos -->
+    <div data-fixed-logos="true" style="display:none;"></div>
+
     <div class="certificate-container">
+        <div class="sidebar"></div>
+        <div class="decorative-circle"></div>
+        <div class="watermark">{{ achievement_type }}</div>
 
-        <!-- LOGO AND QR CODE -->
-        <img src="file://{{ logo_path }}" alt="Event Logo" class="logo">
-        <img src="file://{{ qr_code_path }}" alt="Verification QR Code" class="qr-code">
+        <div class="content">
 
-        <h1>Certificate of {{ achievement_type }}</h1>
-        <p class="subtitle">Awarded by {{ institution_name }}</p>
-
-        <p class="presented-to">Presented to</p>
-        <h2 class="participant-name">{{ name }}</h2>
-
-        <p class="achievement-text">
-            For their successful participation and outstanding contribution to the
-            <strong>{{ event_name }}</strong>, held on {{ event_date }}.
-        </p>
-
-        <div class="footer">
-            <div class="date-block signature-block">
-                <p class="signature-line">{{ event_date }}</p>
+            <!-- Logos (conditional, no hardcoded paths) -->
+            {% if college_logo_path or club_logo_path %}
+            <div class="logo-row">
+                {% if college_logo_path %}
+                <img src="file://{{ college_logo_path }}" class="logo-img" alt="College Logo">
+                {% endif %}
+                {% if club_logo_path %}
+                <img src="file://{{ club_logo_path }}" class="logo-img" alt="Club Logo">
+                {% endif %}
             </div>
-            <div class="signature-block">
-                <img src="file://{{ signature_path }}" alt="Signature" class="signature-image">
-                <p class="signature-line">{{ signature_name }}</p>
+            {% endif %}
+
+            <!-- Header -->
+            <div>
+                <div class="inst-name">{{ institution_name }}</div>
+                <h1>Certificate of {{ achievement_type }}</h1>
             </div>
+
+            <!-- Body -->
+            <div class="body-section">
+                <div class="certify-label">This is to certify that</div>
+                <div class="recipient">{{ name }}</div>
+                <div class="body-text">
+                    has successfully participated in <strong>{{ event_name }}</strong>.<br>
+                    Your dedication and performance have been outstanding.
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div class="sig-block">
+                    <div>{{ event_date }}</div>
+                    <div class="sig-line">Date</div>
+                </div>
+
+                {% if qr_code_path %}
+                <div class="qr-section">
+                    <img src="file://{{ qr_code_path }}" alt="QR Code">
+                </div>
+                {% endif %}
+
+                <div class="sig-block">
+                    {% if signature_path %}
+                    <img src="file://{{ signature_path }}" class="sig-img" alt="Signature">
+                    {% endif %}
+                    <div class="sig-line">{{ signature_name }}</div>
+                </div>
+            </div>
+
         </div>
     </div>
 </body>

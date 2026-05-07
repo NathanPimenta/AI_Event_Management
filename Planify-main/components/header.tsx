@@ -12,15 +12,29 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
-import { Menu, User, LogOut, Home, Calendar, Users } from "lucide-react"
+import { Menu, User, LogOut, Home, Calendar, Users, Award, FileText, Search, ChevronDown, ImageIcon, Images, Video, Megaphone, Globe, Bot } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ModeToggle } from "./mode-toggle"
 import Notifications from "./notifications"
 
+const AI_TOOLS = [
+  { href: "/ai-tools/certificate-generator", label: "Certificate Generator", icon: Award },
+  { href: "/ai-tools/image-curator", label: "Image Curator", icon: Images },
+  { href: "/ai-tools/planify-reelmaker", label: "Reel Maker", icon: Video },
+  { href: "/ai-tools/poster-generator", label: "Poster Generator", icon: ImageIcon },
+  { href: "/ai-tools/report-generator", label: "Report Generator", icon: FileText },
+  { href: "/ai-tools/scraper", label: "Web Scraper", icon: Globe },
+  { href: "/ai-tools/team-formation", label: "Team Formation", icon: Users }
+]
+
 export default function Header() {
   const { user, signOut } = useAuth()
   const [open, setOpen] = useState(false)
+  const [aiToolsOpen, setAiToolsOpen] = useState(false)
+
+  // Only community_member and community_admin can see AI tools (not audience/participants)
+  const canSeeAiTools = user && user.role !== "audience"
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -55,6 +69,65 @@ export default function Header() {
                   <Users className="h-5 w-5" />
                   Communities
                 </Link>
+                <div className="pl-2 border-l-2 border-muted space-y-2">
+                  <span className="text-sm text-muted-foreground font-medium">AI Tools</span>
+                  <Link
+                    href="/ai-tools/team-formation"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Team Formation
+                  </Link>
+                  <Link
+                    href="/ai-tools/certificate-generator"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <Award className="h-4 w-4" />
+                    Certificate Generator
+                  </Link>
+                  <Link
+                    href="/ai-tools/report-generator"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Report Generator
+                  </Link>
+                  <Link
+                    href="/ai-tools/scraper"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <Search className="h-4 w-4" />
+                    Scraper
+                  </Link>
+                  <Link
+                    href="/ai-tools/poster-generator"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    Poster Generator
+                  </Link>
+                  <Link
+                    href="/ai-tools/image-curator"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 text-base font-medium pl-2"
+                  >
+                    <Images className="h-4 w-4" />
+                    Image Curator
+                  </Link>
+                </div>
+                <Link
+                  href="/layout-visualizer"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 text-lg font-semibold"
+                >
+                  <Users className="h-5 w-5" />
+                  Layout Visualizer
+                </Link>
                 {user && (
                   <Link
                     href="/dashboard"
@@ -65,12 +138,46 @@ export default function Header() {
                     Dashboard
                   </Link>
                 )}
+
+                {/* AI Tools accordion — mobile only, non-participant roles */}
+                {canSeeAiTools && (
+                  <div>
+                    <button
+                      onClick={() => setAiToolsOpen(!aiToolsOpen)}
+                      className="flex items-center gap-2 text-lg font-semibold w-full"
+                    >
+                      <Bot className="h-5 w-5" />
+                      AI Tools
+                      <ChevronDown
+                        className={`h-4 w-4 ml-auto transition-transform duration-200 ${aiToolsOpen ? "rotate-180" : ""
+                          }`}
+                      />
+                    </button>
+                    {aiToolsOpen && (
+                      <div className="ml-7 mt-2 flex flex-col gap-3 border-l border-border pl-3">
+                        {AI_TOOLS.map((tool) => (
+                          <Link
+                            key={tool.href}
+                            href={tool.href}
+                            onClick={() => { setOpen(false); setAiToolsOpen(false) }}
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <tool.icon className="h-4 w-4" />
+                            {tool.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
+
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-bold">CommunityHub</span>
+            <span className="text-xl font-bold">Planify</span>
           </Link>
+
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <Link href="/events" className="font-medium transition-colors hover:text-primary">
               Events
@@ -78,8 +185,54 @@ export default function Header() {
             <Link href="/communities" className="font-medium transition-colors hover:text-primary">
               Communities
             </Link>
-            <Link href="/ai-tools/team-formation" className="font-medium transition-colors hover:text-primary">
-              AI Tools
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="font-medium gap-1 h-auto p-0 hover:bg-transparent hover:text-primary">
+                  AI Tools
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/team-formation" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Team Formation
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/certificate-generator" className="flex items-center gap-2">
+                    <Award className="h-4 w-4" />
+                    Certificate Generator
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/report-generator" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Report Generator
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/scraper" className="flex items-center gap-2">
+                    <Search className="h-4 w-4" />
+                    Scraper
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/image-curator" className="flex items-center gap-2">
+                    <Images className="h-4 w-4" />
+                    Image Curator
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-tools/planify-reelmaker" className="flex items-center gap-2">
+                    <Video className="h-4 w-4" />
+                    Reel Maker
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Link href="/layout-visualizer" className="font-medium transition-colors hover:text-primary">
+              Layout Visualizer
             </Link>
             {user && (
               <Link href="/dashboard" className="font-medium transition-colors hover:text-primary">
@@ -88,6 +241,7 @@ export default function Header() {
             )}
           </nav>
         </div>
+
         <div className="flex items-center gap-2">
           <ModeToggle />
           {user ? (
@@ -142,4 +296,3 @@ export default function Header() {
     </header>
   )
 }
-

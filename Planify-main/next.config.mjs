@@ -26,6 +26,11 @@ const nextConfig = {
     parallelServerCompiles: true,
     reactServerComponents: true,
   },
+
+  // Allow longer timeouts for scraper API (web scraping can take time)
+  httpAgentOptions: {
+    timeout: 600000, // 10 minutes
+  },
 }
 
 mergeConfig(nextConfig, userConfig)

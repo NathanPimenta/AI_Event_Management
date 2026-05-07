@@ -37,10 +37,22 @@ async function runMigrations() {
     }
     console.log('✅ Material requests schema migration completed')
     
+    // Run judge scoring system schema
+    const judgeFile = path.join(__dirname, '003_judge_scoring_system.sql')
+    const judgeSql = fs.readFileSync(judgeFile, 'utf-8')
+    try {
+      await client.query(judgeSql)
+    } catch (e) {
+      if (!e.message.includes('already exists') && !e.message.includes('duplicate key')) {
+        throw e
+      }
+    }
+    console.log('✅ Judge scoring system migration completed')
+    
     console.log('✅ All migrations completed successfully!')
     process.exit(0)
   } catch (error) {
-    console.error('❌ Migration failed:', error)
+    console.error(' Migration failed:', error)
     process.exit(1)
   } finally {
     client.release()

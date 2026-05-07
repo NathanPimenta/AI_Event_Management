@@ -58,7 +58,7 @@ def save_detailed_report(requirements: Dict[str, Any],
         fitness_score: Final fitness score
         execution_time: Time taken for optimization
     """
-    output_dir = os.path.join("team_formation", "output")
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
     report_path = os.path.join(output_dir, "optimization_report.txt")
     
     try:
@@ -190,7 +190,7 @@ def run_team_formation(event_id: str) -> bool:
     
     if requirements is None or participants_df is None:
         print("\n" + "="*70)
-        print("❌ FAILED: Could not load required data files")
+        print(" FAILED: Could not load required data files")
         print("="*70)
         print("\nPlease ensure the following files exist:")
         print("  - team_formation/data/event_requirements.json")
@@ -207,7 +207,7 @@ def run_team_formation(event_id: str) -> bool:
         try:
             response = input().strip().lower()
             if response != 'y':
-                print("\n❌ Optimization cancelled by user.")
+                print("\n Optimization cancelled by user.")
                 return False
         except:
             # If running in non-interactive mode, continue anyway
@@ -252,11 +252,11 @@ def run_team_formation(event_id: str) -> bool:
         best_assignment = optimizer.run()
         
         if not best_assignment:
-            print("\n❌ Optimization failed to produce a valid assignment")
+            print("\n Optimization failed to produce a valid assignment")
             return False
         
     except Exception as e:
-        print(f"\n❌ ERROR during optimization: {e}")
+        print(f"\n ERROR during optimization: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -301,7 +301,7 @@ def run_team_formation(event_id: str) -> bool:
     save_detailed_report(requirements, participants_df, best_assignment, 
                         final_fitness, execution_time)
     
-    output_dir = os.path.join("team_formation", "output")
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
     print(f"\n📁 Output files located in: {output_dir}/")
     print(f"   - optimal_teams.json (structured assignment)")
     print(f"   - optimization_report.txt (detailed analysis)")

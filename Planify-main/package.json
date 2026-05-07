@@ -58,6 +58,8 @@
     "nodemailer": "^6.10.1",
     "pdf-lib": "^1.17.1",
     "pg": "^8.11.3",
+    "qrcode": "^1.5.3",
+    "qrcode.react": "^1.0.1",
     "react": "^19",
     "react-day-picker": "8.10.1",
     "react-dom": "^19",

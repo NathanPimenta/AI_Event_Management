@@ -9,7 +9,11 @@ import {
   canDelete, 
   canRead,
   isAdmin,
+  isJudge,
   isCommunityMember,
+  canScore,
+  canViewScores,
+  canAssignJudge,
   type UserRole,
   type Resource,
   type Action
@@ -35,7 +39,13 @@ export function usePermissions() {
     
     // Role checks
     isAdmin: isAdmin(userRole),
+    isJudge: isJudge(userRole),
     isCommunityMember: isCommunityMember(userRole),
+    
+    // Judge-specific permissions
+    canScore: canScore(userRole),
+    canViewScores: canViewScores(userRole),
+    canAssignJudge: canAssignJudge(userRole),
     
     // Current user role
     role: userRole,

@@ -305,7 +305,7 @@ function SubmissionsViewer({
     try {
       setLoading(true)
       const response = await fetch(
-        `/api/events/${eventId}/materials/${requestId}/submissions`
+        `/api/events/${eventId}/materials/submissions?requestId=${requestId}`
       )
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}))

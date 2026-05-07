@@ -465,7 +465,7 @@ export default function ManageEventPage() {
                 <p className="text-muted-foreground">No attendees yet</p>
               ) : (
                 <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm text-foreground">
                     <thead className="bg-muted border-b">
                       <tr>
                         <th className="px-4 py-2 text-left font-medium">Name</th>
@@ -475,12 +475,15 @@ export default function ManageEventPage() {
                     </thead>
                     <tbody>
                       {attendees.map((attendee, index) => (
-                        <tr key={attendee.id} className={index % 2 === 0 ? "bg-white" : "bg-muted/30"}>
+                        <tr
+                          key={attendee.id}
+                          className={index % 2 === 0 ? "bg-background" : "bg-muted/40"}
+                        >
                           <td className="px-4 py-2">{attendee.name}</td>
                           <td className="px-4 py-2">{attendee.email}</td>
                           <td className="px-4 py-2">
-                            {attendee.registeredAt 
-                              ? new Date(attendee.registeredAt).toLocaleDateString() 
+                            {attendee.registeredAt
+                              ? new Date(attendee.registeredAt).toLocaleString()
                               : "-"}
                           </td>
                         </tr>

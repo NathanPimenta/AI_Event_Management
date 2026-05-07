@@ -61,18 +61,18 @@ def load_event_requirements(filepath: Optional[str] = None) -> Optional[Dict[str
         return requirements
         
     except FileNotFoundError:
-        print(f"❌ ERROR: File not found: '{filepath}'.")
+        print(f" ERROR: File not found: '{filepath}'.")
         print("   Please ensure 'event_requirements.json' exists in the data folder.")
         return None
     except json.JSONDecodeError as e:
-        print(f"❌ ERROR: Could not decode JSON from '{filepath}'.")
+        print(f" ERROR: Could not decode JSON from '{filepath}'.")
         print(f"   JSON Error: {e}")
         return None
     except ValueError as ve:
-        print(f"❌ ERROR: Invalid JSON structure in '{filepath}': {ve}")
+        print(f" ERROR: Invalid JSON structure in '{filepath}': {ve}")
         return None
     except Exception as e:
-        print(f"❌ ERROR loading '{filepath}': {e}")
+        print(f" ERROR loading '{filepath}': {e}")
         return None
 
 
@@ -140,14 +140,14 @@ def load_participants(filepath: Optional[str] = None) -> Optional[pd.DataFrame]:
         return df
         
     except FileNotFoundError:
-        print(f"❌ ERROR: File not found: '{filepath}'.")
+        print(f" ERROR: File not found: '{filepath}'.")
         print("   Please ensure 'participants.csv' exists in the data folder.")
         return None
     except ValueError as ve:
-        print(f"❌ ERROR: Invalid CSV structure in '{filepath}': {ve}")
+        print(f" ERROR: Invalid CSV structure in '{filepath}': {ve}")
         return None
     except Exception as e:
-        print(f"❌ ERROR loading '{filepath}': {e}")
+        print(f" ERROR loading '{filepath}': {e}")
         return None
 
 
@@ -215,7 +215,7 @@ def validate_data_compatibility(requirements: Dict[str, Any],
     
     # Print results
     if issues:
-        print("❌ COMPATIBILITY ISSUES FOUND:")
+        print(" COMPATIBILITY ISSUES FOUND:")
         for issue in issues:
             print(f"   - {issue}")
         return False
@@ -328,4 +328,4 @@ if __name__ == "__main__":
         print("✅ Data loader test complete!")
         print("="*70)
     else:
-        print("\n❌ Data loading failed. Please check your data files.")
+        print("\n Data loading failed. Please check your data files.")

@@ -149,7 +149,7 @@ class CertificateGenerator:
         try:
             participants_df = self.data_agent.load_participants(csv_source)
         except FileNotFoundError:
-            print(f"❌ ERROR: Participants CSV not found at {self.config['csv_path']}")
+            print(f" ERROR: Participants CSV not found at {self.config['csv_path']}")
             return []
         except Exception as e:
             print(f"❌ ERROR: Failed to load participants CSV: {e}")

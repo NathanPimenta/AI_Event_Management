@@ -58,7 +58,7 @@ export default function ImageCuratorPage() {
             const reqId = data.request_id
             setRequestId(reqId)
             setStatusMessage("Queued...")
-
+            
             // Poll every 2 seconds
             const interval = window.setInterval(async () => {
                 try {
@@ -88,13 +88,6 @@ export default function ImageCuratorPage() {
                         setRequestId(null)
                         setStatusMessage(null)
                         setError(statusData.error || "Curation failed")
-                        setLoading(false)
-                    } else if (statusData.error) {
-                        // Catch cases where the proxy returns a 404 or other error directly
-                        clearInterval(interval)
-                        setRequestId(null)
-                        setStatusMessage(null)
-                        setError(statusData.error)
                         setLoading(false)
                     } else {
                         // Still processing, show progress (non-error)

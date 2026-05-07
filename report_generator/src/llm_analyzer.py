@@ -132,7 +132,7 @@ Social Media Sentiment Summary:"""
                     return f"Error: Unable to analyze after {self.config.max_retries} attempts."
                     
             except Exception as e:
-                print(f"  ❌ ERROR on attempt {attempt}: {e}")
+                print(f"   ERROR on attempt {attempt}: {e}")
                 if attempt == self.config.max_retries:
                     error_msg = "Error: Could not connect to AI analysis service."
                     print(f"  💡 TIP: Ensure Ollama is running (`ollama serve`)")

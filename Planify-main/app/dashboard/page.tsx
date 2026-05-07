@@ -1,21 +1,41 @@
 "use client"
 
 import { useAuth } from "@/hooks/use-auth"
+import { useToast } from "@/hooks/use-toast"
 import { redirect } from "next/navigation"
+import { useEffect, useRef } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { PlusCircle, Users, Calendar, ClipboardList } from "lucide-react"
+import { PlusCircle, Users, Calendar, ClipboardList, GitCommitVertical } from "lucide-react"
 import DashboardCommunities from "@/components/dashboard/communities"
 import DashboardClubs from "@/components/dashboard/clubs"
 import DashboardEvents from "@/components/dashboard/events"
 import DashboardTasks from "@/components/dashboard/tasks"
+import JudgeScoring from "@/components/dashboard/judge-scoring"
 import { Protected } from "@/components/protected"
 import { usePermissions } from "@/hooks/use-permissions"
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const { can } = usePermissions()
+  const { toast } = useToast()
+  const toastShownRef = useRef(false)
+
+  // Show registration success toast if flag exists
+  useEffect(() => {
+    if (typeof window !== "undefined" && !toastShownRef.current && localStorage.getItem("showRegistrationToast")) {
+      toastShownRef.current = true
+      setTimeout(() => {
+        toast({
+          title: "Success!",
+          description: "Account created successfully. Welcome to our community! You'll receive an email with available communities to join.",
+          variant: "default",
+        })
+        localStorage.removeItem("showRegistrationToast")
+      }, 300)
+    }
+  }, [])
 
   // If not logged in, redirect to login page
   if (!loading && !user) {
@@ -43,6 +63,7 @@ export default function DashboardPage() {
             {user?.role === 'community_admin' && ' Manage your communities, clubs, and events.'}
             {user?.role === 'community_member' && ' Participate in clubs and events.'}
             {user?.role === 'audience' && ' Explore communities and join events.'}
+            {user?.role === 'judge' && ' Evaluate material submissions and provide scores.'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -66,7 +87,7 @@ export default function DashboardPage() {
       </div>
 
       <Tabs defaultValue="communities" className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <TabsList className="grid grid-cols-3 md:grid-cols-5 gap-2">
           <TabsTrigger value="communities" className="gap-2">
             <Users className="h-4 w-4" />
             Communities
@@ -79,6 +100,12 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4" />
             Events
           </TabsTrigger>
+          {user?.role === 'judge' && (
+            <TabsTrigger value="scoring" className="gap-2">
+              <GitCommitVertical className="h-4 w-4" />
+              Scoring
+            </TabsTrigger>
+          )}
           {can('tasks', 'read') && (
             <TabsTrigger value="tasks" className="gap-2">
               <ClipboardList className="h-4 w-4" />
@@ -95,6 +122,11 @@ export default function DashboardPage() {
         <TabsContent value="events" className="space-y-4">
           <DashboardEvents />
         </TabsContent>
+        {user?.role === 'judge' && (
+          <TabsContent value="scoring" className="space-y-4">
+            <JudgeScoring />
+          </TabsContent>
+        )}
         {can('tasks', 'read') && (
           <TabsContent value="tasks" className="space-y-4">
             <DashboardTasks />

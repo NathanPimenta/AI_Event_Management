@@ -4,6 +4,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header"
 import { AuthProvider } from "@/components/auth-provider"
+import { ToastProvider } from "@/components/toast-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
+            <ToastProvider />
             <div className="flex min-h-screen flex-col">
               <Header />
               <main className="flex-1">{children}</main>

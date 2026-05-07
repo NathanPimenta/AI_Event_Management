@@ -185,6 +185,9 @@ export default function EventPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={() => router.push(`/events/${id}/manage`)}>
+              Manage Event
+            </Button>
             <Button variant="outline" size="sm" onClick={handleShare}>
               <Share2 className="h-4 w-4 mr-2" />
               Share

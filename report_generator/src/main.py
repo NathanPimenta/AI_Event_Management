@@ -102,7 +102,7 @@ class EventReportGenerator:
         data = data_ingestor.load_data()
 
         if data is None:
-            print("\n❌ Failed to load event data. Cannot generate report.")
+            print("\n Failed to load event data. Cannot generate report.")
             return None
 
         return data
@@ -355,7 +355,7 @@ class EventReportGenerator:
             print("\n\n⚠️  Report generation cancelled by user.")
             return False
         except Exception as e:
-            print(f"\n❌ ERROR during report generation: {e}")
+            print(f"\n ERROR during report generation: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -373,7 +373,29 @@ def main():
 
     print("\n🚀 Starting AI-powered event report generation...\n")
     generator = EventReportGenerator(config)
-    generator.generate()
+    success = generator.generate()
+    
+    if success:
+        print("="*70)
+        print("🎉 SUCCESS! Your event report is ready.")
+        print("="*70)
+        print("\n📌 Next Steps:")
+        print("  1. Review the generated report")
+        print("  2. Share with event stakeholders")
+        print("  3. Use insights for planning future events")
+        print("  4. Archive for institutional records\n")
+    else:
+        print("="*70)
+        print(" Report generation failed.")
+        print("="*70)
+        print("\n🔍 Troubleshooting:")
+        print("  1. Check that all required data files exist")
+        print("  2. Verify Ollama is running: ollama serve")
+        print("  3. Ensure required model is installed: ollama pull llama3:8b")
+        print("  4. Check file permissions in data directory\n")
+    
+    # Exit with appropriate code
+    exit(0 if success else 1)
 
 
 if __name__ == "__main__":

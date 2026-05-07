@@ -365,7 +365,7 @@ class EventAnalytics:
             return True
             
         except Exception as e:
-            print(f"  ❌ ERROR creating session ratings chart: {e}")
+            print(f"   ERROR creating session ratings chart: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -481,7 +481,7 @@ class EventAnalytics:
             return True
             
         except Exception as e:
-            print(f"  ❌ ERROR creating demographics chart: {e}")
+            print(f"   ERROR creating demographics chart: {e}")
             import traceback
             traceback.print_exc()
             return False

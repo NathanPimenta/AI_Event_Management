@@ -3,7 +3,7 @@
  * Defines permissions and provides helper functions for authorization
  */
 
-export type UserRole = 'audience' | 'community_member' | 'community_admin'
+export type UserRole = 'audience' | 'community_member' | 'community_admin' | 'judge'
 
 export type Resource = 
   | 'events' 
@@ -12,8 +12,10 @@ export type Resource =
   | 'tasks' 
   | 'queries'
   | 'members'
+  | 'materials'
+  | 'scores'
 
-export type Action = 'create' | 'read' | 'update' | 'delete' | 'register' | 'manage'
+export type Action = 'create' | 'read' | 'update' | 'delete' | 'register' | 'manage' | 'score' | 'assign'
 
 /**
  * Permission matrix defining what each role can do
@@ -26,6 +28,8 @@ const PERMISSIONS: Record<UserRole, Record<Resource, Action[]>> = {
     tasks: [],
     queries: ['read'],
     members: [],
+    materials: ['read'],
+    scores: [],
   },
   community_member: {
     events: ['read', 'register'],
@@ -34,6 +38,8 @@ const PERMISSIONS: Record<UserRole, Record<Resource, Action[]>> = {
     tasks: ['read'],
     queries: ['create', 'read'],
     members: ['read'],
+    materials: ['read', 'create'],
+    scores: [],
   },
   community_admin: {
     events: ['create', 'read', 'update', 'delete', 'manage'],
@@ -42,6 +48,18 @@ const PERMISSIONS: Record<UserRole, Record<Resource, Action[]>> = {
     tasks: ['create', 'read', 'update', 'delete'],
     queries: ['create', 'read', 'update', 'delete'],
     members: ['create', 'read', 'update', 'delete'],
+    materials: ['create', 'read', 'update', 'delete'],
+    scores: ['read'],
+  },
+  judge: {
+    events: ['read'],
+    communities: ['read'],
+    clubs: ['read'],
+    tasks: ['read'],
+    queries: ['read'],
+    members: ['read'],
+    materials: ['read', 'score'],
+    scores: ['create', 'read', 'update'],
   },
 }
 
@@ -114,10 +132,38 @@ export function isAdmin(userRole: UserRole | undefined): boolean {
 }
 
 /**
+ * Check if user is judge
+ */
+export function isJudge(userRole: UserRole | undefined): boolean {
+  return userRole === 'judge'
+}
+
+/**
  * Check if user is community member or higher
  */
 export function isCommunityMember(userRole: UserRole | undefined): boolean {
-  return userRole === 'community_member' || userRole === 'community_admin'
+  return userRole === 'community_member' || userRole === 'community_admin' || userRole === 'judge'
+}
+
+/**
+ * Check if user can score materials
+ */
+export function canScore(userRole: UserRole | undefined): boolean {
+  return hasPermission(userRole, 'scores', 'create') || hasPermission(userRole, 'scores', 'update')
+}
+
+/**
+ * Check if user can view scores
+ */
+export function canViewScores(userRole: UserRole | undefined): boolean {
+  return hasPermission(userRole, 'scores', 'read')
+}
+
+/**
+ * Check if user can assign judge role
+ */
+export function canAssignJudge(userRole: UserRole | undefined): boolean {
+  return userRole === 'community_admin'
 }
 
 /**
@@ -127,7 +173,8 @@ export function getRoleLevel(userRole: UserRole): number {
   const levels: Record<UserRole, number> = {
     audience: 1,
     community_member: 2,
-    community_admin: 3,
+    judge: 3,
+    community_admin: 4,
   }
   return levels[userRole] || 0
 }

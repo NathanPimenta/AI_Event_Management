@@ -53,11 +53,10 @@ except ImportError:
 DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1neAVyq2-TQkkNW5R_5WVjrr1WOjBy3UN?usp=sharing"
 #DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1lU-F433mn_9iGjm2TkBVTngynWlSDTrq?usp=sharing"
 TEMP_MEDIA_DIR = "temp_images/"
-SERVED_IMAGES_DIR = "served_images/"  # Persistent directory for images shown in UI
 OUTPUT_VIDEO_PATH = "output/final_reel.mp4"
 MUSIC_FILE_PATH = "assets/background_music.mp3"
 MAX_FILES_TO_PROCESS = 100
-IMAGES_FOR_REEL = 5
+IMAGES_FOR_REEL = 15
 # When True, try to extract EXIF timestamps from saved images and order the top assets by time
 APPLY_EXIF_TIMESTAMP_ORDERING = True
 
@@ -259,15 +258,11 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if MODELS is None:
         print("!!! Aborting pipeline because AI models failed to initialize.")
-        return None
+        return
 
     if drive_folder_url == "YOUR_GOOGLE_DRIVE_FOLDER_URL_HERE":
         print("!!! ERROR: Please update the DRIVE_FOLDER_URL in main.py before running.")
-        return None
-    
-    if not drive_folder_url or drive_folder_url.strip() == "":
-        print("!!! ERROR: DRIVE_FOLDER_URL is empty. Please set a valid Google Drive folder URL.")
-        return None
+        return
 
     print("\n--- Starting Planify Reel Maker Pipeline ---")
 
@@ -279,7 +274,7 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if not clean_media_objects:
         print("Pipeline stopped: No media passed the pre-processing stage.")
-        return None
+        return
 
     # MODULE 2: Scoring
     print(f"\n-> Scoring {len(clean_media_objects)} high-quality media assets...")
@@ -328,7 +323,7 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if not scored_media_data:
         print("Pipeline stopped: Could not score any images.")
-        return None
+        return
 
     # Sort by final score first
     scored_media_data.sort(key=lambda item: item['final_score'], reverse=True)
@@ -409,7 +404,7 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if not top_image_paths:
         print("!!! ERROR: No valid media files could be saved for video generation.")
-        return None
+        return
 
     print(f"   - Saved {len(top_image_paths)} images to temporary directory. Converted {converted_count}, skipped {skipped_count}.")
 
@@ -459,7 +454,7 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
 
     if not top_image_paths:
         print("!!! ERROR: No valid media files could be saved for video generation.")
-        return None
+        return
 
     print(f"   - Saved {len(top_image_paths)} images to temporary directory. Converted {converted_count}, skipped {skipped_count}.")
 
@@ -593,120 +588,219 @@ def run_pipeline(drive_folder_url=None, clip_text=None):
             print(f"\n-> Warning: Could not remove temporary downloads directory {temp_download_dir}. Error: {e_rm}")
 
     print(f"\n--- Pipeline Finished Successfully. AI-curated reel saved at: {final_output_path} ---")
-    return {
-        "video_path": final_output_path,
-        "image_paths": padded_image_paths
-    }
+    return final_output_path
 
-# =========================
-# Slideshow Pipeline (for manual captioning)
-# =========================
-def run_slideshow_pipeline(drive_folder_url=None, max_files=None):
-    """
-    Generate a slideshow from images in Google Drive.
-    Returns a list of image paths saved for slideshow display.
-    This is used for the caption workflow where users will add captions manually.
-    """
-    if drive_folder_url is None:
-        drive_folder_url = DRIVE_FOLDER_URL
-    if max_files is None:
-        max_files = IMAGES_FOR_REEL
+# ===== NEW FUNCTIONS FOR API =====
 
-    if MODELS is None:
-        print("!!! Aborting slideshow pipeline because AI models failed to initialize.")
-        return []
-
-    print("\n--- Starting Slideshow Generation ---")
-
-    # MODULE 1: Ingestion
+def generate_slideshow_images(drive_folder_url, max_images=10):
+    """Generate a slideshow of best images from a Google Drive folder."""
+    print(f"\n[Slideshow] Processing folder: {drive_folder_url}")
+    
     clean_media_objects = intelligent_ingestor.run_ingestion_pipeline(
         drive_folder_url=drive_folder_url,
-        max_files=MAX_FILES_TO_PROCESS
+        max_files=30  # Get more to select from
     )
-
+    
     if not clean_media_objects:
-        print("Slideshow generation stopped: No media passed the pre-processing stage.")
+        print("[Slideshow] No valid images found")
         return []
-
-    # MODULE 2: Scoring (lightweight)
-    print(f"\n-> Scoring {len(clean_media_objects)} media assets...")
+    
+    print(f"[Slideshow] Scoring {len(clean_media_objects)} images...")
     scored_media_data = []
     
     for media in clean_media_objects:
         try:
             is_original = media.get('is_original_image', True)
             scores = image_scorer.get_all_scores(media['array'], MODELS, is_original)
-        except Exception as ex_score:
-            print(f"   - ERROR scoring {media.get('name', 'unknown')}: {ex_score}")
+            
+            final_score = (W_TECH * scores.get('technical_score', 0.0)) + \
+                          (W_SEM  * scores.get('semantic_score', 0.0)) + \
+                          (W_ENG  * scores.get('engagement_score', 0.0))
+            
+            media_with_scores = media.copy()
+            media_with_scores['scores'] = scores
+            media_with_scores['final_score'] = final_score
+            scored_media_data.append(media_with_scores)
+        except Exception as ex:
             continue
-
-        final_score = (W_TECH * scores.get('technical_score', 0.0)) + \
-                      (W_SEM  * scores.get('semantic_score', 0.0)) + \
-                      (W_ENG  * scores.get('engagement_score', 0.0))
-
-        media_with_scores = media.copy()
-        media_with_scores['scores'] = scores
-        media_with_scores['final_score'] = final_score
-        media_with_scores['detected_objects'] = scores.get('detected_objects', [])
-        
-        scored_media_data.append(media_with_scores)
-
-    if not scored_media_data:
-        print("Slideshow generation stopped: Could not score any images.")
-        return []
-
-    # Sort by final score
-    scored_media_data.sort(key=lambda item: item['final_score'], reverse=True)
     
-    # Select top images for slideshow
-    top_media_objects = scored_media_data[:max_files]
-    print(f"\n-> Selected top {len(top_media_objects)} images for slideshow")
-
-    # MODULE 3: Save images for slideshow (in persistent served_images directory)
-    print(f"\n-> Saving top {len(top_media_objects)} images for slideshow...")
-    if not os.path.exists(SERVED_IMAGES_DIR):
-        os.makedirs(SERVED_IMAGES_DIR, exist_ok=True)
-
-    image_filenames = []  # Just store filenames, not full paths
-    for idx, media in enumerate(top_media_objects):
+    if not scored_media_data:
+        print("[Slideshow] Could not score any images")
+        return []
+    
+    # Sort by score and take top N
+    scored_media_data.sort(key=lambda item: item['final_score'], reverse=True)
+    top_media_objects = scored_media_data[:max_images]
+    
+    print(f"[Slideshow] Selected top {len(top_media_objects)} images")
+    
+    # Save and return paths
+    if not os.path.exists(TEMP_MEDIA_DIR):
+        os.makedirs(TEMP_MEDIA_DIR, exist_ok=True)
+    
+    image_paths = []
+    for media in top_media_objects:
         try:
             safe_filename = media['name'].replace(" ", "_")
-            orig_ext = os.path.splitext(media['name'])[1] or ".jpg"
-            save_name = f"slide_{idx:02d}_{safe_filename}{orig_ext}"
-            save_path = os.path.join(SERVED_IMAGES_DIR, save_name)
-
-            if isinstance(media.get('array'), np.ndarray) and media['array'].ndim == 3 and media['array'].shape[2] == 3:
+            save_path = os.path.join(TEMP_MEDIA_DIR, safe_filename)
+            
+            if isinstance(media.get('array'), np.ndarray):
                 written_path = safe_save_image_from_array(media['array'], save_path)
                 if written_path:
-                    image_filenames.append(save_name)  # Store just filename
-                    print(f"   - Saved slideshow image {idx + 1}/{len(top_media_objects)}: {save_name}")
-            else:
-                print(f"   - Warning: Skipping invalid image array for {media.get('name','unknown')}")
+                    image_paths.append(written_path)
+        except Exception as e:
+            continue
+    
+    print(f"[Slideshow] Saved {len(image_paths)} images")
+    return image_paths
 
-        except Exception as e_save:
-            print(f"   - Warning: Could not save image {media.get('name','unknown')}. Error: {e_save}")
-
-    if not image_filenames:
-        print("!!! ERROR: No valid images saved for slideshow.")
-        return []
-
-    print(f"\n--- Slideshow Generated Successfully. {len(image_filenames)} images ready for captioning ---")
-    return image_filenames
-
+def generate_reel_from_images_with_captions(image_paths, captions):
+    """Generate a reel from images with captions as narration and optional bot overlays."""
+    print(f"\n[Reel] Starting with {len(image_paths)} images and {len(captions)} captions")
+    
+    if not image_paths or not captions or len(image_paths) != len(captions):
+        raise Exception("Mismatch between images and captions")
+    
+    # Pad images to target size
+    padded_image_paths = []
+    for p in image_paths:
+        try:
+            if os.path.exists(p):
+                base = os.path.basename(p)
+                padded_name = f"padded_{os.path.splitext(base)[0]}.jpg"
+                padded_path = os.path.join(TEMP_MEDIA_DIR, padded_name)
+                out = pad_image_to_target(p, padded_path, target_w=TARGET_W, target_h=TARGET_H)
+                if out:
+                    padded_image_paths.append(out)
+                else:
+                    padded_image_paths.append(p)
+        except Exception as e:
+            padded_image_paths.append(p)
+    
+    # Generate narration from captions using TTS
+    print(f"[Reel] Generating narration from captions...")
+    full_narration = " ".join(captions)
+    narration_path = os.path.join('output', 'narration.mp3')
+    
+    try:
+        tts_path = agentic_reelmaker.tts_narration_natural(full_narration, narration_path)
+    except Exception as e:
+        print(f"[Reel] TTS failed: {e}, using fallback")
+        tts_path = None
+    
+    # Calculate clip duration based on narration
+    final_clip_duration = 3.0
+    if tts_path and os.path.exists(tts_path):
+        try:
+            from moviepy.editor import AudioFileClip
+            audio_clip = AudioFileClip(tts_path)
+            total_audio_duration = audio_clip.duration
+            num_images = max(len(padded_image_paths), 1)
+            transition_duration = 0.5
+            final_clip_duration = (total_audio_duration + (num_images - 1) * transition_duration) / num_images
+            audio_clip.close()
+            print(f"[Reel] Narration duration: {total_audio_duration:.1f}s, clip duration: {final_clip_duration:.1f}s")
+        except Exception as e:
+            print(f"[Reel] Could not read audio duration: {e}")
+    
+    # Generate base video with music
+    output_video_path = os.path.join('output', 'reel_with_captions.mp4')
+    print(f"[Reel] Creating video...")
+    
+    try:
+        video_generator.create_reel_from_images(
+            image_paths=padded_image_paths,
+            music_path=MUSIC_FILE_PATH,
+            output_path=output_video_path,
+            clip_duration=final_clip_duration
+        )
+    except Exception as e:
+        print(f"[Reel] Video generation failed: {e}")
+        raise
+    
+    # Try to add bot overlays
+    try:
+        print(f"[Reel] Planning bot overlays...")
+        
+        # Create media items with dummy objects for bot planning
+        media_items = []
+        for i, caption in enumerate(captions):
+            media_items.append({
+                'name': f'Image {i+1}',
+                'detected_objects': [],  # Simple - no specific objects needed for bot selection
+            })
+        
+        # Get bot videos directory
+        package_root = os.path.dirname(os.path.dirname(__file__))
+        bot_dir = os.path.join(package_root, 'video')
+        
+        # Plan bot overlays (gracefully handles missing bot videos)
+        bot_plan = agentic_reelmaker.plan_bot_overlays(media_items, bot_dir)
+        
+        if any(p.get('path') and os.path.exists(p['path']) for p in bot_plan):
+            print(f"[Reel] Overlaying bot avatars...")
+            composite_output = os.path.splitext(output_video_path)[0] + '_with_bots.mp4'
+            
+            agentic_reelmaker.overlay_bots_on_video(
+                output_video_path, 
+                bot_plan, 
+                tts_path, 
+                composite_output
+            )
+            output_video_path = composite_output
+            print(f"[Reel] Reel with bots complete: {output_video_path}")
+        else:
+            print(f"[Reel] No bot videos available, skipping bot overlay")
+            # Overlay narration without bots
+            if tts_path and os.path.exists(tts_path):
+                try:
+                    from moviepy.editor import VideoFileClip, AudioFileClip
+                    video = VideoFileClip(output_video_path)
+                    narration_audio = AudioFileClip(tts_path)
+                    
+                    if video.audio:
+                        from moviepy.audio.AudioFileClip import concatenate_audioclips
+                        try:
+                            final_audio = concatenate_audioclips([video.audio, narration_audio])
+                        except:
+                            # Fallback: just use narration
+                            final_audio = narration_audio
+                    else:
+                        final_audio = narration_audio
+                    
+                    final_video = video.set_audio(final_audio)
+                    final_output = os.path.join('output', 'reel_final.mp4')
+                    final_video.write_videofile(final_output, verbose=False, logger=None)
+                    
+                    video.close()
+                    final_video.close()
+                    
+                    output_video_path = final_output
+                except Exception as e:
+                    print(f"[Reel] Could not overlay narration: {e}, using video without narration")
+            
+    except Exception as e:
+        print(f"[Reel] Bot overlay failed: {e}, continuing with base video")
+        # Try to at least overlay narration
+        if tts_path and os.path.exists(tts_path):
+            try:
+                from moviepy.editor import VideoFileClip, AudioFileClip
+                video = VideoFileClip(output_video_path)
+                narration_audio = AudioFileClip(tts_path)
+                
+                final_video = video.set_audio(narration_audio)
+                final_output = os.path.join('output', 'reel_final.mp4')
+                final_video.write_videofile(final_output, verbose=False, logger=None)
+                
+                video.close()
+                final_video.close()
+                
+                output_video_path = final_output
+            except Exception as e2:
+                print(f"[Reel] Could not add narration: {e2}")
+    
+    print(f"[Reel] Reel complete: {output_video_path}")
+    return output_video_path
 
 if __name__ == "__main__":
-    print("\n" + "="*80)
-    print("PLANIFY REELMAKER - AI-POWERED VIDEO GENERATION")
-    print("="*80)
-    result = run_pipeline()
-    if result:
-        print("\n" + "="*80)
-        print("✅ PIPELINE EXECUTION COMPLETED SUCCESSFULLY")
-        print("="*80)
-        if isinstance(result, dict):
-            print(f"Video Path: {result.get('video_path')}")
-            print(f"Images Used: {len(result.get('image_paths', []))}")
-    else:
-        print("\n" + "="*80)
-        print("❌ PIPELINE EXECUTION FAILED OR WAS ABORTED")
-        print("="*80)
+    run_pipeline()

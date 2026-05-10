@@ -55,7 +55,7 @@ DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1neAVyq2-TQkkNW5R_5WV
 TEMP_MEDIA_DIR = "temp_images/"
 OUTPUT_VIDEO_PATH = "output/final_reel.mp4"
 MUSIC_FILE_PATH = "assets/background_music.mp3"
-MAX_FILES_TO_PROCESS = 100
+MAX_FILES_TO_PROCESS = 1000
 IMAGES_FOR_REEL = 15
 # When True, try to extract EXIF timestamps from saved images and order the top assets by time
 APPLY_EXIF_TIMESTAMP_ORDERING = True
@@ -73,7 +73,7 @@ W_SEM = 0.25  # Decreased from 0.4 - semantic content less important
 W_ENG = 0.25  # Decreased from 0.4 - engagement secondary to quality
 
 # --- PATH TO YOUR TRAINED PYTORCH MODEL ---
-PYTORCH_NIMA_MODEL_PATH = "planify_reelmaker/nima_efficientnet_b3_ava_4060.pth"
+PYTORCH_NIMA_MODEL_PATH = "nima_efficientnet_b3_ava_4060.pth"
 
 # --- Device Selection (GPU if available, otherwise CPU) ---
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -598,7 +598,7 @@ def generate_slideshow_images(drive_folder_url, max_images=10):
     
     clean_media_objects = intelligent_ingestor.run_ingestion_pipeline(
         drive_folder_url=drive_folder_url,
-        max_files=30  # Get more to select from
+        max_files=1000  # Increased to process all files (up to 1000) instead of just 30
     )
     
     if not clean_media_objects:
@@ -759,9 +759,10 @@ def generate_reel_from_images_with_captions(image_paths, captions):
                     narration_audio = AudioFileClip(tts_path)
                     
                     if video.audio:
-                        from moviepy.audio.AudioFileClip import concatenate_audioclips
+                        from moviepy.editor import CompositeAudioClip
                         try:
-                            final_audio = concatenate_audioclips([video.audio, narration_audio])
+                            bg_audio = video.audio.volumex(0.3)
+                            final_audio = CompositeAudioClip([bg_audio, narration_audio.set_start(0)])
                         except:
                             # Fallback: just use narration
                             final_audio = narration_audio

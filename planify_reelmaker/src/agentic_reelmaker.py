@@ -256,13 +256,15 @@ def overlay_bots_on_video(background_video_path, bot_plan, narration_audio_path,
         final = bg
         if narration_audio_path and os.path.exists(narration_audio_path):
             try:
-                from moviepy.audio.fx.all import audio_loop
+                from moviepy.editor import CompositeAudioClip
                 audio = AudioFileClip(narration_audio_path)
-                if audio.duration < bg.duration:
-                    audio = audio_loop(audio, duration=bg.duration)
-                final = final.set_audio(audio)
+                if final.audio:
+                    bg_audio = final.audio.volumex(0.3)
+                    final_audio = CompositeAudioClip([bg_audio, audio.set_start(0)])
+                    final = final.set_audio(final_audio)
+                else:
+                    final = final.set_audio(audio)
             except Exception as e:
-
                 print(f"   - Warning: Failed to attach narration properly. Error: {e}")
         final.write_videofile(output_path, codec='libx264', audio_codec='aac', fps=bg.fps)
         return output_path
@@ -316,15 +318,16 @@ def overlay_bots_on_video(background_video_path, bot_plan, narration_audio_path,
 
     final = CompositeVideoClip(overlays, size=bg.size).set_duration(bg.duration)
 
-    # Attach narration if present
     if narration_audio_path and os.path.exists(narration_audio_path):
         try:
-            from moviepy.audio.fx.all import audio_loop
+            from moviepy.editor import CompositeAudioClip
             audio = AudioFileClip(narration_audio_path)
-            if audio.duration < final.duration:
-                # Loop the audio to match the video duration rather than just setting duration
-                audio = audio_loop(audio, duration=final.duration)
-            final = final.set_audio(audio)
+            if final.audio:
+                bg_audio = final.audio.volumex(0.3)
+                final_audio = CompositeAudioClip([bg_audio, audio.set_start(0)])
+                final = final.set_audio(final_audio)
+            else:
+                final = final.set_audio(audio)
         except Exception as e:
             print(f"   - Warning: Failed to attach narration properly. Error: {e}")
 
